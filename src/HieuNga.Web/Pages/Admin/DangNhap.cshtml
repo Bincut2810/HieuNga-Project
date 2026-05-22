@@ -1,0 +1,44 @@
+@page "/admin/dang-nhap"
+@model HieuNga.Web.Pages.Admin.DangNhapModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng nhập";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | Honda Hiếu Nga</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-honda-dark flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 md:p-10">
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 bg-[#E40521] rounded-lg mx-auto flex items-center justify-center text-white font-bold">HN</div>
+            <h1 class="text-2xl font-bold mt-4">CMS Admin</h1>
+            <p class="text-gray-500 text-sm mt-1">Honda Hiếu Nga Đà Nẵng</p>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <p class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-4">@Model.ErrorMessage</p>
+        }
+        <form method="post" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium mb-1">Email</label>
+                <input asp-for="Input.Email" class="w-full px-4 py-3 border rounded-lg" autocomplete="username" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Mật khẩu</label>
+                <input asp-for="Input.Password" type="password" class="w-full px-4 py-3 border rounded-lg" autocomplete="current-password" />
+            </div>
+            <label class="flex items-center gap-2 text-sm">
+                <input asp-for="Input.RememberMe" type="checkbox" />
+                Ghi nhớ đăng nhập
+            </label>
+            <button type="submit" class="w-full py-3 bg-[#E40521] text-white font-semibold rounded-lg hover:bg-red-700 transition">Đăng nhập</button>
+        </form>
+        <p class="text-xs text-gray-400 text-center mt-6">Demo: admin@hondahieunga.vn / Admin@123456!</p>
+    </div>
+</body>
+</html>

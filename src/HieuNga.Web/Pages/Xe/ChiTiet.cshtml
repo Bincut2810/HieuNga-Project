@@ -1,0 +1,321 @@
+@page "/xe/{slug}"
+@model HieuNga.Web.Pages.Xe.ChiTietModel
+@using System.Text.Json
+@{
+    var m = Model.Motorcycle!;
+    var galleryImages = m.GalleryUrls.Where(u => !string.IsNullOrEmpty(u)).Distinct().ToList();
+    if (galleryImages.Count == 0 && !string.IsNullOrEmpty(m.ThumbnailUrl))
+        galleryImages = [m.ThumbnailUrl];
+    var mainGalleryImage = m.ThumbnailUrl ?? galleryImages.FirstOrDefault() ?? string.Empty;
+    var activePrice = m.Variants.FirstOrDefault()?.Price ?? m.BasePrice;
+    var defaultDown = Math.Round(activePrice * 0.2m / 500_000) * 500_000;
+    var monthlyEstimate = Model.InitialFinance?.MonthlyPayment ?? (activePrice - defaultDown) / 12;
+    var financeBoot = new
+    {
+        bikeName = m.Name,
+        motorcycleId = m.Id,
+        basePrice = m.BasePrice,
+        down = (double)defaultDown,
+        variants = m.Variants.Select(v => new { id = v.Id.ToString().ToLowerInvariant(), name = v.Name, price = (double)v.Price, available = v.IsAvailable })
+    };
+    var financeBootJson = JsonSerializer.Serialize(financeBoot);
+}
+
+<div class="detail-page bg-white" x-data>
+    <script type="application/json" id="motorcycle-finance-config">@Html.Raw(financeBootJson)</script>
+    <script>
+        (function () {
+            var el = document.getElementById('motorcycle-finance-config');
+            if (!el || !window.bootMotorcycleFinance) return;
+            try { window.bootMotorcycleFinance(JSON.parse(el.textContent)); } catch (e) { console.warn('Finance init:', e); }
+        })();
+    </script>
+    <div id="compare-toast" class="fixed top-24 right-4 z-[70] max-w-sm"></div>
+
+    @* ─── HERO ─── *@
+    <section class="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 lg:pb-20">
+            <nav class="text-sm text-gray-400 mb-6 lg:mb-10">
+                <a href="/" class="hover:text-honda-red transition">Trang chủ</a>
+                <span class="mx-2">/</span>
+                <a href="/xe" class="hover:text-honda-red transition">Xe máy</a>
+                <span class="mx-2">/</span>
+                <span class="text-honda-dark font-medium">@m.Name</span>
+            </nav>
+
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-14 items-start">
+                <div class="lg:col-span-7">
+                    <partial name="Xe/Shared/_DetailGallery" model="(m.Name, mainGalleryImage, (IReadOnlyList<string>)galleryImages)" />
+                </div>
+
+                <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
+                    <div>
+                        <span class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            @m.Category · Còn hàng showroom
+                        </span>
+                        <h1 class="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-honda-dark mt-3 leading-[1.1] tracking-tight">@m.Name</h1>
+                        @if (!string.IsNullOrEmpty(m.ShortDescription))
+                        {
+                            <p class="text-gray-500 mt-4 text-base leading-relaxed">@m.ShortDescription</p>
+                        }
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">Giá niêm yết</p>
+                        <p class="text-3xl sm:text-4xl font-bold text-honda-red mt-1 tracking-tight tabular-nums"
+                           x-text="$store.motorcycleDetail ? $store.motorcycleDetail.formatVnd($store.motorcycleDetail.price) : '@activePrice.ToVnd()'"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-show="$store.motorcycleDetail?.variantName" x-text="$store.motorcycleDetail?.variantName"></p>
+                        <p class="text-sm text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
+                            <span class="px-2 py-0.5 bg-red-50 text-honda-red text-xs font-bold rounded tabular-nums">
+                                Trả góp từ ~<span x-text="$store.motorcycleDetail ? new Intl.NumberFormat('vi-VN').format($store.motorcycleDetail.monthly) : '@((long)monthlyEstimate)'"></span> ₫/tháng
+                            </span>
+                        </p>
+                    </div>
+
+                    @if (m.Variants.Any())
+                    {
+                        <div>
+                            <p class="text-sm font-semibold text-honda-dark mb-3">Chọn phiên bản</p>
+                            <div class="space-y-2">
+                                @foreach (var v in m.Variants)
+                                {
+                                    <button type="button"
+                                            @@click="$store.motorcycleDetail && $store.motorcycleDetail.selectVariant('@v.Id.ToString().ToLowerInvariant()')"
+                                            class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all"
+                                            :class="$store.motorcycleDetail && $store.motorcycleDetail.isVariantSelected('@v.Id.ToString().ToLowerInvariant()') ? 'border-honda-red bg-red-50/60 shadow-sm' : 'border-gray-100 hover:border-gray-300'">
+                                        <span class="font-semibold text-sm">@v.Name</span>
+                                        <span class="font-bold text-honda-red tabular-nums">@v.Price.ToVnd()</span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (m.Colors.Any())
+                    {
+                        <div x-data="{ selected: '@m.Colors.First().Id' }">
+                            <p class="text-sm font-semibold text-honda-dark mb-3">Màu sắc</p>
+                            <div class="flex flex-wrap gap-3">
+                                @foreach (var color in m.Colors)
+                                {
+                                    <button type="button" @@click="selected = '@color.Id'"
+                                            class="flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all"
+                                            :class="selected === '@color.Id' ? 'border-honda-red bg-red-50/50' : 'border-gray-100 hover:border-gray-300'">
+                                        <span class="w-6 h-6 rounded-full border border-gray-200 shadow-inner" style="background:@color.HexCode"></span>
+                                        <span class="text-sm font-medium">@color.Name</span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="hidden lg:grid grid-cols-2 gap-3">
+                        <a href="/dat-lich-lai-thu?xeId=@m.Id" class="btn-primary py-4 text-center justify-center text-base shadow-lg shadow-red-500/20">
+                            Đặt lái thử miễn phí
+                        </a>
+                        <a href="#financing" class="btn-secondary py-4 text-center justify-center text-base">
+                            Tính trả góp
+                        </a>
+                    </div>
+                    <div class="hidden lg:flex gap-3">
+                        <button type="button" hx-get="/so-sanh?handler=Add&id=@m.Id" hx-target="#compare-toast" hx-swap="innerHTML"
+                                class="flex-1 py-3 text-sm font-semibold border border-gray-200 rounded-xl hover:border-honda-red hover:text-honda-red transition">
+                            + Thêm so sánh
+                        </button>
+                        <a href="tel:0905123456" class="flex-1 py-3 text-sm font-semibold text-center border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+                            Gọi 0905 123 456
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* ─── HIGHLIGHTS ─── *@
+    @if (m.Highlights.Any())
+    {
+        <section class="py-14 md:py-20 border-b border-gray-100 reveal">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-honda-red">Điểm nổi bật</span>
+                <h2 class="text-2xl md:text-3xl font-bold text-honda-dark mt-2 tracking-tight">Vì sao chọn @m.Name?</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-10">
+                    @foreach (var highlight in m.Highlights)
+                    {
+                        <div class="flex gap-4 p-5 md:p-6 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 hover:border-honda-red/20 hover:shadow-md transition-all duration-300">
+                            <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-honda-red/10 text-honda-red flex items-center justify-center font-bold">✓</span>
+                            <p class="text-sm md:text-base text-gray-700 leading-relaxed font-medium">@highlight</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <partial name="Shared/_DetailFinanceCalculator" model="@((Motorcycle: m, MotorcycleId: m.Id, DefaultDown: defaultDown))" />
+
+    @* ─── SPECS ─── *@
+    <section class="py-16 md:py-24 bg-gray-50/80 reveal">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-14">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-honda-red">Thông số</span>
+                    <h2 class="text-2xl md:text-4xl font-bold text-honda-dark mt-2 tracking-tight">Thông số kỹ thuật</h2>
+                    <p class="text-gray-500 mt-2">Số liệu tham khảo theo catalogue Honda Việt Nam</p>
+                </div>
+                <p class="text-sm text-gray-400">HEAD Đà Nẵng · Bảo hành chính hãng</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+                @foreach (var spec in m.Specifications)
+                {
+                    <div class="detail-spec-card bg-white rounded-2xl p-5 md:p-6 border border-gray-100">
+                        <span class="text-2xl md:text-3xl">@spec.Icon</span>
+                        <p class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-400 mt-4 leading-snug">@spec.Label</p>
+                        <p class="text-sm md:text-base font-bold text-honda-dark mt-2 leading-tight">@spec.Value</p>
+                    </div>
+                }
+            </div>
+            @if (m.Variants.Any())
+            {
+                <div class="mt-10 bg-white rounded-3xl border border-gray-100 p-6 md:p-10">
+                    <h3 class="font-bold text-lg text-honda-dark">Phiên bản & giá tại showroom</h3>
+                    <div class="grid sm:grid-cols-2 gap-4 mt-6">
+                        @foreach (var v in m.Variants)
+                        {
+                            <button type="button"
+                                    @@click="$store.motorcycleDetail.selectVariant('@v.Id.ToString().ToLowerInvariant()'); document.getElementById('financing')?.scrollIntoView({ behavior: 'smooth' })"
+                                    class="flex justify-between items-center py-4 px-5 bg-gray-50 rounded-2xl border-2 border-gray-100 text-left w-full transition-all hover:border-honda-red/30"
+                                    :class="$store.motorcycleDetail && $store.motorcycleDetail.isVariantSelected('@v.Id.ToString().ToLowerInvariant()') ? 'border-honda-red bg-red-50/40' : ''">
+                                <div>
+                                    <p class="font-semibold">@v.Name</p>
+                                    <p class="text-xs mt-1 @(v.IsAvailable ? "text-green-600" : "text-gray-400")">
+                                        @(v.IsAvailable ? $"Còn {v.StockQuantity} xe" : "Liên hệ")
+                                    </p>
+                                </div>
+                                <p class="font-bold text-honda-red text-lg tabular-nums">@v.Price.ToVnd()</p>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    @* ─── TRUST ─── *@
+    <section class="py-16 md:py-20 border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-xl mx-auto mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Vì sao chọn Honda Hiếu Nga?</h2>
+                <p class="text-gray-500 mt-3">Đại lý HEAD — tiêu chuẩn cao nhất của Honda Việt Nam</p>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach (var item in new[] {
+                    ("🏆", "Honda HEAD", "Đại lý hạng cao — xe & phụ tùng chính hãng"),
+                    ("🔧", "Bảo dưỡng chuẩn", "KTV đào tạo bài bản, quy trình Honda"),
+                    ("💳", "Hỗ trợ trả góp", "Nhiều ngân hàng — thủ tục tại showroom"),
+                    ("📍", "Showroom Đà Nẵng", "Không gian trải nghiệm cao cấp")
+                })
+                {
+                    <div class="group text-center p-8 rounded-2xl bg-gradient-to-b from-gray-50 to-white border border-gray-100 hover:shadow-lg hover:border-honda-red/20 transition-all duration-300">
+                        <div class="text-3xl group-hover:scale-110 transition-transform duration-300">@item.Item1</div>
+                        <h3 class="font-bold mt-4 text-honda-dark">@item.Item2</h3>
+                        <p class="text-sm text-gray-500 mt-2 leading-relaxed">@item.Item3</p>
+                    </div>
+                }
+            </div>
+            <div class="mt-12 flex flex-wrap justify-center gap-4">
+                <a href="/bao-duong" class="btn-secondary">Đặt bảo dưỡng</a>
+                <a href="/lien-he" class="btn-primary">Đến showroom</a>
+            </div>
+        </div>
+    </section>
+
+    @* ─── DESCRIPTION ─── *@
+    @if (!string.IsNullOrEmpty(m.Description))
+    {
+        <section class="py-16 md:py-24">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-honda-red">Chi tiết</span>
+                <h2 class="text-2xl md:text-3xl font-bold text-honda-dark mt-2 mb-8">Tìm hiểu về @m.Name</h2>
+                <div class="prose prose-lg prose-gray max-w-none prose-headings:text-honda-dark prose-a:text-honda-red">
+                    @Html.Raw(m.Description)
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ─── RELATED ─── *@
+    @if (Model.Related.Any())
+    {
+        <section class="py-16 md:py-20 bg-gray-50 border-t">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-end justify-between mb-10">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Xe tương tự</h2>
+                        <p class="text-gray-500 mt-2">Khám phá thêm trong phân khúc @m.Category</p>
+                    </div>
+                    <a href="/xe?category=@((int)m.Category)" class="hidden sm:inline-flex text-honda-red font-semibold hover:underline">Xem tất cả →</a>
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    @foreach (var bike in Model.Related)
+                    {
+                        <div class="relative">
+                            <partial name="_MotorcycleCard" model="bike" />
+                            <span class="absolute top-4 left-4 z-10 px-2 py-1 bg-white/95 backdrop-blur text-xs font-bold text-honda-red rounded shadow-sm">Trả góp 0%</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <partial name="_CtaBanner" />
+</div>
+
+@* Mobile sticky CTA (detail-specific) *@
+<div class="detail-sticky-bar fixed bottom-0 inset-x-0 z-[60] lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200"
+     x-data
+     @@finance-updated.window="$store.motorcycleDetail && ($store.motorcycleDetail.monthly = $event.detail.monthly)">
+    <div class="px-3 py-2.5">
+        <div class="flex items-center gap-2 mb-2">
+            <div class="flex-1 min-w-0">
+                <p class="text-[10px] text-gray-400 truncate" x-text="$store.motorcycleDetail?.variantName || '@m.Name'"></p>
+                <p class="text-sm font-bold text-honda-red leading-tight tabular-nums">
+                    ~<span x-text="$store.motorcycleDetail ? new Intl.NumberFormat('vi-VN').format($store.motorcycleDetail.monthly) : '@((long)monthlyEstimate)'"></span> ₫/tháng
+                </p>
+            </div>
+            <p class="text-sm font-bold text-honda-dark shrink-0 tabular-nums"
+               x-text="$store.motorcycleDetail ? $store.motorcycleDetail.formatVnd($store.motorcycleDetail.price) : '@activePrice.ToVnd()'"></p>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+            <a href="#financing" class="py-3 text-xs font-bold text-center border-2 border-honda-dark rounded-xl">Tính góp</a>
+            <a href="/lien-he" class="py-3 text-xs font-semibold text-center bg-gray-100 rounded-xl">Tư vấn</a>
+            <a href="/dat-lich-lai-thu?xeId=@m.Id" class="py-3 text-xs font-bold text-center text-white bg-honda-red rounded-xl">Lái thử</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.body.addEventListener('htmx:afterSwap', function (e) {
+        if (e.detail.target.id === 'compare-toast') {
+            setTimeout(() => { e.detail.target.innerHTML = ''; }, 3500);
+        }
+    });
+</script>
+}
+
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "Product",
+    "name": "@m.Name",
+    "brand": { "@@type": "Brand", "name": "Honda" },
+    "offers": {
+        "@@type": "Offer",
+        "price": "@m.BasePrice",
+        "priceCurrency": "VND",
+        "availability": "https://schema.org/InStock"
+    }
+}
+</script>

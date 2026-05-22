@@ -1,0 +1,11 @@
+{
+  "name": "hieu-nga-web",
+  "private": true,
+  "scripts": {
+    "css:build": "tailwindcss -i ./src/HieuNga.Web/wwwroot/css/input.css -o ./src/HieuNga.Web/wwwroot/css/site-built.css --minify",
+    "css:watch": "tailwindcss -i ./src/HieuNga.Web/wwwroot/css/input.css -o ./src/HieuNga.Web/wwwroot/css/site-built.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

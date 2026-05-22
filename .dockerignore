@@ -1,0 +1,17 @@
+**/.git
+**/.vs
+**/.vscode
+**/.cursor
+**/bin
+**/obj
+**/out
+**/*.user
+**/*.suo
+**/TestResults
+**/agent-transcripts
+**/terminals
+docker/postgres_data
+*.md
+!README.md
+.env
+.env.*

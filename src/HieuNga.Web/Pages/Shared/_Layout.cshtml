@@ -1,0 +1,83 @@
+@{
+    var siteName = "Honda Hiếu Nga Đà Nẵng";
+    var metaTitle = ViewData["MetaTitle"] as string ?? siteName;
+    var metaDesc = ViewData["MetaDescription"] as string ?? "Đại lý Honda HEAD chính hãng tại Đà Nẵng. Xe máy Honda, trả góp 0%, lái thử miễn phí, bảo dưỡng chuyên nghiệp.";
+    var ogImage = ViewData["OgImage"] as string ?? "/images/og-default.jpg";
+    var canonical = ViewData["CanonicalUrl"] as string;
+    var baseUrl = "https://hondahieunga.vn";
+}
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@metaTitle</title>
+    <meta name="description" content="@metaDesc" />
+    @if (ViewData["MetaKeywords"] is string keywords)
+    {
+        <meta name="keywords" content="@keywords" />
+    }
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="@metaTitle" />
+    <meta property="og:description" content="@metaDesc" />
+    <meta property="og:image" content="@($"{baseUrl}{ogImage}")" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    @if (!string.IsNullOrEmpty(canonical))
+    {
+        <link rel="canonical" href="@canonical" />
+    }
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        honda: { red: '#E40521', dark: '#1A1A1A', charcoal: '#2D2D2D', gray: '#F5F5F5' }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    transitionDuration: { DEFAULT: '280ms', slow: '450ms' },
+                    transitionTimingFunction: { premium: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+                    animation: { 'fade-in': 'fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1)', 'slide-up': 'slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1)' },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="~/js/detail-finance.js" asp-append-version="true"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="bg-white text-honda-charcoal font-sans antialiased" hx-boost="true" hx-target="#main-content" hx-select="#main-content" hx-swap="innerHTML transition:true settle:0.28s">
+    <div id="htmx-progress" role="progressbar" aria-hidden="true"></div>
+    <partial name="_Header" />
+
+    <main id="main-content" class="min-h-screen">
+        @RenderBody()
+    </main>
+
+    <partial name="_Footer" />
+    <partial name="_MobileCta" />
+
+    <script src="~/js/polish.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "MotorcycleDealer",
+        "name": "@siteName",
+        "address": { "@@type": "PostalAddress", "addressLocality": "Đà Nẵng", "addressCountry": "VN" },
+        "telephone": "+84905123456",
+        "url": "@baseUrl"
+    }
+    </script>
+</body>
+</html>

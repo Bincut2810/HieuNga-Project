@@ -1,0 +1,73 @@
+@page "/tra-gop"
+@model HieuNga.Web.Pages.TraGop.IndexModel
+
+<partial name="_PageHero" model='("Tính trả góp", "Ước tính khoản trả hàng tháng — thủ tục nhanh tại HEAD Đà Nẵng", "Financing")' />
+
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid lg:grid-cols-2 gap-10 items-start">
+        <div x-data="{
+            price: @Model.VehiclePrice,
+            down: @Model.DownPayment,
+            months: @Model.TermMonths
+        }" class="bg-white border rounded-3xl p-8 shadow-sm space-y-8">
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <label class="font-medium">Giá xe</label>
+                    <span class="text-honda-red font-bold" x-text="new Intl.NumberFormat('vi-VN').format(price) + ' ₫'"></span>
+                </div>
+                <input type="range" x-model.number="price" min="20000000" max="150000000" step="1000000" class="w-full accent-[#E40521]" />
+            </div>
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <label class="font-medium">Trả trước</label>
+                    <span class="font-semibold" x-text="new Intl.NumberFormat('vi-VN').format(down) + ' ₫'"></span>
+                </div>
+                <input type="range" x-model.number="down" min="0" :max="price * 0.7" step="500000" class="w-full accent-[#E40521]" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-3">Kỳ hạn</label>
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="t in [6,12,18,24,36]">
+                        <button type="button" @@click="months = t"
+                                class="px-4 py-2 rounded-lg text-sm font-medium border transition"
+                                :class="months === t ? 'bg-honda-dark text-white border-honda-dark' : 'hover:border-honda-red'"
+                                x-text="t + ' tháng'"></button>
+                    </template>
+                </div>
+            </div>
+            <form hx-post="/tra-gop?handler=Calculate" hx-target="#calc-result" hx-swap="innerHTML transition:true" hx-indicator="#calc-loading" class="space-y-3">
+                <input type="hidden" name="VehiclePrice" :value="price" />
+                <input type="hidden" name="DownPayment" :value="down" />
+                <input type="hidden" name="TermMonths" :value="months" />
+                <button type="submit" class="btn-primary w-full">Tính khoản trả tháng</button>
+            </form>
+        </div>
+
+        <div class="relative min-h-[280px]">
+            <div id="calc-loading" class="htmx-indicator absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm rounded-3xl">
+                <div class="w-10 h-10 border-2 border-gray-200 border-t-honda-red rounded-full animate-spin"></div>
+            </div>
+            <div id="calc-result">
+            @if (Model.Result is not null)
+            {
+                <partial name="_CalculatorResult" model="Model.Result" />
+            }
+            else
+            {
+                <div class="bg-gray-50 border border-dashed rounded-3xl p-12 text-center text-gray-400">
+                    <p class="text-lg">Điều chỉnh thanh trượt và nhấn tính toán</p>
+                    <p class="text-sm mt-2">Kết quả mang tính tham khảo — tư vấn viên sẽ báo chính xác</p>
+                </div>
+            }
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-16 grid md:grid-cols-3 gap-6 text-center reveal">
+        <div class="p-6 rounded-2xl bg-white border"><p class="text-2xl">⚡</p><p class="font-bold mt-2">Duyệt nhanh</p><p class="text-xs text-gray-500 mt-1">Trong ngày làm việc</p></div>
+        <div class="p-6 rounded-2xl bg-white border"><p class="text-2xl">📋</p><p class="font-bold mt-2">Thủ tục gọn</p><p class="text-xs text-gray-500 mt-1">Hỗ trợ hồ sơ tại showroom</p></div>
+        <div class="p-6 rounded-2xl bg-white border"><p class="text-2xl">🤝</p><p class="font-bold mt-2">Đối tác uy tín</p><p class="text-xs text-gray-500 mt-1">Nhiều ngân hàng liên kết</p></div>
+    </div>
+</section>
+
+<partial name="_CtaBanner" />

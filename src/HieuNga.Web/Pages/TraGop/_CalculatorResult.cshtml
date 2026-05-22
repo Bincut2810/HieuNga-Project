@@ -1,0 +1,10 @@
+@model InstallmentCalculationDto
+<div class="bg-honda-dark text-white rounded-2xl p-8 calc-result-enter">
+    <p class="text-gray-400 text-sm">Trả hàng tháng (ước tính)</p>
+    <p class="text-4xl font-bold text-honda-red mt-2">@Model.MonthlyPayment.ToVnd()</p>
+    <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
+        <div><span class="text-gray-400">Tổng thanh toán</span><p class="font-semibold mt-1">@Model.TotalPayment.ToVnd()</p></div>
+        <div><span class="text-gray-400">Kỳ hạn</span><p class="font-semibold mt-1">@Model.TermMonths tháng</p></div>
+    </div>
+    <a href="/lien-he" class="btn-primary mt-8 inline-flex">Đăng ký tư vấn trả góp</a>
+</div>

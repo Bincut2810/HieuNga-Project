@@ -1,0 +1,18 @@
+@model PromotionDto
+<a href="/khuyen-mai/@Model.Slug" class="card-premium group block">
+    <div class="img-wrap aspect-[16/9] overflow-hidden bg-gray-100">
+        <img src="@(Model.ImageUrl ?? "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80")" alt="@Model.Title"
+             class="img-media w-full h-full object-cover transition-transform duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
+             loading="lazy" decoding="async" width="800" height="450" />
+    </div>
+    <div class="p-6 md:p-8">
+        <span class="text-xs font-bold text-honda-red uppercase tracking-wide">@Model.Type</span>
+        <h3 class="text-xl font-bold mt-2 group-hover:text-honda-red transition-colors duration-300 line-clamp-2">@Model.Title</h3>
+        @if (!string.IsNullOrEmpty(Model.Summary))
+        {
+            <p class="text-gray-500 text-sm mt-2 line-clamp-2">@Model.Summary</p>
+        }
+        <p class="text-xs text-gray-400 mt-4">Hết hạn: @Model.EndDate.ToString("dd/MM/yyyy")</p>
+        <span class="inline-block mt-4 text-sm font-semibold text-honda-dark group-hover:text-honda-red transition-colors">Xem chi tiết →</span>
+    </div>
+</a>

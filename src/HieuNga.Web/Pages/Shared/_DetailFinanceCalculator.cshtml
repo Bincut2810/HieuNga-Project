@@ -1,0 +1,184 @@
+@model (MotorcycleDetailDto Motorcycle, Guid MotorcycleId, decimal DefaultDown)
+@{
+    var m = Model.Motorcycle;
+}
+
+<section id="financing" class="py-16 md:py-24 bg-honda-dark text-white relative overflow-hidden scroll-mt-24">
+    <div class="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-honda-red/40 via-transparent to-transparent"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="text-center max-w-2xl mx-auto mb-8 md:mb-12">
+            <span class="text-xs font-bold uppercase tracking-[0.2em] text-honda-red">Công cụ trả góp</span>
+            <h2 class="text-3xl md:text-4xl font-bold mt-3 tracking-tight">@m.Name — trả bao nhiêu mỗi tháng?</h2>
+            <p class="text-gray-400 mt-4 text-sm md:text-base">Chọn phiên bản, ngân hàng, trả trước và kỳ hạn — cập nhật tức thì</p>
+        </div>
+
+        <template x-if="$store.motorcycleDetail">
+            <div>
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 md:p-6 rounded-2xl bg-white/10 backdrop-blur border border-white/10">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400">Giá xe đang tính</p>
+                        <p class="text-2xl md:text-3xl font-bold mt-1 tabular-nums" x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.price)"></p>
+                        <p class="text-xs text-gray-400 mt-1" x-show="$store.motorcycleDetail.variantName" x-text="$store.motorcycleDetail.variantName"></p>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400">Số tiền vay</p>
+                        <p class="text-xl font-bold text-white/90 mt-1 tabular-nums" x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.principal)"></p>
+                    </div>
+                </div>
+
+                <div class="detail-finance-panel rounded-3xl overflow-hidden text-honda-dark shadow-2xl">
+                    <div class="grid lg:grid-cols-5 gap-0">
+                        <div class="lg:col-span-3 p-5 md:p-10 space-y-7 md:space-y-8 border-b lg:border-b-0 lg:border-r border-gray-100 bg-white">
+                            <template x-if="$store.motorcycleDetail.hasVariants">
+                                <div>
+                                    <p class="text-sm font-bold text-honda-dark mb-3">Phiên bản xe</p>
+                                    <div class="grid sm:grid-cols-2 gap-2">
+                                        <template x-for="v in $store.motorcycleDetail.variants" :key="v.id">
+                                            <button type="button"
+                                                    @@click="$store.motorcycleDetail.selectVariant(v.id)"
+                                                    class="finance-variant-card text-left p-4 rounded-2xl border-2 transition-all"
+                                                    :class="$store.motorcycleDetail.isVariantSelected(v.id) ? 'border-honda-red bg-red-50/80 ring-2 ring-honda-red/20' : 'border-gray-100 hover:border-gray-300'">
+                                                <p class="font-bold text-sm" x-text="v.name"></p>
+                                                <p class="text-honda-red font-bold mt-1 tabular-nums" x-text="$store.motorcycleDetail.formatVnd(v.price)"></p>
+                                                <p class="text-[10px] mt-1" :class="v.available ? 'text-green-600' : 'text-gray-400'" x-text="v.available ? 'Còn hàng' : 'Liên hệ'"></p>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <div>
+                                <p class="text-sm font-bold text-honda-dark mb-3">Ngân hàng</p>
+                                <div class="grid grid-cols-2 gap-2 md:gap-3">
+                                    <template x-for="b in $store.motorcycleDetail.banks" :key="b.id">
+                                        <button type="button"
+                                                @@click="$store.motorcycleDetail.selectBank(b.id)"
+                                                class="finance-bank-card text-left p-3 md:p-4 rounded-2xl border-2 border-gray-100"
+                                                :class="{ 'is-selected': $store.motorcycleDetail.isBankSelected(b.id) }">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0"
+                                                     :style="'background:' + b.color" x-text="b.initials"></div>
+                                                <div class="min-w-0">
+                                                    <p class="font-bold text-xs md:text-sm truncate" x-text="b.name"></p>
+                                                    <p class="text-honda-red text-[10px] md:text-xs font-semibold mt-0.5" x-text="b.rateLabel"></p>
+                                                </div>
+                                            </div>
+                                            <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide" x-text="b.trust"></p>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-baseline mb-3 gap-2">
+                                    <p class="text-sm font-bold">Trả trước</p>
+                                    <div class="text-right">
+                                        <p class="text-sm font-bold text-honda-red tabular-nums" x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.down)"></p>
+                                        <p class="text-[10px] text-gray-400">
+                                            <span x-text="$store.motorcycleDetail.downPercent"></span>% · Còn vay
+                                            <span x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.principal)"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-4 gap-2 mb-4">
+                                    <template x-for="pct in [20, 30, 40, 50]" :key="pct">
+                                        <button type="button"
+                                                @@click="$store.motorcycleDetail.setDownPercent(pct)"
+                                                class="finance-segment py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold border-2"
+                                                :class="$store.motorcycleDetail.isDownPercentSelected(pct) ? 'border-honda-red bg-honda-red text-white shadow-md shadow-red-500/20' : 'border-gray-200 hover:border-gray-300'"
+                                                x-text="pct + '%'"></button>
+                                    </template>
+                                </div>
+                                <input type="range" class="detail-range w-full touch-manipulation"
+                                       x-model.number="$store.motorcycleDetail.down"
+                                       min="0" :max="$store.motorcycleDetail.maxDown" step="500000"
+                                       @@input="$store.motorcycleDetail.onDownSlider()"
+                                       aria-label="Trả trước" />
+                                <div class="mt-4">
+                                    <label class="text-xs font-semibold text-gray-500 block mb-2">Nhập số tiền trả trước</label>
+                                    <input type="text" inputmode="numeric"
+                                           class="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 focus:border-honda-red focus:ring-2 focus:ring-honda-red/20 outline-none text-base font-semibold tabular-nums transition"
+                                           x-model="$store.motorcycleDetail.downInput"
+                                           @@focus="$store.motorcycleDetail.onDownInputFocus()"
+                                           @@blur="$store.motorcycleDetail.commitDownInput()"
+                                           @@keydown.enter.prevent="$store.motorcycleDetail.commitDownInput()" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <p class="text-sm font-bold mb-3">Thời hạn vay</p>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <template x-for="t in [6, 12, 24, 36]" :key="t">
+                                        <button type="button"
+                                                @@click="$store.motorcycleDetail.setTerm(t)"
+                                                class="finance-segment py-3 md:py-3.5 rounded-xl text-sm font-bold border-2"
+                                                :class="$store.motorcycleDetail.isTermSelected(t) ? 'border-honda-dark bg-honda-dark text-white' : 'border-gray-200 hover:border-gray-300'"
+                                                x-text="t + 'T'"></button>
+                                    </template>
+                                </div>
+                                <p class="text-center text-xs text-gray-400 mt-2"><span x-text="$store.motorcycleDetail.months"></span> tháng</p>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-2 p-5 md:p-10 bg-gradient-to-br from-gray-50 via-white to-red-50/40 flex flex-col min-h-[320px]">
+                            <div class="flex-1 flex flex-col justify-center">
+                                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-gray-100 text-xs font-semibold text-gray-600 w-fit mx-auto lg:mx-0">
+                                    <span class="w-2 h-2 rounded-full bg-honda-red animate-pulse"></span>
+                                    <span x-text="$store.motorcycleDetail.selectedBank.name"></span>
+                                    <span class="text-gray-300">·</span>
+                                    <span x-text="$store.motorcycleDetail.selectedBank.rateLabel"></span>
+                                </div>
+
+                                <div class="mt-6 md:mt-8 text-center lg:text-left">
+                                    <p class="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">Trả hàng tháng ước tính</p>
+                                    <p class="finance-monthly-hero text-4xl sm:text-5xl md:text-6xl font-bold text-honda-red mt-3 tracking-tight leading-none tabular-nums"
+                                       :class="{ 'is-updating': $store.motorcycleDetail.monthlyAnim }"
+                                       x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.monthly)"></p>
+                                    <p class="text-gray-500 text-sm mt-4">
+                                        <span x-text="$store.motorcycleDetail.months"></span> kỳ · Trả trước
+                                        <strong x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.down)"></strong>
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-3 mt-8">
+                                    <div class="finance-stat-pill flex justify-between items-center">
+                                        <span class="label">Vốn vay</span>
+                                        <span class="value tabular-nums" x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.principal)"></span>
+                                    </div>
+                                    <div class="finance-stat-pill flex justify-between items-center">
+                                        <span class="label">Tổng thanh toán</span>
+                                        <span class="value tabular-nums" x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.total)"></span>
+                                    </div>
+                                    <div class="finance-stat-pill flex justify-between items-center border-honda-red/20 bg-red-50/50">
+                                        <span class="label">Lãi ước tính</span>
+                                        <span class="value text-honda-red tabular-nums" x-text="$store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.interest)"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-[10px] text-gray-400 text-center lg:text-left mt-6 leading-relaxed">
+                                * Gốc/kỳ + lãi trên dư nợ (tham khảo). Lãi thực tế theo hồ sơ ngân hàng tại HEAD Đà Nẵng.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-honda-dark p-5 md:p-8 grid sm:grid-cols-3 gap-3">
+                        <a :href="'/lien-he?subject=' + encodeURIComponent('Tư vấn trả góp @m.Name — ' + $store.motorcycleDetail.formatVnd($store.motorcycleDetail.result.monthly) + '/tháng')"
+                           class="touch-press flex items-center justify-center gap-2 px-5 py-4 bg-honda-red text-white font-bold rounded-xl hover:bg-red-700 transition text-sm text-center shadow-lg shadow-red-500/25">
+                            Đăng ký tư vấn trả góp
+                        </a>
+                        <a href="/lien-he"
+                           class="touch-press flex items-center justify-center px-5 py-4 bg-white/10 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/20 transition text-sm text-center">
+                            Liên hệ showroom
+                        </a>
+                        <a href="/dat-lich-lai-thu?xeId=@Model.MotorcycleId"
+                           class="touch-press flex items-center justify-center px-5 py-4 bg-white text-honda-dark font-bold rounded-xl hover:bg-gray-100 transition text-sm text-center">
+                            Đặt lịch lái thử
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</section>

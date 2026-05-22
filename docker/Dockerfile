@@ -1,0 +1,1 @@
+# Deprecated: use /Dockerfile at repository root (Render + docker compose).

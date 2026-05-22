@@ -1,0 +1,34 @@
+@page "/xe"
+@model HieuNga.Web.Pages.Xe.IndexModel
+
+<section class="bg-honda-dark text-white py-16 md:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-4xl md:text-5xl font-bold">Danh mục xe máy</h1>
+        <p class="text-gray-400 mt-4 max-w-xl">Khám phá toàn bộ dòng xe Honda chính hãng tại showroom HEAD Đà Nẵng</p>
+    </div>
+</section>
+
+<section class="page-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal is-visible">
+    <form hx-get="/xe?handler=Filter" hx-target="#catalog-grid" hx-swap="innerHTML transition:true" hx-indicator="#catalog-skeleton"
+          hx-trigger="change delay:200ms, submit" class="flex flex-wrap gap-4 mb-10">
+        <input type="search" name="q" value="@Model.Q" placeholder="Tìm xe..." class="flex-1 min-w-[200px] px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none transition-shadow" />
+        <select name="category" class="px-4 py-3 border border-gray-200 rounded-xl bg-white transition-shadow focus:ring-2 focus:ring-honda-red">
+            <option value="">Tất cả loại xe</option>
+            @foreach (MotorcycleCategory cat in Enum.GetValues<MotorcycleCategory>())
+            {
+                if (cat == MotorcycleCategory.Other) continue;
+                <option value="@((int)cat)" selected="@(Model.Category == cat)">@cat</option>
+            }
+        </select>
+        <button type="submit" class="btn-primary touch-press">Lọc</button>
+    </form>
+
+    <div class="relative min-h-[280px]">
+        <div id="catalog-skeleton" class="htmx-indicator absolute inset-0 z-10 bg-white/90 backdrop-blur-sm rounded-2xl p-4 md:p-6">
+            <partial name="_SkeletonMotorcycleGrid" />
+        </div>
+        <div id="catalog-grid" class="transition-opacity duration-300">
+            <partial name="_CatalogGrid" model="Model.Result" />
+        </div>
+    </div>
+</section>

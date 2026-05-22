@@ -1,0 +1,18 @@
+@page "/admin/banner"
+@model HieuNga.Web.Pages.Admin.Banner.IndexModel
+
+<h1 class="text-2xl font-bold">Banner</h1>
+<div class="mt-8 grid md:grid-cols-2 gap-6">
+    @foreach (var b in Model.Items)
+    {
+        <div class="bg-white border rounded-2xl overflow-hidden">
+            <div class="aspect-video bg-gray-100">
+                <img src="@b.ImageUrl" alt="@b.Title" class="w-full h-full object-cover" />
+            </div>
+            <div class="p-5">
+                <h3 class="font-bold">@b.Title</h3>
+                <p class="text-sm text-gray-500 mt-1">@b.Subtitle</p>
+            </div>
+        </div>
+    }
+</div>

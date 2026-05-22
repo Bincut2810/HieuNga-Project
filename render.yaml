@@ -1,0 +1,28 @@
+# Optional Render Blueprint — import in Render Dashboard → Blueprints
+# Or create services manually using docs/DEPLOY-RENDER.md
+
+databases:
+  - name: hieunga-db
+    plan: free
+    databaseName: hieunga
+    user: hieunga
+
+services:
+  - type: web
+    name: hieunga-web
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:8080
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: hieunga-db
+          property: connectionString

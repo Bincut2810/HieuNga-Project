@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E1A6FA94-E91B-4798-BF55-EA864981CD60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HieuNga.Domain", "src\HieuNga.Domain\HieuNga.Domain.csproj", "{039D5CD8-2C8B-4B09-95B5-42DF2094E6D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HieuNga.Application", "src\HieuNga.Application\HieuNga.Application.csproj", "{74790956-6B73-4937-814D-0E1FA58371C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HieuNga.Infrastructure", "src\HieuNga.Infrastructure\HieuNga.Infrastructure.csproj", "{20D069D0-9D0C-4067-AF87-99313D349180}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HieuNga.Web", "src\HieuNga.Web\HieuNga.Web.csproj", "{89F16201-EA6E-465A-8B42-D88CDD081A38}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{30544614-389E-4F8A-B84E-C28B7B2F81EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HieuNga.Tests", "tests\HieuNga.Tests\HieuNga.Tests.csproj", "{F14A7E7C-E7E1-436E-A308-AAD923B9E6C4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{039D5CD8-2C8B-4B09-95B5-42DF2094E6D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{039D5CD8-2C8B-4B09-95B5-42DF2094E6D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{039D5CD8-2C8B-4B09-95B5-42DF2094E6D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{039D5CD8-2C8B-4B09-95B5-42DF2094E6D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74790956-6B73-4937-814D-0E1FA58371C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74790956-6B73-4937-814D-0E1FA58371C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74790956-6B73-4937-814D-0E1FA58371C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74790956-6B73-4937-814D-0E1FA58371C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20D069D0-9D0C-4067-AF87-99313D349180}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20D069D0-9D0C-4067-AF87-99313D349180}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20D069D0-9D0C-4067-AF87-99313D349180}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20D069D0-9D0C-4067-AF87-99313D349180}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89F16201-EA6E-465A-8B42-D88CDD081A38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89F16201-EA6E-465A-8B42-D88CDD081A38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89F16201-EA6E-465A-8B42-D88CDD081A38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89F16201-EA6E-465A-8B42-D88CDD081A38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F14A7E7C-E7E1-436E-A308-AAD923B9E6C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F14A7E7C-E7E1-436E-A308-AAD923B9E6C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F14A7E7C-E7E1-436E-A308-AAD923B9E6C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F14A7E7C-E7E1-436E-A308-AAD923B9E6C4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{039D5CD8-2C8B-4B09-95B5-42DF2094E6D0} = {E1A6FA94-E91B-4798-BF55-EA864981CD60}
+		{74790956-6B73-4937-814D-0E1FA58371C4} = {E1A6FA94-E91B-4798-BF55-EA864981CD60}
+		{20D069D0-9D0C-4067-AF87-99313D349180} = {E1A6FA94-E91B-4798-BF55-EA864981CD60}
+		{89F16201-EA6E-465A-8B42-D88CDD081A38} = {E1A6FA94-E91B-4798-BF55-EA864981CD60}
+		{F14A7E7C-E7E1-436E-A308-AAD923B9E6C4} = {30544614-389E-4F8A-B84E-C28B7B2F81EF}
+	EndGlobalSection
+EndGlobal

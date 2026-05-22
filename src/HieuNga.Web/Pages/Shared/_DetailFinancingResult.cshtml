@@ -1,0 +1,37 @@
+@model InstallmentCalculationDto
+<div class="detail-finance-result animate-fade-in w-full">
+    <div class="text-center lg:text-left">
+        @if (!string.IsNullOrEmpty(Model.BankName))
+        {
+            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">@Model.BankName · @Model.MonthlyRatePercent.ToString("0.#")%/tháng</p>
+        }
+        else
+        {
+            <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">Ước tính trả hàng tháng</p>
+        }
+        <p class="text-4xl md:text-5xl font-bold text-honda-red mt-2 tracking-tight">@Model.MonthlyPayment.ToVnd()</p>
+        <p class="text-sm text-gray-500 mt-2">/ tháng · @Model.TermMonths kỳ</p>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
+        <div class="finance-stat-pill">
+            <p class="label">Vốn vay</p>
+            <p class="value">@Model.FinancedAmount.ToVnd()</p>
+        </div>
+        <div class="finance-stat-pill">
+            <p class="label">Trả trước</p>
+            <p class="value">@Model.DownPayment.ToVnd()</p>
+        </div>
+        <div class="finance-stat-pill">
+            <p class="label">Tổng trả</p>
+            <p class="value">@Model.TotalPayment.ToVnd()</p>
+        </div>
+        <div class="finance-stat-pill">
+            <p class="label">Lãi ước tính</p>
+            <p class="value text-honda-red">@Model.TotalInterest.ToVnd()</p>
+        </div>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3 mt-8">
+        <a href="/lien-he" class="btn-primary flex-1 text-center justify-center">Đăng ký tư vấn trả góp</a>
+        <a href="tel:0905123456" class="btn-secondary flex-1 text-center justify-center">Gọi tư vấn viên</a>
+    </div>
+</div>

@@ -1,0 +1,32 @@
+@page "/khuyen-mai"
+@model HieuNga.Web.Pages.KhuyenMai.IndexModel
+
+<partial name="_PageHero" model='("Khuyến mãi & Ưu đãi", "Chương trình hấp dẫn dành riêng khách hàng Honda Hiếu Nga", "Hot Deal")' />
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 pb-8">
+    <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 flex flex-wrap gap-6 items-center justify-between border">
+        <div>
+            <p class="text-sm text-gray-500">Đang áp dụng</p>
+            <p class="text-3xl font-bold text-honda-red">@Model.Promotions.Count chương trình</p>
+        </div>
+        <a href="/tra-gop" class="btn-primary">Tính trả góp</a>
+    </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    @if (!Model.Promotions.Any())
+    {
+        <p class="text-center text-gray-500 py-20">Hiện chưa có khuyến mãi. Vui lòng liên hệ hotline để biết ưu đãi mới nhất.</p>
+    }
+    else
+    {
+        <div class="grid md:grid-cols-2 gap-8">
+            @foreach (var promo in Model.Promotions)
+            {
+                <partial name="_PromotionCard" model="promo" />
+            }
+        </div>
+    }
+</section>
+
+<partial name="_CtaBanner" />

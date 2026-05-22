@@ -1,0 +1,44 @@
+@model IReadOnlyList<MotorcycleListItemDto>
+@if (Model.Any())
+{
+    <div class="overflow-x-auto -mx-4 px-4">
+        <div class="min-w-[640px] grid gap-4" style="grid-template-columns: 180px repeat(@Model.Count, minmax(200px, 1fr));">
+            <div></div>
+            @foreach (var bike in Model)
+            {
+                <div class="bg-white border rounded-2xl p-4 text-center relative">
+                    <button hx-get="/so-sanh?handler=Remove&id=@bike.Id" hx-target="#compare-table" hx-swap="innerHTML"
+                            class="absolute top-2 right-2 w-8 h-8 rounded-full bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-honda-red text-sm">✕</button>
+                    <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4">
+                        @{
+                            var compareImg = HieuNga.Application.Mappings.MotorcycleImageCatalog.ResolveThumbnail(bike.Slug, bike.ThumbnailUrl);
+                            var compareFallback = HieuNga.Application.Mappings.MotorcycleImageCatalog.GetThumbnail(bike.Slug);
+                        }
+                        <img src="@compareImg" data-fallback="@compareFallback" alt="@bike.Name"
+                             class="img-motorcycle w-full h-full object-cover"
+                             onerror="if(this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback}" />
+                    </div>
+                    <h3 class="font-bold text-sm">@bike.Name</h3>
+                    <p class="text-honda-red font-bold mt-2">@bike.BasePrice.ToVnd()</p>
+                    <a href="/xe/@bike.Slug" class="text-xs text-gray-500 hover:text-honda-red mt-2 inline-block">Chi tiết</a>
+                </div>
+            }
+
+            @{
+                var rows = new[] { ("Loại xe", (Func<MotorcycleListItemDto, string>)(m => m.Category.ToString())), ("Giá niêm yết", (Func<MotorcycleListItemDto, string>)(m => m.BasePrice.ToVnd())) };
+            }
+            @foreach (var (label, getter) in rows)
+            {
+                <div class="flex items-center font-semibold text-sm text-gray-500 py-4 border-t">@label</div>
+                @foreach (var bike in Model)
+                {
+                    <div class="flex items-center justify-center py-4 border-t text-sm font-medium">@getter(bike)</div>
+                }
+            }
+        </div>
+    </div>
+    <div class="mt-10 flex flex-wrap gap-4 justify-center">
+        <a href="/xe" class="btn-secondary">Thêm xe</a>
+        <a href="/dat-lich-lai-thu" class="btn-primary">Đặt lái thử</a>
+    </div>
+}
