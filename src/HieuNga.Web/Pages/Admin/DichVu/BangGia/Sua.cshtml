@@ -1,0 +1,82 @@
+@page "/admin/dich-vu/bang-gia/sua/{id:guid}"
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.DichVu.BangGiaSuaModel
+
+<partial name="Admin/Shared/_AdminBreadcrumb" model='new List<AdminBreadcrumbItem> {
+    new("Admin", "/admin"),
+    new("Dịch vụ"),
+    new("Bảng giá", "/admin/dich-vu/bang-gia"),
+    new("Sửa")
+}' />
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Sửa dịch vụ</h1>
+        @if (!string.IsNullOrEmpty(Model.Input.Slug))
+        {
+            <p class="admin-page-subtitle">
+                Trang công khai:
+                <a href="/bao-duong/@Model.Input.Slug" target="_blank" rel="noopener" style="color: var(--admin-honda-red);">/bao-duong/@Model.Input.Slug</a>
+            </p>
+        }
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="/admin/dich-vu/bang-gia" class="admin-btn-secondary">Quay lại danh sách</a>
+        <button type="submit" form="service-form" name="submitAction" value="save" class="admin-btn-primary">Lưu thay đổi</button>
+    </div>
+</div>
+
+<form method="post" id="service-form" class="admin-form-card" style="max-width: 48rem;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Input.Id" />
+    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+    <partial name="Admin/DichVu/_ServiceItemForm" model="Model.Input" />
+    <div class="admin-form-actions admin-form-actions-sticky">
+        <button type="submit" name="submitAction" value="save" class="admin-btn-primary">Lưu thay đổi</button>
+        <button type="submit" name="submitAction" value="continue" class="admin-btn-secondary">Lưu và tiếp tục chỉnh sửa</button>
+        <a href="/admin/dich-vu/bang-gia" class="admin-btn-ghost">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            function updatePreview() {
+                const cat = document.getElementById('service-category');
+                const previewCat = document.getElementById('preview-category');
+                const previewName = document.getElementById('preview-name');
+                const previewShort = document.getElementById('preview-short');
+                const previewPrice = document.getElementById('preview-price');
+                const previewDuration = document.getElementById('preview-duration');
+                const previewNote = document.getElementById('preview-note');
+                const previewStatus = document.getElementById('preview-status');
+                const nameInput = document.getElementById('service-name');
+                const shortDesc = document.getElementById('service-short-desc');
+                const active = document.getElementById('service-active');
+                if (previewCat && cat) {
+                    const opt = cat.options[cat.selectedIndex];
+                    previewCat.textContent = opt && opt.value ? opt.text : 'Danh mục';
+                }
+                if (previewName) previewName.textContent = nameInput?.value || 'Tên dịch vụ';
+                if (previewShort && shortDesc) {
+                    previewShort.textContent = shortDesc.value;
+                    previewShort.classList.toggle('hidden', !shortDesc.value.trim());
+                }
+                const price = document.getElementById('service-price');
+                if (previewPrice) previewPrice.textContent = price?.value || '—';
+                const dur = document.getElementById('service-duration');
+                if (previewDuration) previewDuration.textContent = dur?.value ? '⏱ ' + dur.value : '';
+                const note = document.getElementById('service-price-note');
+                if (previewNote && note) {
+                    previewNote.textContent = note.value;
+                    previewNote.classList.toggle('hidden', !note.value.trim());
+                }
+                if (previewStatus && active) previewStatus.classList.toggle('hidden', active.checked);
+            }
+            document.getElementById('service-item-form')?.addEventListener('input', updatePreview);
+            document.getElementById('service-item-form')?.addEventListener('change', updatePreview);
+            updatePreview();
+        })();
+    </script>
+}

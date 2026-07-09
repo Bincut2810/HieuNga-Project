@@ -11,14 +11,14 @@ public static class MotorcycleImageCatalog
         "honda-cb150r"
     };
 
-    public const string Default = "/images/motorcycles/default.jpg";
+    public const string Default = "/images/motorcycles/default.svg";
 
     public static string GetThumbnail(string slug) => slug.ToLowerInvariant() switch
     {
-        "honda-vision-2025" => "/images/motorcycles/honda-vision-2025.jpg",
-        "honda-sh-160i" => "/images/motorcycles/honda-sh-160i.jpg",
-        "honda-winner-x" => "/images/motorcycles/honda-winner-x.jpg",
-        "honda-cb150r" => "/images/motorcycles/honda-cb150r.jpg",
+        "honda-vision-2025" => "/images/motorcycles/honda-vision-2025.svg",
+        "honda-sh-160i" => "/images/motorcycles/honda-sh-160i.svg",
+        "honda-winner-x" => "/images/motorcycles/honda-winner-x.svg",
+        "honda-cb150r" => "/images/motorcycles/honda-cb150r.svg",
         _ => Default
     };
 
@@ -28,6 +28,11 @@ public static class MotorcycleImageCatalog
     {
         if (string.IsNullOrWhiteSpace(url)) return false;
         if (url.StartsWith("/images/motorcycles/", StringComparison.OrdinalIgnoreCase)) return true;
+        if (url.StartsWith("/images/", StringComparison.OrdinalIgnoreCase)
+            && (url.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+                || url.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                || url.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
+            return true;
         return url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
                || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
     }

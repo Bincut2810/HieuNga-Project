@@ -212,43 +212,24 @@
 .skeleton-card .sk-line.short { width: 40%; }
 .skeleton-card .sk-line.medium { width: 70%; }
 
-/* ─── HTMX page transitions ─── */
-#htmx-progress {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 2px;
-  width: 0;
-  z-index: 9999;
-  background: linear-gradient(90deg, var(--honda-red), #ff6b6b);
-  opacity: 0;
-  transition: opacity var(--motion-fast), width var(--motion-slow) var(--ease-soft);
-  pointer-events: none;
-}
-#htmx-progress.is-active {
-  opacity: 1;
-}
-
-#main-content {
-  transition:
-    opacity var(--motion-base) var(--ease-premium),
-    transform var(--motion-base) var(--ease-premium);
-}
-#main-content.is-swapping,
-#main-content.htmx-swapping {
-  opacity: 0;
-  transform: translateY(8px);
-}
+/* ─── HTMX page transitions (instant swap, optional subtle enter) ─── */
 #main-content.page-enter {
-  animation: pageEnter var(--motion-slower) var(--ease-premium) forwards;
+  animation: pageEnter 0.28s var(--ease-premium) forwards;
 }
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0.92; }
+  to { opacity: 1; }
 }
 
 .htmx-swapping.htmx-settling {
   opacity: 1;
+}
+
+.service-card-compact .service-icon {
+  transition: background-color 0.2s ease;
+}
+.service-card-compact:hover .service-icon {
+  background-color: rgba(228, 5, 33, 0.12);
 }
 
 /* ─── Scroll reveal ─── */

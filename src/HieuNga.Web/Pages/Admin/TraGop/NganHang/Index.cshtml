@@ -1,0 +1,67 @@
+@page "/admin/tra-gop/ngan-hang"
+@model HieuNga.Web.Pages.Admin.TraGop.NganHangIndexModel
+
+<h1 class="text-2xl font-bold">Ngân hàng trả góp</h1>
+
+<div class="mt-8 grid lg:grid-cols-2 gap-8">
+    <div class="bg-white border rounded-2xl p-6">
+        <h2 class="font-semibold mb-4">@(Model.Input.Id.HasValue ? "Sửa ngân hàng" : "Thêm ngân hàng")</h2>
+        <form method="post" class="space-y-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Input.Id" />
+            <div>
+                <label class="block text-sm font-medium mb-1">Loại ngân hàng</label>
+                <select asp-for="Input.BankTypeId" asp-items="Model.TypeOptions" class="w-full border rounded-lg px-3 py-2 text-sm"></select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Tên *</label>
+                <input asp-for="Input.Name" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                <span asp-validation-for="Input.Name" class="text-red-600 text-xs"></span>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Tên viết tắt *</label>
+                <input asp-for="Input.ShortName" class="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Logo URL</label>
+                <input asp-for="Input.LogoUrl" class="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Màu thương hiệu</label>
+                    <input asp-for="Input.BrandColor" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="#E40521" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Thứ tự</label>
+                    <input asp-for="Input.DisplayOrder" type="number" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                </div>
+            </div>
+            <label class="flex items-center gap-2 text-sm"><input asp-for="Input.IsActive" type="checkbox" /> Kích hoạt</label>
+            <button type="submit" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold text-sm">Lưu</button>
+        </form>
+    </div>
+    <div class="bg-white border rounded-2xl overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-left"><tr><th class="px-4 py-3">Ngân hàng</th><th class="px-4 py-3">Loại</th><th class="px-4 py-3"></th></tr></thead>
+            <tbody class="divide-y">
+                @foreach (var b in Model.Items)
+                {
+                    <tr>
+                        <td class="px-4 py-3 font-medium">@b.Name (@b.ShortName)</td>
+                        <td class="px-4 py-3 text-gray-500">@b.TypeName</td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="?editId=@b.Id" class="text-honda-red text-xs font-medium">Sửa</a>
+                            <form method="post" asp-page-handler="Delete" class="inline ml-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <button type="submit" class="text-gray-400 text-xs" onclick="return confirm('Xóa?')">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,7 +1,10 @@
 @page "/admin/banner"
 @model HieuNga.Web.Pages.Admin.Banner.IndexModel
 
-<h1 class="text-2xl font-bold">Banner</h1>
+<div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-2xl font-bold">Banner</h1>
+    <a href="/admin/banner/them" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Thêm banner</a>
+</div>
 <div class="mt-8 grid md:grid-cols-2 gap-6">
     @foreach (var b in Model.Items)
     {
@@ -9,9 +12,12 @@
             <div class="aspect-video bg-gray-100">
                 <img src="@b.ImageUrl" alt="@b.Title" class="w-full h-full object-cover" />
             </div>
-            <div class="p-5">
-                <h3 class="font-bold">@b.Title</h3>
-                <p class="text-sm text-gray-500 mt-1">@b.Subtitle</p>
+            <div class="p-5 flex justify-between items-start gap-4">
+                <div>
+                    <h3 class="font-bold">@b.Title</h3>
+                    <p class="text-sm text-gray-500 mt-1">@b.Subtitle</p>
+                </div>
+                <a href="/admin/banner/sua/@b.Id" class="text-honda-red font-semibold text-sm shrink-0">Sửa</a>
             </div>
         </div>
     }

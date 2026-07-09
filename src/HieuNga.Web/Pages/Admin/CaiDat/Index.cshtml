@@ -1,0 +1,28 @@
+@page "/admin/cai-dat"
+@model HieuNga.Web.Pages.Admin.CaiDat.IndexModel
+
+<h1 class="text-2xl font-bold">Cài đặt site</h1>
+
+<form method="post" class="mt-8 bg-white border rounded-2xl p-6 md:p-8 max-w-3xl space-y-4">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+    <div><label asp-for="Input.SiteName" class="block text-sm font-medium mb-1">Tên site *</label><input asp-for="Input.SiteName" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div class="grid md:grid-cols-2 gap-4">
+        <div><label asp-for="Input.Hotline" class="block text-sm font-medium mb-1">Hotline *</label><input asp-for="Input.Hotline" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+        <div><label asp-for="Input.Phone" class="block text-sm font-medium mb-1">Điện thoại *</label><input asp-for="Input.Phone" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+        <div><label asp-for="Input.Email" class="block text-sm font-medium mb-1">Email *</label><input asp-for="Input.Email" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+        <div><label asp-for="Input.ZaloUrl" class="block text-sm font-medium mb-1">Zalo URL</label><input asp-for="Input.ZaloUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    </div>
+    <div><label asp-for="Input.Address" class="block text-sm font-medium mb-1">Địa chỉ *</label><input asp-for="Input.Address" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div><label asp-for="Input.OpeningHours" class="block text-sm font-medium mb-1">Giờ mở cửa</label><input asp-for="Input.OpeningHours" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div><label asp-for="Input.DefaultMetaTitle" class="block text-sm font-medium mb-1">SEO title mặc định</label><input asp-for="Input.DefaultMetaTitle" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div><label asp-for="Input.DefaultMetaDescription" class="block text-sm font-medium mb-1">SEO description mặc định</label><textarea asp-for="Input.DefaultMetaDescription" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
+    <div><label asp-for="Input.FacebookUrl" class="block text-sm font-medium mb-1">Facebook URL</label><input asp-for="Input.FacebookUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div><label asp-for="Input.FooterText" class="block text-sm font-medium mb-1">Footer text</label><input asp-for="Input.FooterText" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div><label asp-for="Input.ServicePricingDisclaimer" class="block text-sm font-medium mb-1">Disclaimer bảng giá dịch vụ</label><textarea asp-for="Input.ServicePricingDisclaimer" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
+    <button type="submit" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu cài đặt</button>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -12,6 +12,6 @@ public class IndexModel(IBannerRepository repository) : PageModel
     {
         ViewData["Title"] = "Banner";
         var all = await repository.GetAllAsync(ct);
-        Items = all.Select(b => b.ToDto()).ToList();
+        Items = all.Where(b => !b.IsDeleted).OrderBy(b => b.SortOrder).Select(b => b.ToDto()).ToList();
     }
 }

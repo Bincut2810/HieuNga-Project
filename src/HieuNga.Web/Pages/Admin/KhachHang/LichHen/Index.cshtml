@@ -1,0 +1,26 @@
+@page "/admin/khach-hang/lich-hen"
+@model HieuNga.Web.Pages.Admin.KhachHang.LichHenIndexModel
+
+<h1 class="text-2xl font-bold">Lịch hẹn</h1>
+<form method="get" class="mt-6 flex flex-wrap gap-3 items-end">
+    <input name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="border rounded-lg px-3 py-2 text-sm" />
+    <select name="status" asp-items="Model.StatusOptions" class="border rounded-lg px-3 py-2 text-sm"><option value="">Tất cả trạng thái</option></select>
+    <button type="submit" class="border px-4 py-2 rounded-lg text-sm">Lọc</button>
+</form>
+<div class="mt-6 bg-white border rounded-2xl overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-left"><tr><th class="px-6 py-4">Khách hàng</th><th class="px-6 py-4">Loại</th><th class="px-6 py-4">Ngày</th><th class="px-6 py-4">Trạng thái</th><th class="px-6 py-4"></th></tr></thead>
+        <tbody class="divide-y">
+            @foreach (var item in Model.Items)
+            {
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4"><p class="font-medium">@item.CustomerName</p><p class="text-gray-500 text-xs">@item.Phone</p></td>
+                    <td class="px-6 py-4">@item.Type</td>
+                    <td class="px-6 py-4">@item.PreferredDate.ToString("dd/MM/yyyy")</td>
+                    <td class="px-6 py-4">@item.Status</td>
+                    <td class="px-6 py-4 text-right"><a href="/admin/khach-hang/lich-hen/@item.Id" class="text-honda-red font-medium">Chi tiết</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

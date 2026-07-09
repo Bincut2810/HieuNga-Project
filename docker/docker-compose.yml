@@ -1,3 +1,5 @@
+# LOCAL DEVELOPMENT ONLY — credentials below must not be used in production.
+# Production: set ConnectionStrings__DefaultConnection via Render/host env (see docs/ENVIRONMENT.md).
 services:
   postgres:
     image: postgres:16-alpine
@@ -5,6 +7,7 @@ services:
     environment:
       POSTGRES_DB: hieunga
       POSTGRES_USER: hieunga
+      # Local-only password — matches appsettings.Development.json
       POSTGRES_PASSWORD: hieunga_dev_2025
     ports:
       - "5433:5432"
@@ -23,7 +26,14 @@ services:
     container_name: hieunga-web
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      # Local Docker network only — same dev password as postgres service above
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=hieunga;Username=hieunga;Password=hieunga_dev_2025"
+      Site__BaseUrl: "http://localhost:8080"
+      SeedOptions__EnableDemoSeed: "true"
+      SeedOptions__AdminSeedEnabled: "true"
+      SeedOptions__AdminEmail: "admin@hondahieunga.vn"
+      SeedOptions__AdminPassword: "Admin@123456!"
+      ImageStorage__Provider: "Local"
     ports:
       - "8080:8080"
     depends_on:

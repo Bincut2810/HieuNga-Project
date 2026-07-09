@@ -14,6 +14,7 @@ public class MaintenanceBooking : BaseEntity
     public DateTime PreferredDate { get; set; }
     public string? PreferredTime { get; set; }
     public string? Notes { get; set; }
+    public string? AdminNotes { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
     public Guid? BranchId { get; set; }
 

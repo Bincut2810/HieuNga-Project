@@ -1,0 +1,13 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@{
+    var success = TempData.Peek(AdminUi.SuccessKey) as string;
+    var error = TempData.Peek(AdminUi.ErrorKey) as string;
+}
+@if (!string.IsNullOrEmpty(success))
+{
+    <div class="admin-flash admin-flash-success" role="status">@success</div>
+}
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="admin-flash admin-flash-error" role="alert">@error</div>
+}

@@ -1,0 +1,43 @@
+@page "/admin/xe/sua/{id:guid}"
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.SuaModel
+
+<partial name="Admin/Shared/_AdminBreadcrumb" model='new List<AdminBreadcrumbItem> {
+    new("Admin", "/admin"),
+    new("Xe máy", "/admin/xe"),
+    new("Sửa")
+}' />
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Sửa xe</h1>
+        <p class="admin-page-subtitle">
+            @if (!string.IsNullOrEmpty(Model.Input.Slug))
+            {
+                <span>Trang công khai: <a href="/xe/@Model.Input.Slug" target="_blank" rel="noopener" style="color: var(--admin-honda-red);">/xe/@Model.Input.Slug</a></span>
+                <span> · </span>
+            }
+            <a href="/admin/xe/@Model.Id/gia" style="color: var(--admin-text-secondary);">Quản lý giá</a>
+            <span> · </span>
+            <a href="/admin/xe/@Model.Id/noi-dung" style="color: var(--admin-text-secondary);">Nội dung & hình ảnh</a>
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="/admin/xe" class="admin-btn-secondary">Quay lại danh sách</a>
+        <button type="submit" form="moto-form" class="admin-btn-primary">Lưu thay đổi</button>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="moto-form" class="admin-form-card" style="max-width: 48rem;">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+    <partial name="Admin/Xe/_MotorcycleForm" model="Model.Input" />
+    <div class="admin-form-actions admin-form-actions-sticky">
+        <button type="submit" class="admin-btn-primary">Lưu thay đổi</button>
+        <a href="/admin/xe" class="admin-btn-secondary">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -44,10 +44,13 @@ docker compose up --build
 - Site: http://localhost
 - API/Web container: http://localhost:8080
 
-### Default admin (seed)
+### Default admin (development seed only)
 
-- Email: `admin@hondahieunga.vn`
-- Password: `Admin@123456!`
+Local Development uses credentials from `appsettings.Development.json` or [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+
+**Production:** set `SeedOptions__AdminSeedEnabled`, `SeedOptions__AdminEmail`, and `SeedOptions__AdminPassword` (12+ characters) on first deploy. Set `SeedOptions__AdminSeedEnabled=false` after login works. No default admin is created without them.
+
+**Staging checklist:** [docs/STAGING-CHECKLIST.md](docs/STAGING-CHECKLIST.md)
 
 ## Project Structure
 
@@ -70,11 +73,13 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Configuration
 
-- Local: `src/HieuNga.Web/appsettings.Development.json` — connection string localhost.
+See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for all environment variables.
+
+- Local: `src/HieuNga.Web/appsettings.Development.json` — local Docker postgres (port 5433).
 - Production: set `ConnectionStrings__DefaultConnection` on Render (see [docs/DEPLOY-RENDER.md](docs/DEPLOY-RENDER.md)).
 
 ## Deploy to Render.com
 
 **Full step-by-step guide (Vietnamese):** [docs/DEPLOY-RENDER.md](docs/DEPLOY-RENDER.md)
 
-Quick: push to GitHub → Render PostgreSQL → Render Web Service (Docker) → set env vars → open `/health`.
+Quick: push to GitHub → Render PostgreSQL → Render Web Service (Docker) → set env vars (see [ENVIRONMENT.md](docs/ENVIRONMENT.md)) → verify with [STAGING-CHECKLIST.md](docs/STAGING-CHECKLIST.md).

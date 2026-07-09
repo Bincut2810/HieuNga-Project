@@ -1,0 +1,27 @@
+@model HieuNga.Web.Pages.Admin.IAdminSeoInput
+
+<section class="admin-form-section">
+    <h2 class="admin-form-section-title">SEO</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+        <div>
+            <label asp-for="MetaTitle" class="admin-label">Meta Title</label>
+            <input asp-for="MetaTitle" class="admin-input" />
+        </div>
+        <div>
+            <label asp-for="MetaKeywords" class="admin-label">Meta Keywords</label>
+            <input asp-for="MetaKeywords" class="admin-input" />
+        </div>
+        <div style="grid-column: 1 / -1;">
+            <label asp-for="MetaDescription" class="admin-label">Meta Description</label>
+            <textarea asp-for="MetaDescription" rows="2" class="admin-textarea"></textarea>
+        </div>
+        <div>
+            <label asp-for="OgImageUrl" class="admin-label">OG Image URL</label>
+            <input asp-for="OgImageUrl" class="admin-input" />
+        </div>
+        <div>
+            <label asp-for="CanonicalUrl" class="admin-label">Canonical URL</label>
+            <input asp-for="CanonicalUrl" class="admin-input" />
+        </div>
+    </div>
+</section>

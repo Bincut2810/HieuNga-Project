@@ -1,9 +1,16 @@
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+}
 <header id="site-header" class="site-header sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100"
         x-data="{ open: false }"
-        @@click.outside="open = false">
+        @@click.outside="open = false"
+        @@htmx:afterSwap.window="open = false"
+        @@htmx:historyRestore.window="open = false">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="site-header-inner flex items-center justify-between">
-            <a href="/" class="flex items-center gap-3 group">
+            <a href="/" data-nav class="flex items-center gap-3 group">
                 <div class="site-logo-mark w-10 h-10 bg-honda-red rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
                     <span class="text-white font-bold text-sm">HN</span>
                 </div>
@@ -14,17 +21,15 @@
             </a>
 
             <nav class="hidden lg:flex items-center gap-8 text-sm font-medium">
-                <a href="/xe" data-nav class="nav-link hover:text-honda-red">Xe máy</a>
-                <a href="/khuyen-mai" data-nav class="nav-link hover:text-honda-red">Khuyến mãi</a>
-                <a href="/tra-gop" data-nav class="nav-link hover:text-honda-red">Trả góp</a>
-                <a href="/bao-duong" data-nav class="nav-link hover:text-honda-red">Bảo dưỡng</a>
-                <a href="/tin-tuc" data-nav class="nav-link hover:text-honda-red">Tin tức</a>
+                <a href="/xe" data-nav class="nav-link hover:text-honda-red">Mua xe</a>
+                <a href="/bao-duong" data-nav class="nav-link hover:text-honda-red">Dịch vụ</a>
                 <a href="/lien-he" data-nav class="nav-link hover:text-honda-red">Liên hệ</a>
             </nav>
 
             <div class="hidden lg:flex items-center gap-3">
-                <a href="tel:0905123456" class="text-sm font-semibold text-honda-dark hover:text-honda-red transition-colors">0905 123 456</a>
-                <a href="/dat-lich-lai-thu" class="btn-primary">Lái thử</a>
+                <a href="@telHref" hx-boost="false" class="text-sm font-semibold text-honda-dark hover:text-honda-red transition-colors">@site.Hotline</a>
+                <a href="/lien-he" class="btn-primary">Tư vấn ngay</a>
+                <a href="/admin" hx-boost="false" class="text-xs font-medium text-gray-500 border border-gray-200 rounded-lg px-3 py-2 hover:border-gray-300 hover:text-honda-dark transition-colors">Quản trị</a>
             </div>
 
             <button @@click="open = !open" class="lg:hidden p-2 rounded-lg hover:bg-gray-50 transition-colors touch-press" aria-label="Menu" :aria-expanded="open">
@@ -45,14 +50,19 @@
          x-transition:leave-end="opacity-0 -translate-y-2"
          class="mobile-nav-panel lg:hidden border-t bg-white/98 backdrop-blur-lg px-4 py-4 space-y-1 shadow-lg"
          x-cloak>
-        <a href="/xe" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Xe máy</a>
-        <a href="/khuyen-mai" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Khuyến mãi</a>
-        <a href="/tra-gop" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Trả góp</a>
-        <a href="/bao-duong" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Bảo dưỡng</a>
-        <a href="/tin-tuc" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Tin tức</a>
-        <a href="/dat-lich-lai-thu" class="block py-3 px-3 rounded-xl font-semibold text-honda-red bg-red-50">Lái thử miễn phí</a>
+        <a href="/xe" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Mua xe</a>
+        <a href="/bao-duong" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Dịch vụ</a>
         <a href="/lien-he" data-nav class="block py-3 px-3 rounded-xl font-medium hover:bg-gray-50 transition">Liên hệ</a>
-        <a href="tel:0905123456" class="block py-3 px-3 text-center font-semibold border border-gray-200 rounded-xl mt-2 touch-press">Gọi 0905 123 456</a>
+        <a href="/lien-he" class="block py-3 px-3 rounded-xl font-semibold text-center text-white bg-honda-red hover:bg-red-700 transition mt-2">Tư vấn ngay</a>
+        <a href="@telHref" hx-boost="false" class="block py-3 px-3 text-center font-semibold border border-gray-200 rounded-xl mt-1 touch-press">Gọi @site.Hotline</a>
+        <a href="/admin" hx-boost="false" class="block py-2.5 px-3 text-center text-xs font-medium text-gray-500 hover:text-honda-dark transition mt-1">Quản trị</a>
     </div>
 </header>
-<style>[x-cloak] { display: none !important; }</style>
+<style>
+[x-cloak] { display: none !important; }
+.mobile-nav-panel a[data-nav].nav-link-active {
+    color: var(--honda-red, #E40521);
+    background: rgba(228, 5, 33, 0.06);
+    font-weight: 600;
+}
+</style>

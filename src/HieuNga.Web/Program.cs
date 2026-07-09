@@ -1,8 +1,10 @@
-using System.Net;
 using HieuNga.Application;
+using HieuNga.Application.Options;
 using HieuNga.Infrastructure;
 using HieuNga.Infrastructure.Persistence;
+using HieuNga.Web.Filters;
 using HieuNga.Web.Middleware;
+using HieuNga.Web.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 
 // Render.com injects PORT — bind Kestrel before CreateBuilder finishes URL config
@@ -14,25 +16,31 @@ if (!string.IsNullOrWhiteSpace(renderPort))
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages(options =>
-{
-    options.Conventions.AuthorizeFolder("/Admin");
-    options.Conventions.AllowAnonymousToPage("/Admin/DangNhap");
-});
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/admin/dang-nhap";
     options.AccessDeniedPath = "/admin/dang-nhap";
     options.SlidingExpiration = true;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
 });
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<HieuNga.Web.Services.CompareSessionService>();
+builder.Services.AddScoped<CompareSessionService>();
 builder.Services.AddResponseCompression();
 builder.Services.AddAntiforgery();
+builder.Services.AddScoped<SiteSettingsPageFilter>();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/Admin");
+    options.Conventions.AllowAnonymousToPage("/Admin/DangNhap");
+}).AddMvcOptions(o => o.Filters.Add<SiteSettingsPageFilter>());
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -59,7 +67,30 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<SeoMiddleware>();
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", time = DateTime.UtcNow }));
+app.MapGet("/health", async (HieuNgaDbContext db, IHostEnvironment env, CancellationToken ct) =>
+{
+    var dbConnected = false;
+    try
+    {
+        dbConnected = await db.Database.CanConnectAsync(ct);
+    }
+    catch
+    {
+        dbConnected = false;
+    }
+
+    var payload = new
+    {
+        status = dbConnected ? "Healthy" : "Unhealthy",
+        database = dbConnected ? "Connected" : "Disconnected",
+        environment = env.EnvironmentName,
+        timestamp = DateTime.UtcNow
+    };
+
+    return dbConnected
+        ? Results.Json(payload)
+        : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
 app.MapRazorPages();
 
 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");

@@ -1,0 +1,12 @@
+@model HieuNga.Web.Pages.Admin.BlogPostInputModel
+<div><label asp-for="Title" class="block text-sm font-medium mb-1">Tiêu đề *</label><input asp-for="Title" class="w-full border rounded-lg px-3 py-2 text-sm" /><span asp-validation-for="Title" class="text-red-600 text-xs"></span></div>
+<div><label asp-for="Slug" class="block text-sm font-medium mb-1">Slug</label><input asp-for="Slug" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+<div><label asp-for="Summary" class="block text-sm font-medium mb-1">Tóm tắt</label><textarea asp-for="Summary" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
+<div><label asp-for="Content" class="block text-sm font-medium mb-1">Nội dung *</label><textarea asp-for="Content" rows="10" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea><span asp-validation-for="Content" class="text-red-600 text-xs"></span></div>
+<div class="grid md:grid-cols-2 gap-3">
+    <div><label asp-for="CategoryId" class="block text-sm font-medium mb-1">Danh mục</label><select asp-for="CategoryId" asp-items="@(ViewData["CategoryOptions"] as SelectList)"><option value="">—</option></select></div>
+    <div><label asp-for="AuthorName" class="block text-sm font-medium mb-1">Tác giả</label><input asp-for="AuthorName" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+</div>
+<div><label asp-for="ThumbnailUrl" class="block text-sm font-medium mb-1">Thumbnail URL</label><input asp-for="ThumbnailUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+<label class="flex items-center gap-2 text-sm"><input asp-for="IsPublished" type="checkbox" /> Xuất bản</label>
+<partial name="Admin/Shared/_SeoFields" model="Model" />

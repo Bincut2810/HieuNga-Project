@@ -22,6 +22,94 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.Bank", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BankTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BrandColor")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ShortName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankTypeId");
+
+                    b.ToTable("banks", (string)null);
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.BankType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("bank_types", (string)null);
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.Banner", b =>
                 {
                     b.Property<Guid>("Id")
@@ -208,6 +296,9 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AdminNotes")
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
@@ -330,11 +421,80 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.ToTable("branches", (string)null);
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.FinanceRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BankId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxDownPaymentPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxTermMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinDownPaymentPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinTermMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("MonthlyInterestRatePercent")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("numeric(8,4)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PlanName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProcessingFeeText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SupportedTermsMonths")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TrustLabel")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankId");
+
+                    b.ToTable("finance_rates", (string)null);
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.InstallmentRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AdminNotes")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -389,6 +549,9 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AdminNotes")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
@@ -791,6 +954,128 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.ToTable("reviews", (string)null);
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.ServiceCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("service_categories", (string)null);
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.ServiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CanonicalUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DetailDescription")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EstimatedDurationText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EstimatedPriceText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IconKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IncludesJson")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MetaDescription")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetaKeywords")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetaTitle")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OgImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PriceNote")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ServiceCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ShortDescription")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceCategoryId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("service_items", (string)null);
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.SiteSetting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1033,6 +1318,17 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.ToTable("admin_user_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.Bank", b =>
+                {
+                    b.HasOne("HieuNga.Domain.Entities.BankType", "BankType")
+                        .WithMany("Banks")
+                        .HasForeignKey("BankTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BankType");
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.BlogPost", b =>
                 {
                     b.HasOne("HieuNga.Domain.Entities.BlogCategory", "Category")
@@ -1055,6 +1351,17 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Navigation("Branch");
 
                     b.Navigation("Motorcycle");
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.FinanceRate", b =>
+                {
+                    b.HasOne("HieuNga.Domain.Entities.Bank", "Bank")
+                        .WithMany("FinanceRates")
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
                 });
 
             modelBuilder.Entity("HieuNga.Domain.Entities.InstallmentRequest", b =>
@@ -1126,6 +1433,17 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Navigation("Motorcycle");
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.ServiceItem", b =>
+                {
+                    b.HasOne("HieuNga.Domain.Entities.ServiceCategory", "Category")
+                        .WithMany("Items")
+                        .HasForeignKey("ServiceCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -1177,6 +1495,16 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.Bank", b =>
+                {
+                    b.Navigation("FinanceRates");
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.BankType", b =>
+                {
+                    b.Navigation("Banks");
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.BlogCategory", b =>
                 {
                     b.Navigation("Posts");
@@ -1196,6 +1524,11 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Navigation("Reviews");
 
                     b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.ServiceCategory", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

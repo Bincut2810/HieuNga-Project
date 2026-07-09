@@ -1,40 +1,44 @@
 @page "/admin"
 @model HieuNga.Web.Pages.Admin.IndexModel
+@using HieuNga.Web.Pages.Admin.Extensions
 @{
     ViewData["Title"] = "Dashboard";
 }
 
-<h1 class="text-2xl md:text-3xl font-bold text-honda-dark">Dashboard</h1>
-<p class="text-gray-500 mt-1">Tổng quan showroom Honda Hiếu Nga</p>
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel(
+             "Dashboard",
+             "Tổng quan showroom Honda Hiếu Nga")' />
 
-<div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mt-8">
-    <div class="bg-white rounded-2xl p-6 border shadow-sm">
-        <p class="text-sm text-gray-500">Xe máy</p>
-        <p class="text-3xl font-bold text-honda-red mt-2">@Model.MotorcycleCount</p>
-        <a href="/admin/xe" class="text-xs font-semibold mt-4 inline-block hover:text-honda-red">Quản lý →</a>
+<div class="admin-dash-grid">
+    <div class="admin-dash-card">
+        <p class="admin-dash-card-label">Xe máy</p>
+        <p class="admin-dash-card-value admin-dash-card-value-accent">@Model.MotorcycleCount</p>
+        <a href="/admin/xe" class="admin-dash-card-link">Quản lý xe →</a>
     </div>
-    <div class="bg-white rounded-2xl p-6 border shadow-sm">
-        <p class="text-sm text-gray-500">Khuyến mãi</p>
-        <p class="text-3xl font-bold mt-2">@Model.PromotionCount</p>
-        <a href="/admin/khuyen-mai" class="text-xs font-semibold mt-4 inline-block hover:text-honda-red">Quản lý →</a>
+    <div class="admin-dash-card">
+        <p class="admin-dash-card-label">Khuyến mãi</p>
+        <p class="admin-dash-card-value">@Model.PromotionCount</p>
+        <a href="/admin/khuyen-mai" class="admin-dash-card-link">Quản lý →</a>
     </div>
-    <div class="bg-white rounded-2xl p-6 border shadow-sm">
-        <p class="text-sm text-gray-500">Bài viết</p>
-        <p class="text-3xl font-bold mt-2">@Model.BlogCount</p>
-        <a href="/admin/tin-tuc" class="text-xs font-semibold mt-4 inline-block hover:text-honda-red">Quản lý →</a>
+    <div class="admin-dash-card">
+        <p class="admin-dash-card-label">Bài viết</p>
+        <p class="admin-dash-card-value">@Model.BlogCount</p>
+        <a href="/admin/tin-tuc" class="admin-dash-card-link">Quản lý →</a>
     </div>
-    <div class="bg-white rounded-2xl p-6 border shadow-sm">
-        <p class="text-sm text-gray-500">Lịch hẹn / Lead</p>
-        <p class="text-3xl font-bold mt-2">@Model.BookingCount</p>
+    <div class="admin-dash-card">
+        <p class="admin-dash-card-label">Lịch hẹn / Lead</p>
+        <p class="admin-dash-card-value">@Model.BookingCount</p>
+        <a href="/admin/khach-hang/lich-hen" class="admin-dash-card-link">Xem lead →</a>
     </div>
 </div>
 
-<div class="mt-10 bg-white rounded-2xl border p-8">
-    <h2 class="font-bold text-lg">Chuẩn bị demo</h2>
-    <ul class="mt-4 space-y-2 text-sm text-gray-600">
-        <li>✓ Trang khuyến mãi, tin tức, liên hệ đã hoàn thiện</li>
-        <li>✓ So sánh xe & đặt bảo dưỡng</li>
-        <li>→ Phase 2: Form thêm/sửa CRUD đầy đủ</li>
+<div class="admin-card admin-card-padded" style="margin-top: 1.5rem;">
+    <h2 class="admin-form-section-title" style="margin-bottom: 0.75rem;">Truy cập nhanh</h2>
+    <ul style="font-size: 0.875rem; color: var(--admin-text-muted); line-height: 1.8; list-style: none; padding: 0; margin: 0;">
+        <li><a href="/admin/xe/them" class="admin-action-edit" style="text-decoration: none;">+ Thêm xe mới</a></li>
+        <li><a href="/admin/dich-vu/bang-gia/them" class="admin-action-edit" style="text-decoration: none;">+ Thêm dịch vụ bảo dưỡng</a></li>
+        <li><a href="/admin/khach-hang/lich-hen" style="color: var(--admin-text-secondary); text-decoration: none;">Xem lịch hẹn khách hàng</a></li>
     </ul>
-    <a href="/" target="_blank" class="btn-primary mt-6 inline-flex text-sm px-5 py-2.5 bg-honda-red text-white rounded-lg font-semibold">Xem website demo</a>
+    <a href="/" target="_blank" rel="noopener" class="admin-btn-primary" style="margin-top: 1.25rem;">Xem website</a>
 </div>

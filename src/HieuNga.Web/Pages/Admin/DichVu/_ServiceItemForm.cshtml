@@ -1,0 +1,114 @@
+@model HieuNga.Web.Pages.Admin.DichVu.ServiceItemInputModel
+@{
+    var categoryOptions = ViewData["CategoryOptions"] as SelectList;
+}
+
+<div id="service-item-form">
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Thông tin cơ bản</h2>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                <div>
+                    <label asp-for="Name" class="admin-label">Tên dịch vụ <span class="admin-label-required">*</span></label>
+                    <input asp-for="Name" id="service-name" class="admin-input" />
+                    <span asp-validation-for="Name" class="admin-validation"></span>
+                </div>
+                <div>
+                    <label asp-for="Slug" class="admin-label">Slug</label>
+                    <input asp-for="Slug" id="service-slug" class="admin-input" placeholder="tu-dong-tao-tu-ten" />
+                    <p class="admin-hint">URL trên website, ví dụ: <code>thay-nhot</code>. Để trống để tự tạo.</p>
+                    <span asp-validation-for="Slug" class="admin-validation"></span>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                <div>
+                    <label asp-for="ServiceCategoryId" class="admin-label">Danh mục dịch vụ <span class="admin-label-required">*</span></label>
+                    <select asp-for="ServiceCategoryId" id="service-category" asp-items="categoryOptions" class="admin-select">
+                        <option value="">-- Chọn danh mục --</option>
+                    </select>
+                    <span asp-validation-for="ServiceCategoryId" class="admin-validation"></span>
+                </div>
+                <div>
+                    <label asp-for="DisplayOrder" class="admin-label">Thứ tự hiển thị</label>
+                    <input asp-for="DisplayOrder" type="number" class="admin-input" />
+                    <p class="admin-hint">Số nhỏ hơn hiển thị trước.</p>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: end;">
+                <div>
+                    <label asp-for="IconKey" class="admin-label">Icon key</label>
+                    <input asp-for="IconKey" class="admin-input" placeholder="oil, wrench..." />
+                    <p class="admin-hint">Mã icon trên trang bảo dưỡng.</p>
+                </div>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding-bottom: 0.5rem;">
+                    <input asp-for="IsActive" type="checkbox" id="service-active" style="accent-color: var(--admin-honda-red);" />
+                    Hiển thị trên website
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding-bottom: 0.5rem;">
+                    <input asp-for="IsFeatured" type="checkbox" id="service-featured" style="accent-color: var(--admin-honda-red);" />
+                    Dịch vụ nổi bật
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Nội dung hiển thị</h2>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+                <label asp-for="ShortDescription" class="admin-label">Mô tả ngắn</label>
+                <textarea asp-for="ShortDescription" id="service-short-desc" rows="2" class="admin-textarea"></textarea>
+                <p class="admin-hint">Hiển thị trong danh sách dịch vụ.</p>
+            </div>
+            <div>
+                <label asp-for="DetailDescription" class="admin-label">Mô tả chi tiết</label>
+                <textarea asp-for="DetailDescription" rows="4" class="admin-textarea"></textarea>
+            </div>
+            <div>
+                <label asp-for="IncludesLines" class="admin-label">Bao gồm gì</label>
+                <textarea asp-for="IncludesLines" rows="4" class="admin-textarea" style="font-family: ui-monospace, monospace; font-size: 0.8125rem;" placeholder="Thay nhớt chính hãng&#10;Kiểm tra tổng quát"></textarea>
+                <p class="admin-hint">Mỗi dòng là một mục trong danh sách “bao gồm”.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Giá và thời gian</h2>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                <div>
+                    <label asp-for="EstimatedPriceText" class="admin-label">Giá tham khảo <span class="admin-label-required">*</span></label>
+                    <input asp-for="EstimatedPriceText" id="service-price" class="admin-input" placeholder="từ 150.000đ" />
+                    <p class="admin-hint">Ví dụ: <em>từ 150.000đ</em> hoặc <em>Liên hệ</em>.</p>
+                    <span asp-validation-for="EstimatedPriceText" class="admin-validation"></span>
+                </div>
+                <div>
+                    <label asp-for="EstimatedDurationText" class="admin-label">Thời gian dự kiến</label>
+                    <input asp-for="EstimatedDurationText" id="service-duration" class="admin-input" placeholder="30–45 phút" />
+                </div>
+            </div>
+            <div>
+                <label asp-for="PriceNote" class="admin-label">Ghi chú giá / báo giá</label>
+                <input asp-for="PriceNote" id="service-price-note" class="admin-input" />
+                <p class="admin-hint">Ghi chú nhỏ hiển thị dưới giá trên website.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Xem trước trên website</h2>
+        <div class="admin-card admin-card-padded" style="max-width: 22rem; background: #F9FAFB;">
+            <span id="preview-category" class="admin-badge admin-badge-category">Danh mục</span>
+            <p id="preview-name" style="font-weight: 600; margin-top: 0.5rem; color: var(--admin-text);">Tên dịch vụ</p>
+            <p id="preview-short" class="admin-hint hidden" style="margin-top: 0.25rem;"></p>
+            <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline;">
+                <span id="preview-price" style="color: var(--admin-honda-red); font-weight: 700;">—</span>
+                <span id="preview-duration" class="admin-hint"></span>
+            </div>
+            <p id="preview-note" class="admin-hint hidden" style="margin-top: 0.5rem;"></p>
+            <p id="preview-status" class="admin-hint hidden" style="margin-top: 0.75rem; color: #B45309;">Dịch vụ đang ẩn — không hiển thị công khai.</p>
+        </div>
+    </section>
+
+    <partial name="Admin/Shared/_SeoFields" model="Model" />
+</div>

@@ -1,5 +1,6 @@
 @page "/admin/dang-nhap"
 @model HieuNga.Web.Pages.Admin.DangNhapModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnv
 @{
     Layout = null;
     ViewData["Title"] = "Đăng nhập";
@@ -38,7 +39,10 @@
             </label>
             <button type="submit" class="w-full py-3 bg-[#E40521] text-white font-semibold rounded-lg hover:bg-red-700 transition">Đăng nhập</button>
         </form>
-        <p class="text-xs text-gray-400 text-center mt-6">Demo: admin@hondahieunga.vn / Admin@123456!</p>
+        @if (HostEnv.IsDevelopment())
+        {
+            <p class="text-xs text-gray-400 text-center mt-6">Development: see appsettings.Development.json or docs/ENVIRONMENT.md</p>
+        }
     </div>
 </body>
 </html>

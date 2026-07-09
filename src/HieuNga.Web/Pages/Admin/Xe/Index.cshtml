@@ -1,33 +1,144 @@
 @page "/admin/xe"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.Xe.IndexModel
 
-<h1 class="text-2xl font-bold">Xe máy</h1>
-<p class="text-gray-500 text-sm mt-1">@Model.Items.Count mẫu xe trong hệ thống</p>
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel(
+             "Xe máy",
+             "Quản lý danh sách xe, giá hiển thị và trạng thái trên website.",
+             "/admin/xe/them",
+             "+ Thêm xe")' />
 
-<div class="mt-8 bg-white rounded-2xl border overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-left text-gray-500">
-                <tr>
-                    <th class="px-6 py-4 font-medium">Tên xe</th>
-                    <th class="px-6 py-4 font-medium">Loại</th>
-                    <th class="px-6 py-4 font-medium">Giá</th>
-                    <th class="px-6 py-4 font-medium"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y">
-                @foreach (var item in Model.Items)
-                {
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 font-semibold">@item.Name</td>
-                        <td class="px-6 py-4 text-gray-500">@item.Category</td>
-                        <td class="px-6 py-4 text-honda-red font-medium">@item.BasePrice.ToVnd()</td>
-                        <td class="px-6 py-4">
-                            <a href="/xe/@item.Slug" target="_blank" class="text-honda-red font-medium hover:underline">Xem</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<div class="admin-stat-grid">
+    <div class="admin-stat">
+        <p class="admin-stat-label">Tổng số xe</p>
+        <p class="admin-stat-value">@Model.TotalCount</p>
     </div>
+    <div class="admin-stat">
+        <p class="admin-stat-label">Đang hiển thị</p>
+        <p class="admin-stat-value admin-stat-value-accent">@Model.PublishedCount</p>
+    </div>
+    <div class="admin-stat">
+        <p class="admin-stat-label">Đang ẩn</p>
+        <p class="admin-stat-value">@Model.HiddenCount</p>
+    </div>
+    <div class="admin-stat">
+        <p class="admin-stat-label">Loại xe</p>
+        <p class="admin-stat-value">@Model.CategoryTypeCount</p>
+    </div>
+</div>
+
+<form method="get" class="admin-toolbar">
+    <div class="admin-toolbar-fields">
+        <div class="admin-field">
+            <label for="q" class="admin-label">Tìm kiếm</label>
+            <input type="search" id="q" name="q" value="@Model.Q" placeholder="Tên xe, slug..."
+                   class="admin-input" />
+        </div>
+        <div class="admin-field admin-field-sm">
+            <label for="category" class="admin-label">Loại xe</label>
+            <select id="category" name="category" asp-items="Model.CategoryOptions" class="admin-select">
+                <option value="">Tất cả loại</option>
+            </select>
+        </div>
+        <div class="admin-field admin-field-sm">
+            <label for="status" class="admin-label">Trạng thái</label>
+            <select id="status" name="status" class="admin-select">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">Tất cả</option>
+                <option value="active" selected="@(Model.Status == "active" ? "selected" : null)">Đang hiển thị</option>
+                <option value="inactive" selected="@(Model.Status == "inactive" ? "selected" : null)">Đang ẩn</option>
+            </select>
+        </div>
+        <div class="admin-toolbar-actions">
+            <button type="submit" class="admin-btn-secondary">Lọc</button>
+            @if (Model.HasActiveFilters)
+            {
+                <a href="/admin/xe" class="admin-btn-ghost">Đặt lại</a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="admin-card admin-table-wrap">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="admin-empty">
+            <p class="admin-empty-title">Chưa có xe nào phù hợp</p>
+            <p class="admin-empty-text">
+                @(Model.HasActiveFilters ? "Thử đổi bộ lọc hoặc xóa lọc để xem thêm." : "Thêm xe đầu tiên để hiển thị trên website.")
+            </p>
+            @if (Model.HasActiveFilters)
+            {
+                <a href="/admin/xe" class="admin-btn-secondary admin-empty-action">Đặt lại bộ lọc</a>
+            }
+            else
+            {
+                <a href="/admin/xe/them" class="admin-btn-primary admin-empty-action">+ Thêm xe</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="admin-table-scroll">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Xe</th>
+                        <th scope="col">Loại</th>
+                        <th scope="col">Giá</th>
+                        <th scope="col">Trạng thái</th>
+                        <th scope="col">Cập nhật</th>
+                        <th scope="col" class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <p class="admin-table-primary">@item.Name</p>
+                                <p class="admin-table-secondary">/@item.Slug</p>
+                            </td>
+                            <td>
+                                <span class="admin-badge admin-badge-category">@item.Category</span>
+                            </td>
+                            <td style="color: var(--admin-honda-red); font-weight: 600;">@item.BasePrice.ToVnd()</td>
+                            <td>
+                                @if (item.IsPublished)
+                                {
+                                    <span class="admin-badge admin-badge-success">Hiển thị</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-badge admin-badge-muted">Ẩn</span>
+                                }
+                            </td>
+                            <td style="font-size: 0.75rem; white-space: nowrap;">
+                                @(item.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")
+                            </td>
+                            <td class="text-right">
+                                <div class="admin-actions">
+                                    <a href="/admin/xe/sua/@item.Id" class="admin-action admin-action-edit">Sửa</a>
+                                    <a href="/xe/@item.Slug" target="_blank" rel="noopener" class="admin-action admin-action-view">Xem</a>
+                                    <form method="post" asp-page-handler="TogglePublish" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="hidden" name="q" value="@Model.Q" />
+                                        <input type="hidden" name="category" value="@((int?)Model.Category)" />
+                                        <input type="hidden" name="status" value="@Model.Status" />
+                                        <button type="submit" class="admin-action admin-action-muted"
+                                                onclick="return confirm('@(item.IsPublished ? "Ẩn xe này khỏi website?" : "Hiển thị lại xe này?")')">
+                                            @(item.IsPublished ? "Ẩn" : "Hiện")
+                                        </button>
+                                    </form>
+                                    <a href="/admin/xe/xoa/@item.Id" class="admin-action admin-action-danger">Xóa</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="admin-table-footer">@Model.Items.Count xe</div>
+    }
 </div>

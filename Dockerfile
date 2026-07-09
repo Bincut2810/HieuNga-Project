@@ -8,6 +8,7 @@ RUN dotnet publish src/HieuNga.Web/HieuNga.Web.csproj -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
+RUN mkdir -p /app/wwwroot/uploads
 ENV ASPNETCORE_ENVIRONMENT=Production
 # Render sets PORT at runtime; Program.cs also reads PORT if present
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080

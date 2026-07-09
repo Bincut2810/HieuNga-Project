@@ -1,10 +1,12 @@
+@inject Microsoft.Extensions.Options.IOptions<HieuNga.Application.Options.SiteOptions> SiteConfig
 @{
-    var siteName = "Honda Hiếu Nga Đà Nẵng";
-    var metaTitle = ViewData["MetaTitle"] as string ?? siteName;
-    var metaDesc = ViewData["MetaDescription"] as string ?? "Đại lý Honda HEAD chính hãng tại Đà Nẵng. Xe máy Honda, trả góp 0%, lái thử miễn phí, bảo dưỡng chuyên nghiệp.";
-    var ogImage = ViewData["OgImage"] as string ?? "/images/og-default.jpg";
+    var site = SiteConfig.Value;
+    var siteName = site.Name;
+    var metaTitle = ViewData["MetaTitle"] as string ?? site.DefaultSeoTitle;
+    var metaDesc = ViewData["MetaDescription"] as string ?? site.DefaultSeoDescription;
+    var ogImage = ViewData["OgImage"] as string ?? "/images/og-default.svg";
     var canonical = ViewData["CanonicalUrl"] as string;
-    var baseUrl = "https://hondahieunga.vn";
+    var baseUrl = site.BaseUrl.TrimEnd('/');
 }
 <!DOCTYPE html>
 <html lang="vi" class="scroll-smooth">
@@ -20,7 +22,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="@metaTitle" />
     <meta property="og:description" content="@metaDesc" />
-    <meta property="og:image" content="@($"{baseUrl}{ogImage}")" />
+    <meta property="og:image" content="@(ogImage.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? ogImage : $"{baseUrl}{ogImage}")" />
     <meta property="og:locale" content="vi_VN" />
     <meta name="twitter:card" content="summary_large_image" />
     @if (!string.IsNullOrEmpty(canonical))
@@ -56,8 +58,12 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="bg-white text-honda-charcoal font-sans antialiased" hx-boost="true" hx-target="#main-content" hx-select="#main-content" hx-swap="innerHTML transition:true settle:0.28s">
-    <div id="htmx-progress" role="progressbar" aria-hidden="true"></div>
+<body class="bg-white text-honda-charcoal font-sans antialiased"
+      hx-boost="true"
+      hx-target="#main-content"
+      hx-select="#main-content"
+      hx-swap="innerHTML show:top"
+      hx-push-url="true">
     <partial name="_Header" />
 
     <main id="main-content" class="min-h-screen">

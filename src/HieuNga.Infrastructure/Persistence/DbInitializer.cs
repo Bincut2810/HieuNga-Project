@@ -2,9 +2,12 @@ using HieuNga.Application.Mappings;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
 using HieuNga.Infrastructure.Identity;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace HieuNga.Infrastructure.Persistence;
@@ -14,25 +17,57 @@ public static class DbInitializer
     private const int MaxAttempts = 12;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
 
+    private const string DevDefaultAdminEmail = "admin@hondahieunga.vn";
+    private const string DevDefaultAdminPassword = "Admin@123456!";
+
     public static async Task InitializeAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<HieuNgaDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<HieuNgaDbContext>>();
+        var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var seedOptions = configuration.GetSection(SeedOptions.SectionName).Get<SeedOptions>() ?? new SeedOptions();
 
         await ExecuteWithRetryAsync(
             async () => await context.Database.MigrateAsync(),
             "Applying database migrations",
             logger);
 
+        var shouldDemoSeed = environment.IsDevelopment() || seedOptions.EnableDemoSeed;
+
         if (!await context.Motorcycles.AnyAsync())
         {
-            logger.LogInformation("Seeding initial database...");
-            await SeedInitialAsync(context, scope.ServiceProvider, logger);
+            if (shouldDemoSeed)
+            {
+                logger.LogInformation("Seeding initial database...");
+                await SeedInitialAsync(context, scope.ServiceProvider, environment, seedOptions, logger);
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Skipping demo motorcycle seed (set SeedOptions__EnableDemoSeed=true for one-time staging demo).");
+            }
         }
 
-        await SeedDemoContentAsync(context, logger);
-        await MotorcycleContentEnricher.EnrichAsync(context, logger);
+        await SeedAdminUserAsync(scope.ServiceProvider, environment, seedOptions, logger);
+
+        if (shouldDemoSeed)
+            await SeedDemoContentAsync(context, logger);
+
+        await ServiceFinanceSeed.SeedAsync(context, logger);
+
+        // Content enricher overwrites motorcycle CMS fields — only in Development or when explicitly enabled.
+        var runEnricher = environment.IsDevelopment() || seedOptions.RunContentEnricher;
+        if (runEnricher)
+        {
+            await MotorcycleContentEnricher.EnrichAsync(context, logger);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Skipping motorcycle content enrichment (set SeedOptions:RunContentEnricher=true or use Development to enable).");
+        }
     }
 
     private static async Task ExecuteWithRetryAsync(Func<Task> action, string description, ILogger logger)
@@ -63,7 +98,12 @@ public static class DbInitializer
                || message.Contains("Exception while reading from stream", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static async Task SeedInitialAsync(HieuNgaDbContext context, IServiceProvider sp, ILogger logger)
+    private static async Task SeedInitialAsync(
+        HieuNgaDbContext context,
+        IServiceProvider sp,
+        IHostEnvironment environment,
+        SeedOptions seedOptions,
+        ILogger logger)
     {
 
         var branch = new Branch
@@ -85,7 +125,7 @@ public static class DbInitializer
             {
                 Title = "Khám phá Honda tại Đà Nẵng",
                 Subtitle = "Trả góp 0% — Lái thử miễn phí",
-                ImageUrl = "/images/motorcycles/default.jpg",
+                ImageUrl = MotorcycleImageCatalog.Default,
                 CtaText = "Xem xe ngay",
                 CtaUrl = "/xe",
                 Position = BannerPosition.Hero,
@@ -125,20 +165,64 @@ public static class DbInitializer
             new SiteSetting { Key = "site.address", Value = "123 Nguyễn Văn Linh, Đà Nẵng", Group = "contact" }
         );
 
-        var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
-        if (await userManager.FindByEmailAsync("admin@hondahieunga.vn") is null)
-        {
-            await userManager.CreateAsync(new ApplicationUser
-            {
-                UserName = "admin@hondahieunga.vn",
-                Email = "admin@hondahieunga.vn",
-                FullName = "Administrator",
-                EmailConfirmed = true
-            }, "Admin@123456!");
-        }
-
         await context.SaveChangesAsync();
         logger.LogInformation("Initial seed completed.");
+    }
+
+    private static async Task SeedAdminUserAsync(
+        IServiceProvider sp,
+        IHostEnvironment environment,
+        SeedOptions seedOptions,
+        ILogger logger)
+    {
+        if (!environment.IsDevelopment() && !seedOptions.AdminSeedEnabled)
+        {
+            logger.LogInformation(
+                "Admin seed skipped: set SeedOptions__AdminSeedEnabled=true (or AdminSeed__Enabled=true) with email/password on first deploy.");
+            return;
+        }
+
+        var email = !string.IsNullOrWhiteSpace(seedOptions.AdminEmail)
+            ? seedOptions.AdminEmail.Trim()
+            : environment.IsDevelopment() ? DevDefaultAdminEmail : null;
+
+        var password = !string.IsNullOrWhiteSpace(seedOptions.AdminPassword)
+            ? seedOptions.AdminPassword
+            : environment.IsDevelopment() ? DevDefaultAdminPassword : null;
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            if (!environment.IsDevelopment())
+            {
+                logger.LogWarning(
+                    "Admin seed skipped: set SeedOptions__AdminEmail and SeedOptions__AdminPassword (12+ chars) before first production deploy.");
+            }
+            return;
+        }
+
+        if (!environment.IsDevelopment() && password.Length < 12)
+        {
+            logger.LogWarning("Admin seed skipped: production admin password must be at least 12 characters.");
+            return;
+        }
+
+        var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        if (await userManager.FindByEmailAsync(email) is not null)
+            return;
+
+        var result = await userManager.CreateAsync(new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            FullName = "Administrator",
+            EmailConfirmed = true
+        }, password);
+
+        if (result.Succeeded)
+            logger.LogInformation("Admin user seeded for {Email}.", email);
+        else
+            logger.LogWarning("Admin user seed failed for {Email}: {Errors}", email,
+                string.Join("; ", result.Errors.Select(e => e.Description)));
     }
 
     private static async Task SeedDemoContentAsync(HieuNgaDbContext context, ILogger logger)

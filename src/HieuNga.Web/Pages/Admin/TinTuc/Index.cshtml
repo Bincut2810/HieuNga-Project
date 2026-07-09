@@ -1,16 +1,22 @@
 @page "/admin/tin-tuc"
 @model HieuNga.Web.Pages.Admin.TinTuc.IndexModel
 
-<h1 class="text-2xl font-bold">Tin tức</h1>
+<div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-2xl font-bold">Tin tức</h1>
+    <a href="/admin/tin-tuc/them" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Thêm bài viết</a>
+</div>
 <div class="mt-8 space-y-3">
-    @foreach (var post in Model.Posts.Items)
+    @foreach (var post in Model.Posts)
     {
         <div class="bg-white border rounded-xl p-5 flex justify-between items-center gap-4">
             <div>
                 <h3 class="font-semibold">@post.Title</h3>
                 <p class="text-xs text-gray-400 mt-1">@post.PublishedAt?.ToString("dd/MM/yyyy")</p>
             </div>
-            <a href="/tin-tuc/@post.Slug" target="_blank" class="text-sm text-honda-red font-semibold shrink-0">Xem →</a>
+            <div class="flex gap-4 shrink-0">
+                <a href="/admin/tin-tuc/sua/@post.Id" class="text-sm text-honda-red font-semibold">Sửa</a>
+                <a href="/tin-tuc/@post.Slug" target="_blank" class="text-sm text-gray-400">Xem →</a>
+            </div>
         </div>
     }
 </div>

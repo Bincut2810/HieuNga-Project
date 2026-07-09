@@ -12,7 +12,7 @@ public class IndexModel(IHomepageService homepageService) : PageModel
     public async Task OnGetAsync(CancellationToken ct)
     {
         Data = await homepageService.GetHomepageDataAsync(ct);
-        this.SetSeo(null, "Honda Hiếu Nga Đà Nẵng | Đại lý HEAD chính hãng",
-            "Khám phá xe máy Honda chính hãng tại Đà Nẵng. Trả góp 0%, lái thử miễn phí, bảo dưỡng chuyên nghiệp.");
+        this.SetSeo(null, "Honda Hiếu Nga Đà Nẵng | Mua xe & dịch vụ HEAD",
+            "Mua xe Honda chính hãng, tư vấn trả góp và đặt lịch sửa chữa, bảo dưỡng tại HEAD Honda Hiếu Nga Đà Nẵng.");
     }
 }

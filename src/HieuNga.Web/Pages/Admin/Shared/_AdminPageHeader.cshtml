@@ -1,0 +1,15 @@
+@model HieuNga.Web.Pages.Admin.Extensions.AdminPageHeaderModel
+
+<header class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">@Model.Title</h1>
+        @if (!string.IsNullOrEmpty(Model.Subtitle))
+        {
+            <p class="admin-page-subtitle">@Model.Subtitle</p>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(Model.PrimaryActionUrl) && !string.IsNullOrEmpty(Model.PrimaryActionText))
+    {
+        <a href="@Model.PrimaryActionUrl" class="admin-btn-primary">@Model.PrimaryActionText</a>
+    }
+</header>

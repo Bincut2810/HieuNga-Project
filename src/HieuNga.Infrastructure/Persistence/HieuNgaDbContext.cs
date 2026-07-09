@@ -23,6 +23,11 @@ public class HieuNgaDbContext(DbContextOptions<HieuNgaDbContext> options)
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<Banner> Banners => Set<Banner>();
     public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
+    public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
+    public DbSet<ServiceItem> ServiceItems => Set<ServiceItem>();
+    public DbSet<BankType> BankTypes => Set<BankType>();
+    public DbSet<Bank> Banks => Set<Bank>();
+    public DbSet<FinanceRate> FinanceRates => Set<FinanceRate>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

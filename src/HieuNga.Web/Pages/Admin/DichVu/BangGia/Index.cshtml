@@ -1,0 +1,126 @@
+@page "/admin/dich-vu/bang-gia"
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.DichVu.BangGiaIndexModel
+
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel(
+             "Bảng giá dịch vụ",
+             "Quản lý danh mục dịch vụ và giá tham khảo hiển thị trên website.",
+             "/admin/dich-vu/bang-gia/them",
+             "+ Thêm dịch vụ")' />
+
+<form method="get" class="admin-toolbar">
+    <div class="admin-toolbar-fields">
+        <div class="admin-field">
+            <label for="search" class="admin-label">Tìm theo tên</label>
+            <input type="search" id="search" name="search" value="@Model.Search"
+                   placeholder="Nhập tên dịch vụ..." class="admin-input" />
+        </div>
+        <div class="admin-field admin-field-sm">
+            <label for="categoryId" class="admin-label">Danh mục</label>
+            <select id="categoryId" name="categoryId" asp-items="Model.CategoryOptions" class="admin-select">
+                <option value="">Tất cả danh mục</option>
+            </select>
+        </div>
+        <div class="admin-field admin-field-sm">
+            <label for="status" class="admin-label">Trạng thái</label>
+            <select id="status" name="status" class="admin-select">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.Status) ? "selected" : null)">Tất cả</option>
+                <option value="active" selected="@(Model.Status == "active" ? "selected" : null)">Đang hiển thị</option>
+                <option value="inactive" selected="@(Model.Status == "inactive" ? "selected" : null)">Đang ẩn</option>
+            </select>
+        </div>
+        <div class="admin-toolbar-actions">
+            <button type="submit" class="admin-btn-secondary">Lọc</button>
+            @if (Model.HasActiveFilters)
+            {
+                <a href="/admin/dich-vu/bang-gia" class="admin-btn-ghost">Đặt lại</a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="admin-card admin-table-wrap">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="admin-empty">
+            <p class="admin-empty-title">Chưa có dịch vụ nào phù hợp</p>
+            <p class="admin-empty-text">
+                @(Model.HasActiveFilters ? "Thử đổi bộ lọc hoặc xóa lọc để xem thêm." : "Thêm dịch vụ đầu tiên để hiển thị trên trang bảo dưỡng.")
+            </p>
+            @if (Model.HasActiveFilters)
+            {
+                <a href="/admin/dich-vu/bang-gia" class="admin-btn-secondary admin-empty-action">Đặt lại bộ lọc</a>
+            }
+            else
+            {
+                <a href="/admin/dich-vu/bang-gia/them" class="admin-btn-primary admin-empty-action">+ Thêm dịch vụ</a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="admin-table-scroll">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Dịch vụ</th>
+                        <th scope="col">Danh mục</th>
+                        <th scope="col">Giá tham khảo</th>
+                        <th scope="col">Thời gian</th>
+                        <th scope="col">Trạng thái</th>
+                        <th scope="col">Cập nhật</th>
+                        <th scope="col" class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <p class="admin-table-primary">@item.Name</p>
+                                <p class="admin-table-secondary">/@item.Slug</p>
+                            </td>
+                            <td>
+                                <span class="admin-badge admin-badge-category">@item.Category</span>
+                            </td>
+                            <td style="max-width: 12rem; word-break: break-word;">@item.Price</td>
+                            <td style="white-space: nowrap;">@(item.Duration ?? "—")</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="admin-badge admin-badge-success">Hiển thị</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-badge admin-badge-muted">Ẩn</span>
+                                }
+                            </td>
+                            <td style="font-size: 0.75rem; white-space: nowrap;">
+                                @(item.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")
+                            </td>
+                            <td class="text-right">
+                                <div class="admin-actions">
+                                    <a href="/admin/dich-vu/bang-gia/sua/@item.Id" class="admin-action admin-action-edit">Sửa</a>
+                                    <a href="/bao-duong/@item.Slug" target="_blank" rel="noopener" class="admin-action admin-action-view">Xem</a>
+                                    <form method="post" asp-page-handler="ToggleActive" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                                        <input type="hidden" name="search" value="@Model.Search" />
+                                        <input type="hidden" name="status" value="@Model.Status" />
+                                        <button type="submit" class="admin-action admin-action-muted"
+                                                onclick="return confirm('@(item.IsActive ? "Ẩn dịch vụ này khỏi website?" : "Hiển thị lại dịch vụ này?")')">
+                                            @(item.IsActive ? "Ẩn" : "Hiện")
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="admin-table-footer">@Model.Items.Count dịch vụ</div>
+    }
+</div>

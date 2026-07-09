@@ -7,6 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace HieuNga.Infrastructure.Persistence;
 
+/// <summary>
+/// Applies canonical demo motorcycle content from MotorcycleContentCatalog.
+/// Invoked only when DbInitializer enables it (Development or SeedOptions:RunContentEnricher).
+/// </summary>
 public static class MotorcycleContentEnricher
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };

@@ -11,7 +11,7 @@ public static class SeoExtensions
         viewData["MetaTitle"] = seo?.Title ?? fallbackTitle;
         viewData["MetaDescription"] = seo?.Description ?? fallbackDescription;
         viewData["MetaKeywords"] = seo?.Keywords;
-        viewData["OgImage"] = seo?.OgImageUrl ?? "/images/og-default.jpg";
+        viewData["OgImage"] = seo?.OgImageUrl ?? "/images/og-default.svg";
         viewData["CanonicalUrl"] = seo?.CanonicalUrl;
     }
 }

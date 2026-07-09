@@ -1,0 +1,23 @@
+@model IReadOnlyList<HieuNga.Web.Pages.Admin.Extensions.AdminBreadcrumbItem>
+
+@if (Model.Count > 0)
+{
+    <nav class="admin-breadcrumb" aria-label="Breadcrumb">
+        @for (var i = 0; i < Model.Count; i++)
+        {
+            var item = Model[i];
+            if (i > 0)
+            {
+                <span aria-hidden="true">/</span>
+            }
+            if (!string.IsNullOrEmpty(item.Url))
+            {
+                <a href="@item.Url">@item.Text</a>
+            }
+            else
+            {
+                <span class="admin-breadcrumb-current">@item.Text</span>
+            }
+        }
+    </nav>
+}

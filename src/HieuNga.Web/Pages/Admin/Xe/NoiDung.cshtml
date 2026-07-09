@@ -1,0 +1,24 @@
+@page "/admin/xe/{id:guid}/noi-dung"
+@model HieuNga.Web.Pages.Admin.Xe.NoiDungModel
+
+<h1 class="text-2xl font-bold">Nội dung & hình ảnh — @Model.MotorcycleName</h1>
+<p class="text-gray-500 text-sm mt-1">
+    <a href="/admin/xe/sua/@Model.MotorcycleId" class="hover:text-honda-red">← Sửa thông tin xe</a>
+</p>
+
+<form method="post" class="mt-8 bg-white border rounded-2xl p-6 md:p-8 max-w-3xl space-y-6">
+    @Html.AntiForgeryToken()
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh (mỗi dòng: url|alt|thứ tự)</label>
+        <textarea asp-for="Input.MediaLines" rows="6" class="w-full border rounded-lg px-3 py-2 text-sm font-mono" placeholder="/images/motorcycles/honda-sh-160i.svg|Honda SH|0"></textarea>
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Điểm nổi bật (mỗi dòng một ý)</label>
+        <textarea asp-for="Input.HighlightsLines" rows="5" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Thông số kỹ thuật (mỗi dòng: nhãn|giá trị)</label>
+        <textarea asp-for="Input.SpecsLines" rows="6" class="w-full border rounded-lg px-3 py-2 text-sm font-mono" placeholder="Dung tích xy-lanh|149 cc"></textarea>
+    </div>
+    <button type="submit" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu nội dung</button>
+</form>

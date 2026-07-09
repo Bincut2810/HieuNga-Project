@@ -1,0 +1,36 @@
+@page "/admin/khach-hang/lich-hen/{id:guid}"
+@model HieuNga.Web.Pages.Admin.KhachHang.LichHenDetailModel
+
+<h1 class="text-2xl font-bold">Chi tiết lịch hẹn</h1>
+<p class="text-sm text-gray-500 mt-1"><a href="/admin/khach-hang/lich-hen" class="hover:text-honda-red">← Danh sách</a></p>
+
+@if (Model.Booking is not null)
+{
+    var b = Model.Booking;
+    <div class="mt-6 grid lg:grid-cols-2 gap-8">
+        <div class="bg-white border rounded-2xl p-6 space-y-2 text-sm">
+            <p><span class="text-gray-500">Khách:</span> <strong>@b.CustomerName</strong></p>
+            <p><span class="text-gray-500">SĐT:</span> @b.Phone</p>
+            <p><span class="text-gray-500">Email:</span> @(b.Email ?? "—")</p>
+            <p><span class="text-gray-500">Loại:</span> @b.Type</p>
+            <p><span class="text-gray-500">Ngày hẹn:</span> @b.PreferredDate.ToString("dd/MM/yyyy") @b.PreferredTime</p>
+            <p><span class="text-gray-500">Xe:</span> @(b.Motorcycle?.Name ?? "—")</p>
+            <p><span class="text-gray-500">Chi nhánh:</span> @(b.Branch?.Name ?? "—")</p>
+            <p><span class="text-gray-500">Ghi chú KH:</span> @(b.Notes ?? "—")</p>
+        </div>
+        <form method="post" class="bg-white border rounded-2xl p-6">
+            @Html.AntiForgeryToken()
+            <div class="space-y-4">
+                <div>
+                    <label asp-for="Input.Status" class="block text-sm font-medium mb-1">Trạng thái</label>
+                    <select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<BookingStatus>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select>
+                </div>
+                <div>
+                    <label asp-for="Input.AdminNotes" class="block text-sm font-medium mb-1">Ghi chú admin</label>
+                    <textarea asp-for="Input.AdminNotes" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+                </div>
+            </div>
+            <button type="submit" class="mt-4 bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu</button>
+        </form>
+    </div>
+}

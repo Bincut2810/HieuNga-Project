@@ -127,6 +127,20 @@ Thêm **từng dòng** sau:
 |-----|--------|
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 | `ASPNETCORE_URLS` | `http://0.0.0.0:8080` |
+| `Site__BaseUrl` | `https://hieunga-web.onrender.com` (đổi theo URL thật) |
+| `Site__Name` | `Honda Hiếu Nga Đà Nẵng` |
+| `Site__Hotline` | `0905 123 456` |
+| `Site__ZaloUrl` | `https://zalo.me/0905123456` |
+| `Site__DefaultSeoTitle` | `Honda Hiếu Nga Đà Nẵng \| Mua xe & dịch vụ HEAD` |
+| `Site__DefaultSeoDescription` | `Đại lý Honda HEAD chính hãng tại Đà Nẵng.` |
+| `SeedOptions__EnableDemoSeed` | `true` (demo lần đầu; đặt `false` sau khi ổn định) |
+| `SeedOptions__AdminSeedEnabled` | `true` (chỉ lần deploy đầu) |
+| `SeedOptions__AdminEmail` | email admin của bạn |
+| `SeedOptions__AdminPassword` | mật khẩu mạnh 12+ ký tự |
+| `ImageStorage__Provider` | `Cloudinary` (khuyên dùng) hoặc để URL ảnh |
+| `ImageStorage__Cloudinary__CloudName` | từ Cloudinary dashboard |
+| `ImageStorage__Cloudinary__ApiKey` | từ Cloudinary dashboard |
+| `ImageStorage__Cloudinary__ApiSecret` | từ Cloudinary dashboard |
 
 **Connection string** — cách dễ nhất:
 
@@ -146,7 +160,13 @@ ConnectionStrings__DefaultConnection
 ### C4. Health check
 
 - **Health Check Path:** `/health`
-- Render gọi URL này để biết app còn sống.
+- Render gọi URL này để biết app còn sống. Response mẫu:
+
+```json
+{"status":"Healthy","database":"Connected","environment":"Production","timestamp":"..."}
+```
+
+HTTP 503 khi DB không kết nối được.
 
 ### C5. Deploy
 
@@ -176,16 +196,34 @@ Mở trình duyệt (tab ẩn danh):
 
 | URL | Kỳ vọng |
 |-----|---------|
-| `https://YOUR-SERVICE.onrender.com/health` | JSON `{"status":"healthy",...}` |
+| `https://YOUR-SERVICE.onrender.com/health` | JSON `{"status":"Healthy","database":"Connected",...}` |
 | `https://YOUR-SERVICE.onrender.com/` | Trang chủ Honda Hiếu Nga |
 | `https://YOUR-SERVICE.onrender.com/xe` | Danh sách xe |
 | `https://YOUR-SERVICE.onrender.com/xe/honda-vision-2025` | Chi tiết xe + trả góp |
 | `https://YOUR-SERVICE.onrender.com/admin/dang-nhap` | Admin login |
 
-**Admin demo:**
+**Admin (production) — lần deploy đầu:**
 
-- Email: `admin@hondahieunga.vn`
-- Password: `Admin@123456!`
+Set trên Render → Environment:
+
+```
+SeedOptions__AdminSeedEnabled=true
+SeedOptions__AdminEmail=your-admin@yourdomain.vn
+SeedOptions__AdminPassword=YOUR_STRONG_PASSWORD_MIN_12_CHARS
+```
+
+Sau khi đăng nhập admin thành công, đặt `SeedOptions__AdminSeedEnabled=false`.
+
+Không có biến này → **không tạo admin mặc định** (an toàn hơn mật khẩu cố định).
+
+**Ảnh upload (khuyên dùng Cloudinary):**
+
+1. Tạo tài khoản miễn phí tại https://cloudinary.com
+2. Lấy Cloud Name, API Key, API Secret
+3. Set `ImageStorage__Provider=Cloudinary` và 3 biến `ImageStorage__Cloudinary__*`
+4. Không cấu hình Cloudinary → Admin vẫn dùng **URL ảnh**; upload file bị tắt với thông báo rõ ràng
+
+**Checklist đầy đủ:** [STAGING-CHECKLIST.md](STAGING-CHECKLIST.md)
 
 ---
 
@@ -242,6 +280,8 @@ HieuNga-Project/
 ├── .dockerignore
 ├── .env.example
 ├── docs/DEPLOY-RENDER.md   ← File này
+├── docs/ENVIRONMENT.md     ← Biến môi trường đầy đủ
+├── docs/STAGING-CHECKLIST.md
 └── src/HieuNga.Web/
     ├── Program.cs          ← PORT, HTTPS proxy, /health
     └── appsettings.Production.json
@@ -255,5 +295,6 @@ HieuNga-Project/
 |-------------|------------|
 | 502 Bad Gateway | Xem Logs — app crash khi migrate DB |
 | Trang trắng | Đợi cold start; refresh sau 1 phút |
-| Ảnh/CSS mất | Kiểm tra `wwwroot/` có trong repo; static files tự serve |
+| Ảnh/CSS mất | Kiểm tra `wwwroot/` có trong repo; dùng Cloudinary cho upload Admin |
+| Upload ảnh mất sau redeploy | Dùng `ImageStorage__Provider=Cloudinary` hoặc URL ảnh |
 | DB connection | Dùng Internal URL + link database trong Render |

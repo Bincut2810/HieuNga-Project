@@ -36,6 +36,7 @@
                 </div>
             </div>
             <form hx-post="/tra-gop?handler=Calculate" hx-target="#calc-result" hx-swap="innerHTML transition:true" hx-indicator="#calc-loading" class="space-y-3">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="VehiclePrice" :value="price" />
                 <input type="hidden" name="DownPayment" :value="down" />
                 <input type="hidden" name="TermMonths" :value="months" />

@@ -1,0 +1,71 @@
+@page "/admin/xe/{id:guid}/gia"
+@model HieuNga.Web.Pages.Admin.Xe.GiaModel
+
+<h1 class="text-2xl font-bold">Quản lý giá — @Model.MotorcycleName</h1>
+<p class="text-gray-500 text-sm mt-1">
+    <a href="/admin/xe/sua/@Model.MotorcycleId" class="hover:text-honda-red">← Sửa thông tin xe</a>
+</p>
+
+<div class="mt-8 grid lg:grid-cols-2 gap-8">
+    <div class="bg-white border rounded-2xl p-6">
+        <h2 class="font-semibold mb-4">Thêm / sửa phiên bản</h2>
+        <form method="post" asp-page-handler="Save">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Input.Id" />
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Tên phiên bản *</label>
+                    <input asp-for="Input.Name" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                    <span asp-validation-for="Input.Name" class="text-red-600 text-xs"></span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Giá (VNĐ)</label>
+                        <input asp-for="Input.Price" type="number" step="1000" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tồn kho</label>
+                        <input asp-for="Input.StockQuantity" type="number" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                </div>
+                <label class="flex items-center gap-2 text-sm"><input asp-for="Input.IsAvailable" type="checkbox" /> Còn hàng</label>
+            </div>
+            <button type="submit" class="mt-4 bg-honda-red text-white px-4 py-2 rounded-lg font-semibold text-sm">Lưu phiên bản</button>
+        </form>
+    </div>
+
+    <div class="bg-white border rounded-2xl overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-left">
+                <tr>
+                    <th class="px-4 py-3">Phiên bản</th>
+                    <th class="px-4 py-3">Giá</th>
+                    <th class="px-4 py-3">Kho</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                @foreach (var v in Model.Variants)
+                {
+                    <tr>
+                        <td class="px-4 py-3 font-medium">@v.Name @(!v.IsAvailable ? "(hết)" : "")</td>
+                        <td class="px-4 py-3 text-honda-red">@v.Price.ToVnd()</td>
+                        <td class="px-4 py-3">@v.StockQuantity</td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="/admin/xe/@Model.MotorcycleId/gia?edit=@v.Id" class="text-honda-red text-xs font-medium">Sửa</a>
+                            <form method="post" asp-page-handler="Delete" class="inline ml-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="variantId" value="@v.Id" />
+                                <button type="submit" class="text-gray-400 text-xs" onclick="return confirm('Xóa phiên bản này?')">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

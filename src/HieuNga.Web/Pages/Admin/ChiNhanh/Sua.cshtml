@@ -1,0 +1,9 @@
+@page "/admin/chi-nhanh/sua/{id:guid}"
+@model HieuNga.Web.Pages.Admin.ChiNhanhSuaModel
+<h1 class="text-2xl font-bold">Sửa chi nhánh</h1>
+<form method="post" class="mt-8 bg-white border rounded-2xl p-6 max-w-2xl space-y-3">
+    @Html.AntiForgeryToken()
+    <partial name="Admin/Shared/_BranchForm" model="Model.Input" />
+    <button type="submit" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu</button>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

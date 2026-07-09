@@ -1,32 +1,47 @@
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+}
 <footer class="bg-honda-dark text-white mt-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div class="md:col-span-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="md:col-span-1">
                 <h3 class="text-xl font-bold mb-4">Honda Hiếu Nga</h3>
                 <p class="text-gray-400 text-sm leading-relaxed max-w-md">
-                    Đại lý Honda HEAD chính hãng tại Đà Nẵng. Cam kết xe chính hãng, giá minh bạch, dịch vụ hậu mãi chuyên nghiệp.
+                    Đại lý Honda HEAD chính hãng tại Đà Nẵng. Xe chính hãng, dịch vụ sửa chữa &amp; bảo dưỡng chuyên nghiệp.
                 </p>
+                <div class="mt-6 space-y-2 text-sm">
+                    <p>
+                        <span class="text-gray-500">Hotline:</span>
+                        <a href="@telHref" hx-boost="false" class="text-white font-semibold hover:text-honda-red transition ml-1">@site.Hotline</a>
+                    </p>
+                    <p class="text-gray-400">
+                        <span class="text-gray-500">Showroom:</span>
+                        @site.Address
+                    </p>
+                    <p class="text-gray-400">@site.OpeningHours</p>
+                </div>
             </div>
             <div>
-                <h4 class="font-semibold mb-4">Khám phá</h4>
+                <h4 class="font-semibold mb-4">Liên kết</h4>
                 <ul class="space-y-2 text-sm text-gray-400">
-                    <li><a href="/xe" class="hover:text-white transition">Danh sách xe</a></li>
-                    <li><a href="/khuyen-mai" class="hover:text-white transition">Khuyến mãi</a></li>
-                    <li><a href="/so-sanh" class="hover:text-white transition">So sánh xe</a></li>
+                    <li><a href="/xe" class="hover:text-white transition">Mua xe</a></li>
+                    <li><a href="/bao-duong" class="hover:text-white transition">Dịch vụ sửa chữa &amp; bảo dưỡng</a></li>
+                    <li><a href="/lien-he" class="hover:text-white transition">Liên hệ &amp; tư vấn</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="font-semibold mb-4">Dịch vụ</h4>
-                <ul class="space-y-2 text-sm text-gray-400">
-                    <li><a href="/dat-lich-lai-thu" class="hover:text-white transition">Đặt lái thử</a></li>
-                    <li><a href="/bao-duong" class="hover:text-white transition">Bảo dưỡng</a></li>
-                    <li><a href="/tra-gop" class="hover:text-white transition">Tính trả góp</a></li>
+                <h4 class="font-semibold mb-4 text-gray-300">Khác</h4>
+                <ul class="space-y-2 text-xs text-gray-500">
+                    <li><a href="/khuyen-mai" class="hover:text-gray-300 transition">Khuyến mãi</a></li>
+                    <li><a href="/admin" hx-boost="false" class="hover:text-gray-300 transition">Quản trị</a></li>
                 </ul>
             </div>
         </div>
         <div class="border-t border-white/10 mt-12 pt-8 text-sm text-gray-500 flex flex-col sm:flex-row justify-between gap-4">
             <p>&copy; @DateTime.Now.Year Honda Hiếu Nga Đà Nẵng. All rights reserved.</p>
-            <p>HEAD Dealer chính hãng Honda Việt Nam</p>
+            <p>@(site.FooterText ?? "HEAD Dealer chính hãng Honda Việt Nam")</p>
         </div>
     </div>
 </footer>

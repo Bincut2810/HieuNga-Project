@@ -1,27 +1,78 @@
-## .NET
+## .NET / ASP.NET Core
 bin/
 obj/
+[Dd]ebug/
+[Rr]elease/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
 .vs/
 *.DotSettings.user
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+
+## Build results
+*.dll
+*.exe
+*.pdb
+*.cache
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+
+## User secrets (never commit)
+**/secrets.json
+*.secrets.json
 
 ## Node / Tailwind
 node_modules/
-package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-## Environment
+## Environment & local config
 .env
-.env.*
+.env.local
+.env.*.local
+!.env.example
 appsettings.*.local.json
+
+## Logs
+logs/
+*.log
 
 ## IDE
 .idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 *.swp
+*~
 
 ## OS
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 .DS_Store
 
-## Docker
+## Docker local volumes
 postgres_data/
+
+## User uploads (local dev only — use Cloudinary in staging/production)
+src/HieuNga.Web/wwwroot/uploads/
+
+## Temporary files
+*.tmp
+*.temp
+~$*

@@ -1,0 +1,14 @@
+@model HieuNga.Web.Pages.Admin.BannerInputModel
+<div><label asp-for="Title" class="block text-sm font-medium mb-1">Tiêu đề *</label><input asp-for="Title" class="w-full border rounded-lg px-3 py-2 text-sm" /><span asp-validation-for="Title" class="text-red-600 text-xs"></span></div>
+<div><label asp-for="Subtitle" class="block text-sm font-medium mb-1">Phụ đề</label><input asp-for="Subtitle" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+<div><label asp-for="ImageUrl" class="block text-sm font-medium mb-1">Ảnh URL *</label><input asp-for="ImageUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+<div><label asp-for="MobileImageUrl" class="block text-sm font-medium mb-1">Ảnh mobile URL</label><input asp-for="MobileImageUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+<div class="grid md:grid-cols-2 gap-3">
+    <div><label asp-for="CtaText" class="block text-sm font-medium mb-1">CTA text</label><input asp-for="CtaText" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+    <div><label asp-for="CtaUrl" class="block text-sm font-medium mb-1">CTA URL</label><input asp-for="CtaUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+</div>
+<div class="grid md:grid-cols-2 gap-3">
+    <div><label asp-for="Position" class="block text-sm font-medium mb-1">Vị trí</label><select asp-for="Position" asp-items="Html.GetEnumSelectList<BannerPosition>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select></div>
+    <div><label asp-for="SortOrder" class="block text-sm font-medium mb-1">Thứ tự</label><input asp-for="SortOrder" type="number" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
+</div>
+<label class="flex items-center gap-2 text-sm"><input asp-for="IsActive" type="checkbox" /> Kích hoạt</label>

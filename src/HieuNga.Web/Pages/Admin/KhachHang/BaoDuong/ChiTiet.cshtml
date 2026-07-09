@@ -1,0 +1,27 @@
+@page "/admin/khach-hang/bao-duong/{id:guid}"
+@model HieuNga.Web.Pages.Admin.KhachHang.BaoDuongDetailModel
+
+<h1 class="text-2xl font-bold">Chi tiết bảo dưỡng</h1>
+<p class="text-sm text-gray-500 mt-1"><a href="/admin/khach-hang/bao-duong" class="hover:text-honda-red">← Danh sách</a></p>
+
+@if (Model.Booking is not null)
+{
+    var b = Model.Booking;
+    <div class="mt-6 grid lg:grid-cols-2 gap-8">
+        <div class="bg-white border rounded-2xl p-6 space-y-2 text-sm">
+            <p><strong>@b.CustomerName</strong> · @b.Phone</p>
+            <p>Xe: @(b.MotorcycleModel ?? "—") · @(b.LicensePlate ?? "")</p>
+            <p>Dịch vụ: @b.ServiceType</p>
+            <p>Ngày: @b.PreferredDate.ToString("dd/MM/yyyy") @b.PreferredTime</p>
+            <p>Ghi chú: @(b.Notes ?? "—")</p>
+        </div>
+        <form method="post" class="bg-white border rounded-2xl p-6">
+            @Html.AntiForgeryToken()
+            <div class="space-y-4">
+                <div><label asp-for="Input.Status" class="block text-sm font-medium mb-1">Trạng thái</label><select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<BookingStatus>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select></div>
+                <div><label asp-for="Input.AdminNotes" class="block text-sm font-medium mb-1">Ghi chú admin</label><textarea asp-for="Input.AdminNotes" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
+            </div>
+            <button type="submit" class="mt-4 bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu</button>
+        </form>
+    </div>
+}

@@ -48,6 +48,7 @@
   }
 
   function buildStore(config) {
+    const banks = (config.banks && config.banks.length > 0) ? config.banks : BANKS;
     const variants = (config.variants || []).map((v) => ({
       ...v,
       id: normId(v.id),
@@ -65,8 +66,8 @@
       variantName: first ? first.name : null,
       price,
       basePrice: Number(config.basePrice),
-      banks: BANKS,
-      bank: 'mb',
+      banks,
+      bank: banks[0]?.id ?? 'mb',
       down,
       months: 12,
       downPercent: price > 0 ? Math.min(70, Math.round((down / price) * 100)) : 20,
