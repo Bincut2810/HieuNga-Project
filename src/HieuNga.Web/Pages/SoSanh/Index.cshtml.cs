@@ -14,7 +14,7 @@ public class IndexModel(IMotorcycleService motorcycleService, CompareSessionServ
     public async Task OnGetAsync(CancellationToken ct)
     {
         await LoadAsync(ct);
-        this.SetSeo(null, "So sánh xe máy Honda | Honda Hiếu Nga", "So sánh thông số và giá các dòng xe Honda.");
+        this.SetSeo(null, "So sánh xe máy Honda | Xe Máy Hiếu Nga", "So sánh thông số và giá các dòng xe Honda.");
     }
 
     public IActionResult OnGetAdd(Guid id)

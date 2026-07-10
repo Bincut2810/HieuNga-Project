@@ -17,7 +17,7 @@ public class IndexModel(IMotorcycleService motorcycleService) : PageModel
     public async Task OnGetAsync(CancellationToken ct)
     {
         Result = await motorcycleService.SearchAsync(new MotorcycleFilterDto(Q, Category, null, null, PageNumber, 12), ct);
-        this.SetSeo(null, "Danh sách xe máy Honda | Honda Hiếu Nga",
+        this.SetSeo(null, "Danh sách xe máy Honda | Xe Máy Hiếu Nga",
             "Khám phá toàn bộ dòng xe Honda chính hãng tại Đà Nẵng.");
     }
 

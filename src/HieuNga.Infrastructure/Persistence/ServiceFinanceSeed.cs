@@ -22,6 +22,8 @@ public static class ServiceFinanceSeed
         }
 
         await SeedSiteSettingDefaultsAsync(context, logger);
+        await MigrateLegacyBrandingAsync(context, logger);
+        await SyncFinancePartnersAsync(context, logger);
         await context.SaveChangesAsync();
     }
 
@@ -71,7 +73,7 @@ public static class ServiceFinanceSeed
         Item("bao-duong-dinh-ky", "Bảo dưỡng định kỳ", "Bảo dưỡng", "wrench",
             "Kiểm tra tổng quát xe theo mốc km để xe vận hành ổn định.",
             ["Kiểm tra phanh, lốp, đèn, còi, xích/dây curoa.", "Kiểm tra nhớt, lọc gió, bugi.", "Tư vấn hạng mục cần thay thế nếu có."],
-            "Từ 150.000đ – 350.000đ", "30 – 60 phút", "Giá tham khảo — Honda Hiếu Nga xác nhận trước khi thực hiện.", 1, true),
+            "Từ 150.000đ – 350.000đ", "30 – 60 phút", null, 1, true),
         Item("thay-nhot-may", "Thay nhớt máy", "Bảo dưỡng", "oil",
             "Thay nhớt phù hợp với dòng xe số, xe ga hoặc xe côn.",
             ["Xả nhớt cũ.", "Thay nhớt mới theo khuyến nghị.", "Kiểm tra rò rỉ và mức nhớt."],
@@ -126,6 +128,20 @@ public static class ServiceFinanceSeed
             "Từ 100.000đ – 200.000đ", "20 – 40 phút", null, 14, false)
     ];
 
+    private static readonly (string ShortName, string Name, string Color, string Trust, bool IsDefault)[] RequiredBanks =
+    [
+        ("HDB", "HD Bank", "#C8102E", "Đối tác trả góp", true),
+        ("MB", "MB Bank", "#0054A6", "Đối tác trả góp", false),
+        ("JACCS", "JACCS", "#003B71", "Đối tác trả góp", false)
+    ];
+
+    private static readonly HashSet<string> RetiredBankShortNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "TP", "AG", "TC", "TPB", "AGRI", "TCB"
+    };
+
+    private const decimal RequiredMonthlyRatePercent = 0.79m;
+
     private static async Task SeedFinanceAsync(HieuNgaDbContext context)
     {
         var bankType = new BankType
@@ -138,43 +154,157 @@ public static class ServiceFinanceSeed
         context.BankTypes.Add(bankType);
         await context.SaveChangesAsync();
 
-        var banks = new[]
+        await UpsertRequiredBanksAsync(context, bankType.Id);
+    }
+
+    /// <summary>Idempotent sync for deployed DBs — deactivates old demo banks, ensures HD/MB/JACCS at 0.79%/tháng.</summary>
+    private static async Task SyncFinancePartnersAsync(HieuNgaDbContext context, ILogger logger)
+    {
+        var bankType = await context.BankTypes
+            .OrderBy(t => t.DisplayOrder)
+            .FirstOrDefaultAsync(t => !t.IsDeleted);
+
+        if (bankType is null)
+            return;
+
+        var retired = await context.Banks
+            .Where(b => !b.IsDeleted && RetiredBankShortNames.Contains(b.ShortName))
+            .ToListAsync();
+
+        foreach (var bank in retired)
         {
-            ("mb", "MB", "MB Bank", "#0054A6", 1.4m, "Ưu đãi HEAD", true),
-            ("tpb", "TP", "TPBank", "#6B2C91", 1.5m, "Duyệt nhanh", false),
-            ("agri", "AG", "Agribank", "#006B3F", 1.2m, "Lãi suất thấp", false),
-            ("tcb", "TC", "Techcombank", "#E30613", 1.6m, "Phổ biến", false)
+            if (!bank.IsActive) continue;
+            bank.IsActive = false;
+            logger.LogInformation("Deactivated retired finance partner {Bank}", bank.Name);
+        }
+
+        foreach (var rate in await context.FinanceRates
+                     .Where(r => !r.IsDeleted && retired.Select(b => b.Id).Contains(r.BankId))
+                     .ToListAsync())
+        {
+            rate.IsActive = false;
+        }
+
+        await UpsertRequiredBanksAsync(context, bankType.Id, logger);
+    }
+
+    private static Task UpsertRequiredBanksAsync(HieuNgaDbContext context, Guid bankTypeId, ILogger? logger = null)
+    {
+        return UpsertRequiredBanksCoreAsync(context, bankTypeId, logger);
+    }
+
+    private static async Task UpsertRequiredBanksCoreAsync(HieuNgaDbContext context, Guid bankTypeId, ILogger? logger)
+    {
+        var order = 0;
+        foreach (var (shortName, name, color, trust, isDefault) in RequiredBanks)
+        {
+            var bank = await context.Banks
+                .Include(b => b.FinanceRates)
+                .FirstOrDefaultAsync(b => !b.IsDeleted && b.ShortName == shortName);
+
+            if (bank is null)
+            {
+                bank = new Bank
+                {
+                    BankTypeId = bankTypeId,
+                    Name = name,
+                    ShortName = shortName,
+                    BrandColor = color,
+                    DisplayOrder = order,
+                    IsActive = true
+                };
+                context.Banks.Add(bank);
+                await context.SaveChangesAsync();
+                logger?.LogInformation("Seeded finance partner {Bank}", name);
+            }
+            else
+            {
+                bank.Name = name;
+                bank.BrandColor = color;
+                bank.DisplayOrder = order;
+                bank.IsActive = true;
+                bank.IsDeleted = false;
+            }
+
+            var rate = bank.FinanceRates.FirstOrDefault(r => !r.IsDeleted)
+                       ?? new FinanceRate { BankId = bank.Id };
+
+            if (rate.Id == Guid.Empty)
+                context.FinanceRates.Add(rate);
+
+            rate.PlanName = "Trả góp tiêu chuẩn";
+            if (rate.Id == Guid.Empty || IsLegacyDemoRate(rate.MonthlyInterestRatePercent))
+                rate.MonthlyInterestRatePercent = RequiredMonthlyRatePercent;
+            rate.MinDownPaymentPercent = 0;
+            rate.MaxDownPaymentPercent = 70;
+            rate.MinTermMonths = 6;
+            rate.MaxTermMonths = 36;
+            rate.SupportedTermsMonths = "6,12,18,24,36";
+            rate.TrustLabel = trust;
+            rate.IsDefault = isDefault;
+            rate.IsActive = true;
+            rate.IsDeleted = false;
+            rate.DisplayOrder = 0;
+
+            order++;
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static bool IsLegacyDemoRate(decimal ratePercent) =>
+        ratePercent is 1.2m or 1.4m or 1.5m or 1.6m;
+
+    private static async Task MigrateLegacyBrandingAsync(HieuNgaDbContext context, ILogger logger)
+    {
+        var settingMigrations = new Dictionary<string, (string Old, string New)>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["site.name"] = (BrandDefaults.LegacySiteName, BrandDefaults.SiteName),
+            ["seo.default_title"] = (BrandDefaults.LegacySeoTitle, BrandDefaults.SeoTitle)
         };
 
-        var order = 0;
-        foreach (var (id, shortName, name, color, rate, trust, isDefault) in banks)
+        foreach (var row in await context.SiteSettings.ToListAsync())
         {
-            var bank = new Bank
-            {
-                BankTypeId = bankType.Id,
-                Name = name,
-                ShortName = shortName,
-                BrandColor = color,
-                DisplayOrder = order++,
-                IsActive = true
-            };
-            context.Banks.Add(bank);
-            await context.SaveChangesAsync();
+            if (!settingMigrations.TryGetValue(row.Key, out var migration)) continue;
+            if (row.Value != migration.Old) continue;
+            row.Value = migration.New;
+            row.UpdatedAt = DateTime.UtcNow;
+            logger.LogInformation("Updated site setting {Key} to new brand name", row.Key);
+        }
 
-            context.FinanceRates.Add(new FinanceRate
+        var disclaimer = await context.SiteSettings
+            .FirstOrDefaultAsync(s => s.Key == "service.pricing_disclaimer");
+        if (disclaimer is not null && disclaimer.Value.Contains("Honda Hiếu Nga", StringComparison.Ordinal))
+        {
+            disclaimer.Value = BrandDefaults.ServicePricingDisclaimer;
+            disclaimer.UpdatedAt = DateTime.UtcNow;
+            logger.LogInformation("Updated service.pricing_disclaimer to new brand copy");
+        }
+
+        var branch = await context.Branches
+            .FirstOrDefaultAsync(b => !b.IsDeleted && b.Name == BrandDefaults.LegacyBranchName);
+        if (branch is not null)
+        {
+            branch.Name = BrandDefaults.SiteNameWithCity;
+            logger.LogInformation("Updated default branch name to new brand");
+        }
+
+        foreach (var bike in await context.Motorcycles.Where(m => !m.IsDeleted).ToListAsync())
+        {
+            if (bike.MetaTitle?.Contains("Honda Hiếu Nga", StringComparison.Ordinal) == true)
             {
-                BankId = bank.Id,
-                PlanName = "Trả góp tiêu chuẩn",
-                MonthlyInterestRatePercent = rate,
-                MinDownPaymentPercent = 0,
-                MaxDownPaymentPercent = 70,
-                MinTermMonths = 6,
-                MaxTermMonths = 36,
-                SupportedTermsMonths = "6,12,18,24,36",
-                TrustLabel = trust,
-                IsDefault = isDefault,
-                IsActive = true
-            });
+                bike.MetaTitle = bike.MetaTitle
+                    .Replace(BrandDefaults.LegacySiteName, BrandDefaults.SiteName, StringComparison.Ordinal)
+                    .Replace("Honda Hiếu Nga", BrandDefaults.SiteName, StringComparison.Ordinal);
+            }
+
+            if (bike.MetaDescription?.Contains("Honda Hiếu Nga", StringComparison.Ordinal) == true)
+            {
+                bike.MetaDescription = bike.MetaDescription
+                    .Replace("Honda Hiếu Nga HEAD Đà Nẵng", BrandDefaults.SiteNameWithCity, StringComparison.Ordinal)
+                    .Replace(BrandDefaults.LegacySiteName, BrandDefaults.SiteNameWithCity, StringComparison.Ordinal)
+                    .Replace("Honda Hiếu Nga", BrandDefaults.SiteName, StringComparison.Ordinal);
+            }
         }
     }
 
@@ -182,14 +312,13 @@ public static class ServiceFinanceSeed
     {
         var defaults = new Dictionary<string, (string Value, string Group)>
         {
-            ["service.pricing_disclaimer"] = (
-                "Giá có thể thay đổi theo dòng xe, tình trạng xe và phụ tùng thực tế. Honda Hiếu Nga sẽ kiểm tra và báo giá rõ ràng trước khi thực hiện.",
-                "service"),
+            ["site.name"] = (BrandDefaults.SiteName, "general"),
+            ["service.pricing_disclaimer"] = (BrandDefaults.ServicePricingDisclaimer, "service"),
             ["site.zalo"] = ("https://zalo.me/0905123456", "site"),
             ["site.hours"] = ("T2–T7: 8:00–18:00 · CN: 8:00–17:00", "site"),
-            ["seo.default_title"] = ("Honda Hiếu Nga Đà Nẵng | Mua xe & dịch vụ HEAD", "seo"),
-            ["seo.default_description"] = ("Đại lý Honda HEAD chính hãng tại Đà Nẵng.", "seo"),
-            ["site.footer_text"] = ("HEAD Dealer chính hãng Honda Việt Nam", "site")
+            ["seo.default_title"] = (BrandDefaults.SeoTitle, "seo"),
+            ["seo.default_description"] = (BrandDefaults.SeoDescription, "seo"),
+            ["site.footer_text"] = ("Đại lý xe máy uy tín tại Đà Nẵng", "site")
         };
 
         foreach (var (key, (value, group)) in defaults)

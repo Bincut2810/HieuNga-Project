@@ -37,7 +37,7 @@ public class IndexModel(
                 ServiceType = match.Name;
         }
 
-        this.SetSeo(null, "Đặt lịch bảo dưỡng | Honda Hiếu Nga HEAD",
+        this.SetSeo(null, "Đặt lịch bảo dưỡng | Xe Máy Hiếu Nga",
             "Bảo dưỡng chính hãng Honda — kỹ thuật viên được đào tạo bài bản.");
     }
 

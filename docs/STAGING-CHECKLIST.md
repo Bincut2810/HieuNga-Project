@@ -12,12 +12,12 @@ Use this checklist after deploying to Render (or similar) before sharing the dem
 
 | # | Check | URL / action | Pass? | Notes |
 |---|-------|--------------|-------|-------|
-| 1 | Homepage loads | `/` | ☐ | |
+| 1 | Homepage loads | `/` | ☐ | Brand: **Xe Máy Hiếu Nga** (not Honda Hiếu Nga) |
 | 2 | Motorcycle listing | `/xe` | ☐ | |
-| 3 | Motorcycle detail | `/xe/honda-vision-2025` (or any slug) | ☐ | |
+| 3 | Motorcycle detail | `/xe/honda-vision-2025` (or any slug) | ☐ | Calculator: HD Bank, MB Bank, JACCS @ **0,79%/tháng** |
 | 4 | Motorcycle image visible | Detail page gallery/thumbnail | ☐ | SVG demo or uploaded URL |
-| 5 | Maintenance listing | `/bao-duong` | ☐ | |
-| 6 | Maintenance detail | `/bao-duong/bao-duong-dinh-ky` | ☐ | |
+| 5 | Maintenance listing | `/bao-duong` | ☐ | No public service prices |
+| 6 | Maintenance detail | `/bao-duong/bao-duong-dinh-ky` | ☐ | "Báo giá sau khi kiểm tra" block |
 | 7 | Installment page | `/tra-gop` | ☐ | |
 | 8 | Contact page | `/lien-he` | ☐ | |
 | 9 | Contact form submits | Submit consultation form | ☐ | |
@@ -60,6 +60,7 @@ Use this checklist after deploying to Render (or similar) before sharing the dem
 
 - [ ] `ConnectionStrings__DefaultConnection` (with SSL)
 - [ ] `Site__BaseUrl` = public HTTPS URL
+- [ ] `Site__Name` = `Xe Máy Hiếu Nga`
 - [ ] `SeedOptions__AdminSeedEnabled` = `false` (after first admin login)
 - [ ] `SeedOptions__RunContentEnricher` = `false` or unset
 - [ ] `ImageStorage__Provider` = `Cloudinary` (if using uploads)

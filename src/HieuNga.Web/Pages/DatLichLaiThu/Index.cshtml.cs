@@ -20,7 +20,7 @@ public class IndexModel(IBookingService bookingService, IValidator<CreateBooking
     public void OnGet([FromQuery] Guid? xeId)
     {
         MotorcycleId = xeId;
-        this.SetSeo(null, "Đặt lịch lái thử | Honda Hiếu Nga", "Đặt lịch lái thử xe Honda miễn phí tại Đà Nẵng.");
+        this.SetSeo(null, "Đặt lịch lái thử | Xe Máy Hiếu Nga", "Đặt lịch lái thử xe Honda miễn phí tại Đà Nẵng.");
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)

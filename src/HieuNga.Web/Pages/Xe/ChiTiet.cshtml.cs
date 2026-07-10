@@ -38,7 +38,7 @@ public class ChiTietModel(
         }
 
         ViewData["HideDefaultMobileCta"] = true;
-        this.SetSeo(Motorcycle.Seo, $"{Motorcycle.Name} | Honda Hiếu Nga", Motorcycle.ShortDescription);
+        this.SetSeo(Motorcycle.Seo, $"{Motorcycle.Name} | Xe Máy Hiếu Nga", Motorcycle.ShortDescription);
         return Page();
     }
 

@@ -1,5 +1,6 @@
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
+using HieuNga.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -32,12 +33,12 @@ public static class SiteSettingsViewData
     {
         if (viewData[SiteSettingsPageFilter.ViewDataKey] is SiteSettingsDto s) return s;
         return new SiteSettingsDto(
-            "Honda Hiếu Nga Đà Nẵng", "0905 123 456", "0905 123 456",
+            "Xe Máy Hiếu Nga", "0905 123 456", "0905 123 456",
             "https://zalo.me/0905123456", "contact@hondahieunga.vn",
             "123 Nguyễn Văn Linh, Đà Nẵng", "T2–T7: 8:00–18:00 · CN: 8:00–17:00",
-            "Honda Hiếu Nga Đà Nẵng", "Đại lý Honda HEAD chính hãng tại Đà Nẵng.",
+            BrandDefaults.SeoTitle, BrandDefaults.SeoDescription,
             null, null,
-            "Giá có thể thay đổi theo dòng xe, tình trạng xe và phụ tùng thực tế. Honda Hiếu Nga sẽ kiểm tra và báo giá rõ ràng trước khi thực hiện.");
+            BrandDefaults.ServicePricingDisclaimer);
     }
 
     public static string TelHref(SiteSettingsDto s) =>

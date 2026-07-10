@@ -14,7 +14,7 @@
             }
             <h1 class="text-3xl md:text-5xl font-bold mt-4 leading-tight">@post.Title</h1>
             <p class="text-gray-400 mt-4 text-sm">
-                @(post.AuthorName ?? "Honda Hiếu Nga")
+                @(post.AuthorName ?? "Xe Máy Hiếu Nga")
                 @if (post.PublishedAt.HasValue) { <span> · @post.PublishedAt.Value.ToString("dd/MM/yyyy")</span> }
             </p>
         </div>

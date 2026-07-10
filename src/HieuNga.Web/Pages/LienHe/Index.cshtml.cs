@@ -19,7 +19,7 @@ public class IndexModel(IBranchService branchService, IBookingService bookingSer
     public async Task OnGetAsync(CancellationToken ct)
     {
         Branches = await branchService.GetActiveAsync(ct);
-        this.SetSeo(null, "Liên hệ Honda Hiếu Nga Đà Nẵng", "Hotline, Zalo, bản đồ showroom và form tư vấn miễn phí.");
+        this.SetSeo(null, "Liên hệ Xe Máy Hiếu Nga", "Hotline, Zalo, bản đồ showroom và form tư vấn miễn phí.");
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)

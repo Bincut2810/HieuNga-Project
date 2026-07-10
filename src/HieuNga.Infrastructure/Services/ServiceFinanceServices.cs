@@ -101,7 +101,7 @@ public class FinanceConfigService(HieuNgaDbContext db) : IFinanceConfigService
             bank.ShortName,
             monthly,
             rate.MonthlyInterestRatePercent,
-            $"{rate.MonthlyInterestRatePercent.ToString("0.#", CultureInfo.InvariantCulture)}%/tháng",
+            $"{rate.MonthlyInterestRatePercent.ToString("0.##", CultureInfo.InvariantCulture)}%/tháng",
             rate.TrustLabel,
             bank.BrandColor ?? "#E40521",
             rate.MinDownPaymentPercent,
@@ -115,19 +115,18 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
 {
     private static readonly Dictionary<string, string> Defaults = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["site.name"] = "Honda Hiếu Nga Đà Nẵng",
+        ["site.name"] = BrandDefaults.SiteName,
         ["site.hotline"] = "0905 123 456",
         ["site.phone"] = "0905 123 456",
         ["site.zalo"] = "https://zalo.me/0905123456",
         ["site.email"] = "contact@hondahieunga.vn",
         ["site.address"] = "123 Nguyễn Văn Linh, Đà Nẵng",
         ["site.hours"] = "T2–T7: 8:00–18:00 · CN: 8:00–17:00",
-        ["seo.default_title"] = "Honda Hiếu Nga Đà Nẵng | Mua xe & dịch vụ HEAD",
-        ["seo.default_description"] = "Đại lý Honda HEAD chính hãng tại Đà Nẵng.",
+        ["seo.default_title"] = BrandDefaults.SeoTitle,
+        ["seo.default_description"] = BrandDefaults.SeoDescription,
         ["site.facebook"] = "",
-        ["site.footer_text"] = "HEAD Dealer chính hãng Honda Việt Nam",
-        ["service.pricing_disclaimer"] =
-            "Giá có thể thay đổi theo dòng xe, tình trạng xe và phụ tùng thực tế. Honda Hiếu Nga sẽ kiểm tra và báo giá rõ ràng trước khi thực hiện."
+        ["site.footer_text"] = "Đại lý xe máy uy tín tại Đà Nẵng",
+        ["service.pricing_disclaimer"] = BrandDefaults.ServicePricingDisclaimer
     };
 
     public async Task<SiteSettingsDto> GetAsync(CancellationToken ct = default)

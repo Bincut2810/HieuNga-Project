@@ -1,6 +1,6 @@
-# Honda Hiếu Nga Đà Nẵng — Digital Showroom Platform
+# Xe Máy Hiếu Nga — Digital Showroom Platform
 
-Production-grade motorcycle dealership platform for **Honda Hiếu Nga HEAD Đà Nẵng**.
+Production-grade motorcycle dealership platform for **Xe Máy Hiếu Nga Đà Nẵng**.
 
 ## Tech Stack
 

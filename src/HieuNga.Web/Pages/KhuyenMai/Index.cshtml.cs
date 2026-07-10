@@ -11,7 +11,7 @@ public class IndexModel(IPromotionService promotionService) : PageModel
     public async Task OnGetAsync(CancellationToken ct)
     {
         Promotions = await promotionService.GetActiveAsync(ct);
-        this.SetSeo(null, "Khuyến mãi xe máy Honda | Honda Hiếu Nga",
+        this.SetSeo(null, "Khuyến mãi xe máy Honda | Xe Máy Hiếu Nga",
             "Ưu đãi, quà tặng, trả góp và sự kiện tại đại lý HEAD Đà Nẵng.");
     }
 }

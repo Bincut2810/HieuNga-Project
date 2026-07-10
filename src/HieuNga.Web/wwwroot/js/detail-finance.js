@@ -7,10 +7,9 @@
   const STEP = 500_000;
 
   const BANKS = [
-    { id: 'mb', name: 'MB Bank', initials: 'MB', monthlyRate: 0.014, ratePercent: 1.4, rateLabel: '1,4%/tháng', trust: 'Ưu đãi HEAD', color: '#0054A6' },
-    { id: 'tpb', name: 'TPBank', initials: 'TP', monthlyRate: 0.015, ratePercent: 1.5, rateLabel: '1,5%/tháng', trust: 'Duyệt nhanh', color: '#6B2C91' },
-    { id: 'agri', name: 'Agribank', initials: 'AG', monthlyRate: 0.012, ratePercent: 1.2, rateLabel: '1,2%/tháng', trust: 'Lãi suất thấp', color: '#006B3F' },
-    { id: 'tcb', name: 'Techcombank', initials: 'TC', monthlyRate: 0.016, ratePercent: 1.6, rateLabel: '1,6%/tháng', trust: 'Phổ biến', color: '#E30613' },
+    { id: 'hdb', name: 'HD Bank', initials: 'HDB', monthlyRate: 0.0079, ratePercent: 0.79, rateLabel: '0,79%/tháng', trust: 'Đối tác trả góp', color: '#C8102E' },
+    { id: 'mb', name: 'MB Bank', initials: 'MB', monthlyRate: 0.0079, ratePercent: 0.79, rateLabel: '0,79%/tháng', trust: 'Đối tác trả góp', color: '#0054A6' },
+    { id: 'jaccs', name: 'JACCS', initials: 'JACCS', monthlyRate: 0.0079, ratePercent: 0.79, rateLabel: '0,79%/tháng', trust: 'Đối tác trả góp', color: '#003B71' },
   ];
 
   function normId(id) {
@@ -67,7 +66,7 @@
       price,
       basePrice: Number(config.basePrice),
       banks,
-      bank: banks[0]?.id ?? 'mb',
+      bank: banks[0]?.id ?? 'hdb',
       down,
       months: 12,
       downPercent: price > 0 ? Math.min(70, Math.round((down / price) * 100)) : 20,

@@ -15,7 +15,7 @@ public class IndexModel(IInstallmentService installmentService) : PageModel
 
     public void OnGet()
     {
-        this.SetSeo(null, "Tính trả góp xe máy Honda | Honda Hiếu Nga",
+        this.SetSeo(null, "Tính trả góp xe máy Honda | Xe Máy Hiếu Nga",
             "Công cụ tính trả góp xe máy Honda nhanh chóng, minh bạch.");
     }
 

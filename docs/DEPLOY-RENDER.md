@@ -128,11 +128,11 @@ Thêm **từng dòng** sau:
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 | `ASPNETCORE_URLS` | `http://0.0.0.0:8080` |
 | `Site__BaseUrl` | `https://hieunga-web.onrender.com` (đổi theo URL thật) |
-| `Site__Name` | `Honda Hiếu Nga Đà Nẵng` |
+| `Site__Name` | `Xe Máy Hiếu Nga` |
 | `Site__Hotline` | `0905 123 456` |
 | `Site__ZaloUrl` | `https://zalo.me/0905123456` |
-| `Site__DefaultSeoTitle` | `Honda Hiếu Nga Đà Nẵng \| Mua xe & dịch vụ HEAD` |
-| `Site__DefaultSeoDescription` | `Đại lý Honda HEAD chính hãng tại Đà Nẵng.` |
+| `Site__DefaultSeoTitle` | `Xe Máy Hiếu Nga \| Mua xe và dịch vụ xe máy` |
+| `Site__DefaultSeoDescription` | `Mua xe máy, tư vấn trả góp và đặt lịch sửa chữa, bảo dưỡng tại Đà Nẵng.` |
 | `SeedOptions__EnableDemoSeed` | `true` (demo lần đầu; đặt `false` sau khi ổn định) |
 | `SeedOptions__AdminSeedEnabled` | `true` (chỉ lần deploy đầu) |
 | `SeedOptions__AdminEmail` | email admin của bạn |
@@ -197,7 +197,7 @@ Mở trình duyệt (tab ẩn danh):
 | URL | Kỳ vọng |
 |-----|---------|
 | `https://YOUR-SERVICE.onrender.com/health` | JSON `{"status":"Healthy","database":"Connected",...}` |
-| `https://YOUR-SERVICE.onrender.com/` | Trang chủ Honda Hiếu Nga |
+| `https://YOUR-SERVICE.onrender.com/` | Trang chủ Xe Máy Hiếu Nga |
 | `https://YOUR-SERVICE.onrender.com/xe` | Danh sách xe |
 | `https://YOUR-SERVICE.onrender.com/xe/honda-vision-2025` | Chi tiết xe + trả góp |
 | `https://YOUR-SERVICE.onrender.com/admin/dang-nhap` | Admin login |

@@ -10,7 +10,7 @@ How to configure Honda Hiếu Nga locally and in production without committing s
 | `ASPNETCORE_URLS` | Kestrel bind URLs | `http://localhost:5000` | `http://0.0.0.0:8080` (Render sets `PORT`) |
 | `ConnectionStrings__DefaultConnection` | PostgreSQL | Local Docker port 5433 | **Required** — Render/Neon + SSL |
 | `Site__BaseUrl` | Canonical / OG base URL | `http://localhost:5000` | `https://your-service.onrender.com` |
-| `Site__Name` | Site display name | Default in appsettings | Set on hosting |
+| `Site__Name` | Site display name | Default in appsettings | **`Xe Máy Hiếu Nga`** on Render |
 | `Site__Hotline` | Hotline display | Default | Set on hosting |
 | `Site__ZaloUrl` | Zalo deep link | Default | Set on hosting |
 | `Site__DefaultSeoTitle` | Fallback `<title>` | Default | Set on hosting |
@@ -74,13 +74,14 @@ docker compose up --build
 
 1. Set `ConnectionStrings__DefaultConnection` (Npgsql format with `SSL Mode=Require` for Render/Neon).
 2. Set `Site__BaseUrl` to your public HTTPS URL (required for SEO / Open Graph).
-3. For first deploy:
+3. Set `Site__Name=Xe Máy Hiếu Nga` (and SEO title/description if not using defaults).
+4. For first deploy:
    - `SeedOptions__AdminSeedEnabled=true`
    - `SeedOptions__AdminEmail` + `SeedOptions__AdminPassword` (12+ characters)
    - Optional: `SeedOptions__EnableDemoSeed=true` for demo motorcycles and content
-4. After admin login works, set `SeedOptions__AdminSeedEnabled=false`.
-5. Leave `SeedOptions__RunContentEnricher` unset or `false`.
-6. Configure image storage:
+5. After admin login works, set `SeedOptions__AdminSeedEnabled=false`.
+6. Leave `SeedOptions__RunContentEnricher` unset or `false`.
+7. Configure image storage:
    - `ImageStorage__Provider=Cloudinary` + Cloudinary env vars for persistent uploads
    - Without Cloudinary, use URL-based images in Admin (upload disabled with friendly message)
 

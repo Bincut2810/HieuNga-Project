@@ -22,8 +22,8 @@ public class ChiTietModel(IServiceCatalogService serviceCatalog) : PageModel
         PricingDisclaimer = serviceCatalog.PricingDisclaimer;
         this.SetSeo(
             Service.Seo,
-            $"{Service.Name} | Dịch vụ Honda Hiếu Nga",
-            $"{Service.ShortDescription} Giá tham khảo: {Service.EstimatedPrice}.");
+            $"{Service.Name} | Dịch vụ Xe Máy Hiếu Nga",
+            Service.ShortDescription);
 
         return Page();
     }

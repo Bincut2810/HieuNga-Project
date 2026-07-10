@@ -108,7 +108,7 @@ public static class DbInitializer
 
         var branch = new Branch
         {
-            Name = "Honda Hiếu Nga HEAD - Đà Nẵng",
+            Name = BrandDefaults.SiteNameWithCity,
             Slug = "honda-hieu-nga-da-nang",
             Address = "123 Nguyễn Văn Linh, Quận 7, Đà Nẵng",
             Phone = "0236 123 4567",
@@ -160,7 +160,7 @@ public static class DbInitializer
         );
 
         context.SiteSettings.AddRange(
-            new SiteSetting { Key = "site.name", Value = "Honda Hiếu Nga Đà Nẵng", Group = "general" },
+            new SiteSetting { Key = "site.name", Value = BrandDefaults.SiteName, Group = "general" },
             new SiteSetting { Key = "site.phone", Value = "0905 123 456", Group = "contact" },
             new SiteSetting { Key = "site.address", Value = "123 Nguyễn Văn Linh, Đà Nẵng", Group = "contact" }
         );
@@ -295,7 +295,7 @@ public static class DbInitializer
                     Summary = "Thiết kế trẻ trung, tiết kiệm nhiên liệu, phù hợp di chuyển đô thị.",
                     Content = "<p>Honda Vision 2025 tiếp tục khẳng định vị thế dòng xe tay ga bán chạy nhất phân khúc với động cơ eSP+, tiết kiệm nhiên liệu và bền bỉ.</p><h2>Điểm nổi bật</h2><ul><li>Đèn LED toàn phần</li><li>Cốp rộng 18 lít</li><li>Màu sắc trẻ trung</li></ul>",
                     Category = catNews,
-                    AuthorName = "Honda Hiếu Nga",
+                    AuthorName = BrandDefaults.SiteName,
                     PublishedAt = DateTime.UtcNow.AddDays(-2),
                     IsPublished = true,
                     ThumbnailUrl = "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=900&q=80"
@@ -358,7 +358,7 @@ public static class DbInitializer
             SortOrder = sort,
             ThumbnailUrl = MotorcycleImageCatalog.GetThumbnail(slug),
             OgImageUrl = MotorcycleImageCatalog.GetGalleryPrimary(slug),
-            MetaTitle = $"{name} | Honda Hiếu Nga Đà Nẵng",
-            MetaDescription = $"Mua {name} chính hãng tại Honda Hiếu Nga HEAD Đà Nẵng. Giá tốt, trả góp 0%, lái thử miễn phí."
+            MetaTitle = $"{name} | {BrandDefaults.SiteName}",
+            MetaDescription = $"Mua {name} chính hãng tại {BrandDefaults.SiteNameWithCity}. Giá tốt, trả góp, lái thử miễn phí."
         };
 }

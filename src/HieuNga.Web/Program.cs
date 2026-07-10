@@ -107,7 +107,7 @@ catch (Exception ex)
 }
 
 var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://localhost:5000";
-logger.LogInformation("Honda Hiếu Nga starting. Environment={Env} URLs={Urls}",
+logger.LogInformation("Xe Máy Hiếu Nga starting. Environment={Env} URLs={Urls}",
     app.Environment.EnvironmentName, urls);
 
 app.Run();

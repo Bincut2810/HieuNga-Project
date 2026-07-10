@@ -19,7 +19,7 @@ public class IndexModel(IBlogService blogService) : PageModel
         Categories = await blogService.GetCategoriesAsync(ct);
         Featured = await blogService.GetFeaturedAsync(ct);
         Posts = await blogService.GetPublishedAsync(PageNumber, 9, CategoryId, ct);
-        this.SetSeo(null, "Tin tức & Mẹo hay | Honda Hiếu Nga", "Cập nhật tin tức xe máy Honda, mẹo bảo dưỡng và tư vấn mua xe.");
+        this.SetSeo(null, "Tin tức & Mẹo hay | Xe Máy Hiếu Nga", "Cập nhật tin tức xe máy Honda, mẹo bảo dưỡng và tư vấn mua xe.");
     }
 
     public async Task<IActionResult> OnGetFilterAsync(CancellationToken ct)
