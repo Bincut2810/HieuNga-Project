@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using HieuNga.Application.DemoImport;
 using HieuNga.Application.Interfaces;
+using HieuNga.Domain;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
 using HieuNga.Infrastructure.Persistence;
@@ -206,6 +207,327 @@ public sealed class DemoMotorcycleImporter(
             logger.LogError(ex, "Demo import failed for {Package}", catalog.Folder);
             return Fail($"Import thất bại: {ex.Message}");
         }
+    }
+
+    public async Task<DemoCatalogSeedResult> SeedFullCatalogAsync(CancellationToken ct = default)
+    {
+        if (!imageStorage.SupportsUpload)
+        {
+            return new DemoCatalogSeedResult(
+                false,
+                "Upload ảnh chưa sẵn sàng. Cấu hình Cloudinary (Production) hoặc Local (Development).",
+                0, 0, 0, 0, new Dictionary<string, int>(), []);
+        }
+
+        var sharedDir = EnsureSharedPlaceholdersOnDisk();
+        var warnings = new List<string>();
+        SharedMediaBundle shared;
+        try
+        {
+            shared = await UploadSharedPlaceholdersAsync(sharedDir, ct, warnings);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed uploading shared demo placeholders");
+            return new DemoCatalogSeedResult(
+                false, $"Không upload được placeholder: {ex.Message}",
+                0, 0, 0, 0, new Dictionary<string, int>(), warnings);
+        }
+
+        if (string.IsNullOrWhiteSpace(shared.ThumbnailUrl))
+        {
+            return new DemoCatalogSeedResult(
+                false, "Thiếu thumbnail placeholder trong DemoAssets/_Shared (hoặc Vision).",
+                0, 0, 0, 0, new Dictionary<string, int>(), warnings);
+        }
+
+        var created = 0;
+        var updated = 0;
+        var skipped = 0;
+
+        foreach (var meta in DemoCatalogDefinitions.All)
+        {
+            try
+            {
+                var existed = await db.Motorcycles.AsNoTracking()
+                    .AnyAsync(m => m.Slug == meta.Slug && !m.IsDeleted, ct);
+
+                await UpsertCatalogMotorcycleAsync(meta, shared, ct);
+                if (existed) updated++;
+                else created++;
+            }
+            catch (Exception ex)
+            {
+                skipped++;
+                warnings.Add($"{meta.Slug}: {ex.Message}");
+                logger.LogWarning(ex, "Catalog seed failed for {Slug}", meta.Slug);
+            }
+        }
+
+        var counts = await GetPublishedCategoryCountsAsync(ct);
+        var msg =
+            $"Đã seed catalog demo: +{created} mới, {updated} cập nhật" +
+            (skipped > 0 ? $", {skipped} bỏ qua" : "") + ".";
+
+        logger.LogInformation("Demo catalog seed finished: created={Created} updated={Updated} skipped={Skipped}",
+            created, updated, skipped);
+
+        return new DemoCatalogSeedResult(
+            true, msg, created, updated, skipped, shared.UploadedCount, counts, warnings);
+    }
+
+    public async Task<IReadOnlyDictionary<string, int>> GetPublishedCategoryCountsAsync(CancellationToken ct = default)
+    {
+        var rows = await db.Motorcycles.AsNoTracking()
+            .Where(m => m.IsPublished && !m.IsDeleted)
+            .GroupBy(m => m.Category)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (value, label) in MotorcycleCategoryLabels.All)
+            dict[label] = rows.FirstOrDefault(r => r.Key == value)?.Count ?? 0;
+        return dict;
+    }
+
+    private sealed class SharedMediaBundle
+    {
+        public string? ThumbnailUrl { get; set; }
+        public List<string> GalleryUrls { get; } = [];
+        public List<(string Name, string Hex, string? Url)> Colors { get; } = [];
+        public List<string> SpinUrls { get; } = [];
+        public string? FeatureUrl { get; set; }
+        public string? TechUrl { get; set; }
+        public int UploadedCount { get; set; }
+    }
+
+    private string EnsureSharedPlaceholdersOnDisk()
+    {
+        var shared = Path.Combine(AssetsRootPath, DemoCatalogDefinitions.SharedAssetsFolder);
+        var vision = Path.Combine(AssetsRootPath, "Vision");
+        Directory.CreateDirectory(shared);
+        Directory.CreateDirectory(Path.Combine(shared, "gallery"));
+        Directory.CreateDirectory(Path.Combine(shared, "360"));
+        Directory.CreateDirectory(Path.Combine(shared, "colors"));
+        Directory.CreateDirectory(Path.Combine(shared, "features"));
+        Directory.CreateDirectory(Path.Combine(shared, "technology"));
+
+        void CopyIfMissing(string relative)
+        {
+            var dest = Path.Combine(shared, relative);
+            if (File.Exists(dest)) return;
+            var src = Path.Combine(vision, relative);
+            if (!File.Exists(src)) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            File.Copy(src, dest, overwrite: false);
+        }
+
+        CopyIfMissing("thumbnail.jpg");
+        for (var i = 1; i <= 4; i++)
+            CopyIfMissing(Path.Combine("gallery", $"{i:D2}.jpg"));
+        foreach (var c in new[] { "black.jpg", "white.jpg", "red.jpg" })
+            CopyIfMissing(Path.Combine("colors", c));
+        CopyIfMissing(Path.Combine("features", "feature-01.jpg"));
+        CopyIfMissing(Path.Combine("features", "feature-02.jpg"));
+        CopyIfMissing(Path.Combine("technology", "tech-01.jpg"));
+        CopyIfMissing(Path.Combine("technology", "tech-02.jpg"));
+
+        // Build 36-frame 360 sequence by duplicating a source placeholder
+        var spinSource =
+            ResolveExistingFile(shared, "thumbnail.jpg")
+            ?? ResolveExistingFile(vision, "thumbnail.jpg")
+            ?? ListImageFiles(Path.Combine(vision, "360")).FirstOrDefault()
+            ?? ListImageFiles(Path.Combine(shared, "gallery")).FirstOrDefault();
+
+        if (spinSource is not null)
+        {
+            var spinDir = Path.Combine(shared, "360");
+            for (var i = 1; i <= 36; i++)
+            {
+                var dest = Path.Combine(spinDir, $"{i:D3}.jpg");
+                if (!File.Exists(dest))
+                    File.Copy(spinSource, dest, overwrite: false);
+            }
+        }
+
+        // README once
+        var readme = Path.Combine(shared, "README.md");
+        if (!File.Exists(readme))
+        {
+            File.WriteAllText(readme,
+                "# Shared demo placeholders\n\nUsed by Seed Full Catalog. Replace files in place; keep names. Not Honda product photos.\n");
+        }
+
+        return shared;
+    }
+
+    private async Task<SharedMediaBundle> UploadSharedPlaceholdersAsync(
+        string sharedDir, CancellationToken ct, List<string> warnings)
+    {
+        var bundle = new SharedMediaBundle();
+        const string folder = "demo/_shared";
+
+        async Task<string?> Up(string relative)
+        {
+            var path = ResolveExistingFile(sharedDir, relative);
+            if (path is null) return null;
+            var url = await UploadFileAsync(path, folder, ct, warnings);
+            if (url is not null) bundle.UploadedCount++;
+            return url;
+        }
+
+        bundle.ThumbnailUrl = await Up("thumbnail.jpg");
+
+        foreach (var file in ListImageFiles(Path.Combine(sharedDir, "gallery")))
+        {
+            var url = await UploadFileAsync(file, folder + "/gallery", ct, warnings);
+            if (url is null) continue;
+            bundle.GalleryUrls.Add(url);
+            bundle.UploadedCount++;
+        }
+
+        foreach (var (file, name, hex) in new[]
+                 {
+                     ("black.jpg", "Đen", "#1A1A1A"),
+                     ("white.jpg", "Trắng", "#F5F5F5"),
+                     ("red.jpg", "Đỏ", "#E40521")
+                 })
+        {
+            var url = await Up(Path.Combine("colors", file));
+            bundle.Colors.Add((name, hex, url ?? bundle.ThumbnailUrl));
+        }
+
+        var spinFiles = ListImageFiles(Path.Combine(sharedDir, "360"));
+        string? spinUrl = null;
+        if (spinFiles.Count > 0)
+        {
+            spinUrl = await UploadFileAsync(spinFiles[0], folder + "/360", ct, warnings);
+            if (spinUrl is not null) bundle.UploadedCount++;
+        }
+        spinUrl ??= bundle.ThumbnailUrl;
+
+        if (spinUrl is not null)
+        {
+            for (var i = 0; i < 36; i++)
+                bundle.SpinUrls.Add(spinUrl);
+        }
+        else
+        {
+            warnings.Add("Không tạo được chuỗi 360 placeholder.");
+        }
+
+        bundle.FeatureUrl = await Up(Path.Combine("features", "feature-01.jpg")) ?? bundle.ThumbnailUrl;
+        bundle.TechUrl = await Up(Path.Combine("technology", "tech-01.jpg")) ?? bundle.ThumbnailUrl;
+
+        if (bundle.GalleryUrls.Count == 0 && bundle.ThumbnailUrl is not null)
+        {
+            for (var i = 0; i < 4; i++)
+                bundle.GalleryUrls.Add(bundle.ThumbnailUrl);
+        }
+
+        return bundle;
+    }
+
+    private async Task UpsertCatalogMotorcycleAsync(
+        DemoMotorcycleMetadata meta, SharedMediaBundle shared, CancellationToken ct)
+    {
+        meta.Slug = meta.Slug.Trim().ToLowerInvariant();
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+        var bike = await db.Motorcycles
+            .Include(m => m.Variants)
+            .Include(m => m.Colors)
+            .Include(m => m.MediaAssets)
+            .Include(m => m.Features)
+            .Include(m => m.Technologies)
+            .Include(m => m.SpinFrames)
+            .FirstOrDefaultAsync(m => m.Slug == meta.Slug, ct);
+
+        if (bike is null)
+        {
+            bike = new Motorcycle { Slug = meta.Slug };
+            db.Motorcycles.Add(bike);
+        }
+        else
+        {
+            bike.IsDeleted = false;
+            ClearChildren(bike);
+        }
+
+        ApplyScalarFields(bike, meta);
+        bike.ThumbnailUrl = shared.ThumbnailUrl;
+        bike.OgImageUrl = shared.ThumbnailUrl;
+        await db.SaveChangesAsync(ct);
+
+        var order = 0;
+        foreach (var url in shared.GalleryUrls)
+        {
+            bike.MediaAssets.Add(new MediaAsset
+            {
+                MotorcycleId = bike.Id,
+                FileName = $"gallery-{order + 1:D2}.jpg",
+                Url = url,
+                AltText = bike.Name,
+                Type = MediaType.Image,
+                SortOrder = order++
+            });
+        }
+
+        order = 0;
+        foreach (var color in shared.Colors)
+        {
+            var metaColor = meta.Colors.ElementAtOrDefault(order);
+            bike.Colors.Add(new MotorcycleColor
+            {
+                MotorcycleId = bike.Id,
+                Name = metaColor?.Name ?? color.Name,
+                HexCode = metaColor?.Hex ?? color.Hex,
+                ImageUrl = color.Url,
+                SortOrder = order++
+            });
+        }
+
+        for (var i = 0; i < shared.SpinUrls.Count; i++)
+        {
+            bike.SpinFrames.Add(new MotorcycleSpinFrame
+            {
+                MotorcycleId = bike.Id,
+                ImageUrl = shared.SpinUrls[i],
+                FrameIndex = i + 1
+            });
+        }
+
+        order = 0;
+        foreach (var f in meta.Features)
+        {
+            bike.Features.Add(new MotorcycleFeature
+            {
+                MotorcycleId = bike.Id,
+                Title = f.Title,
+                Description = f.Description,
+                ImageUrl = shared.FeatureUrl ?? shared.ThumbnailUrl ?? "",
+                SortOrder = order++
+            });
+        }
+
+        order = 0;
+        foreach (var t in meta.Technology)
+        {
+            bike.Technologies.Add(new MotorcycleTechnology
+            {
+                MotorcycleId = bike.Id,
+                Title = t.Title,
+                Description = t.Description,
+                ImageUrl = shared.TechUrl ?? shared.ThumbnailUrl ?? "",
+                SortOrder = order++
+            });
+        }
+
+        ImportVariants(bike, meta);
+        await db.SaveChangesAsync(ct);
+        await SaveFinancePrefsAsync(bike.Id, meta.Finance, ct);
+        await tx.CommitAsync(ct);
     }
 
     public async Task<DemoImportResult> DeleteDemoAsync(string packageId, CancellationToken ct = default)
@@ -446,8 +768,36 @@ public sealed class DemoMotorcycleImporter(
             });
             count++;
         }
-        if (files.Count > 0 && files.Count < 2)
+
+        // Fake 360: duplicate first available image into 36 frames when package has no real spin set
+        if (count < 2)
+        {
+            var fallback =
+                bike.ThumbnailUrl
+                ?? bike.MediaAssets.OrderBy(a => a.SortOrder).Select(a => a.Url).FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(fallback))
+            {
+                if (bike.SpinFrames.Count > 0)
+                {
+                    db.MotorcycleSpinFrames.RemoveRange(bike.SpinFrames);
+                    bike.SpinFrames.Clear();
+                }
+                for (var i = 1; i <= 36; i++)
+                {
+                    bike.SpinFrames.Add(new MotorcycleSpinFrame
+                    {
+                        MotorcycleId = bike.Id,
+                        ImageUrl = fallback,
+                        FrameIndex = i
+                    });
+                }
+                warnings.Add("360 dùng ảnh placeholder lặp 36 khung (chưa có bộ frame thật).");
+                return 0;
+            }
+
             warnings.Add("360 cần ≥ 2 khung hình để viewer hoạt động.");
+        }
+
         return count;
     }
 

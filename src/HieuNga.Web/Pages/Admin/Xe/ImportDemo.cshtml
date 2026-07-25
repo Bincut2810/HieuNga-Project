@@ -19,6 +19,33 @@
     }
 </div>
 
+<div class="admin-card" style="margin-bottom:1.25rem;">
+    <h2 style="margin:0 0 0.5rem;font-size:1.1rem;">Seed Full Catalog</h2>
+    <p class="admin-muted" style="margin:0 0 0.75rem;font-size:0.9rem;">
+        Tạo ~@Model.CatalogDefinitionCount xe demo (≈5 mỗi loại) kèm thumbnail, gallery, màu, 360° (36 khung placeholder).
+        Idempotent theo slug <code>demo-*</code>. Có thể sửa toàn bộ trong CMS sau.
+    </p>
+    @if (Model.CategoryCounts.Count > 0)
+    {
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
+            @foreach (var kv in Model.CategoryCounts)
+            {
+                <span class="admin-badge @(kv.Value >= 4 ? "admin-badge-success" : "admin-badge-warning")">@kv.Key: @kv.Value</span>
+            }
+        </div>
+    }
+    <form method="post" asp-page-handler="SeedCatalog" onsubmit="return confirm('Seed toàn bộ catalog demo? Xe demo-* sẽ được tạo/cập nhật.');">
+        @if (Model.StorageReady)
+        {
+            <button type="submit" class="admin-btn admin-btn-primary">Seed Full Catalog</button>
+        }
+        else
+        {
+            <button type="submit" class="admin-btn admin-btn-primary" disabled>Seed Full Catalog</button>
+        }
+    </form>
+</div>
+
 <div class="admin-stat-grid" style="margin-bottom:1.25rem;">
     <div class="admin-stat">
         <p class="admin-stat-label">Packages</p>
@@ -31,6 +58,10 @@
     <div class="admin-stat">
         <p class="admin-stat-label">Đã import</p>
         <p class="admin-stat-value">@Model.Packages.Count(p => p.IsImported)</p>
+    </div>
+    <div class="admin-stat">
+        <p class="admin-stat-label">Catalog defs</p>
+        <p class="admin-stat-value">@Model.CatalogDefinitionCount</p>
     </div>
 </div>
 

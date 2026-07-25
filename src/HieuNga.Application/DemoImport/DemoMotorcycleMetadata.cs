@@ -104,6 +104,16 @@ public sealed record DemoImportResult(
     int UploadedImages,
     IReadOnlyList<string> Warnings);
 
+public sealed record DemoCatalogSeedResult(
+    bool Success,
+    string Message,
+    int Created,
+    int Updated,
+    int Skipped,
+    int UploadedImages,
+    IReadOnlyDictionary<string, int> CountsByCategory,
+    IReadOnlyList<string> Warnings);
+
 public interface IDemoMotorcycleImporter
 {
     string AssetsRootPath { get; }
@@ -113,6 +123,8 @@ public interface IDemoMotorcycleImporter
     Task<IReadOnlyList<DemoPackageInfo>> ListPackagesAsync(CancellationToken ct = default);
     Task<DemoImportResult> ImportAsync(string packageId, CancellationToken ct = default);
     Task<DemoImportResult> DeleteDemoAsync(string packageId, CancellationToken ct = default);
+    Task<DemoCatalogSeedResult> SeedFullCatalogAsync(CancellationToken ct = default);
+    Task<IReadOnlyDictionary<string, int>> GetPublishedCategoryCountsAsync(CancellationToken ct = default);
 }
 
 public static class DemoPackageCatalog

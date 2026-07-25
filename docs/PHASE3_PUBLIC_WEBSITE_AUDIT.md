@@ -49,6 +49,7 @@
 | **3.1** ✅ | Category chips + counts, listing filters (price/sort/featured), availability badges, featured reliability | Better browse → detail funnel |
 | **3.2** ✅ | Detail conversion: above-fold purchase info, color/360, CTAs, related ranking, scoped JS | Detail → lead funnel |
 | **3.3** ✅ | Demo Motorcycle Import System (metadata packages + Cloudinary upload + Admin UI) | Instant CMS demo data |
+| **3.3.1** ✅ | Full demo catalog seed (~5/category + shared media/360 placeholders) | Dealership-feel listing/detail |
 | **3.4** | Intent wiring on contact/test-ride; compare entry; optional home CMS | Lead capture |
 | **3.5** | Unify finance UX (`/tra-gop` + detail banks); keep installment formula | Finance conversion |
 | **3.6** | Nav IA + orphan routes; replace `_CtaBanner` hardcodes | Polish & cleanup |

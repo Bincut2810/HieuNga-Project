@@ -2,6 +2,31 @@
 
 Populate the Motorcycle CMS quickly for dealership demos. Images upload through the **existing** `IImageStorageService` (Cloudinary in Production, Local in Development). No scraping, no remote image downloads.
 
+## Seed Full Catalog (Phase 3.3.1)
+
+Admin → Import Demo Data → **Seed Full Catalog**
+
+Creates **25** presentation motorcycles (`demo-*` slugs), ~5 per category:
+
+| Category | Count |
+|----------|------:|
+| Scooter | 5 |
+| Xe số | 5 |
+| Xe côn tay | 5 |
+| Xe phân khối lớn | 5 |
+| Xe điện | 5 |
+
+Media comes from `DemoAssets/_Shared/` (copied from Vision placeholders if missing):
+
+- thumbnail, gallery (4), colors (3), features/tech
+- `360/001.jpg` … `036.jpg` (duplicated placeholder so the public 360 viewer works)
+
+Shared images are uploaded **once**, then URL-reused across catalog bikes (fast, layouts filled). Replace per-bike media later in the Motorcycle Editor.
+
+Idempotent: re-running updates existing `demo-*` rows and refreshes child media/content.
+
+---
+
 ## Folder structure
 
 Runtime root (published with the web app):
