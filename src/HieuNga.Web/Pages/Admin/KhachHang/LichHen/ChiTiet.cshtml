@@ -17,6 +17,16 @@
             <p><span class="text-gray-500">Xe:</span> @(b.Motorcycle?.Name ?? "—")</p>
             <p><span class="text-gray-500">Chi nhánh:</span> @(b.Branch?.Name ?? "—")</p>
             <p><span class="text-gray-500">Ghi chú KH:</span> @(b.Notes ?? "—")</p>
+            @{
+                var leadSrc = HieuNga.Application.LeadAttribution.ExtractSourceLabel(b.Notes);
+            }
+            @if (!string.IsNullOrWhiteSpace(leadSrc))
+            {
+                <p class="mt-2 pt-2 border-t border-gray-100">
+                    <span class="text-gray-500">Nguồn lead:</span>
+                    <strong class="text-honda-red">@leadSrc</strong>
+                </p>
+            }
         </div>
         <form method="post" class="bg-white border rounded-2xl p-6">
             @Html.AntiForgeryToken()

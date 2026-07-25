@@ -8,10 +8,10 @@
 
 @if (!Model.Items.Any())
 {
-    <div class="text-center py-16 px-4">
-        <p class="text-gray-600 font-medium">Không tìm thấy xe phù hợp.</p>
-        <p class="text-sm text-gray-400 mt-2">Thử đổi bộ lọc hoặc xem toàn bộ danh mục.</p>
-        <a href="/xe" class="inline-flex mt-6 text-sm font-semibold text-honda-red hover:underline">Xóa bộ lọc</a>
+    <div class="empty-state">
+        <h3>Không tìm thấy xe phù hợp</h3>
+        <p>Thử đổi bộ lọc hoặc xem toàn bộ danh mục.</p>
+        <a href="/xe" class="btn-ghost mt-6 inline-flex">Xóa bộ lọc</a>
     </div>
 }
 else
@@ -19,7 +19,7 @@ else
     <div class="flex items-center justify-between gap-3 mb-6">
         <p class="text-sm text-gray-500">Hiển thị <span class="font-semibold text-honda-dark">@Model.Items.Count</span> / @Model.Total xe</p>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 htmx-settling">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 htmx-settling" data-stagger>
         @foreach (var bike in Model.Items)
         {
             <partial name="_MotorcycleCard" model="bike" />

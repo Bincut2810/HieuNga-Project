@@ -53,6 +53,10 @@ public record MotorcycleFilterDto(
     bool? FeaturedOnly = null,
     string? Sort = null);
 
-public record MotorcycleCategoryCountDto(MotorcycleCategory Category, string Label, int Count);
+public record MotorcycleCategoryCountDto(
+    MotorcycleCategory Category,
+    string Label,
+    int Count,
+    string? ImageUrl = null);
 
 public record PagedResultDto<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize);

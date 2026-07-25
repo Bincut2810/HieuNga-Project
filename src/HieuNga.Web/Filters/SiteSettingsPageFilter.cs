@@ -43,4 +43,15 @@ public static class SiteSettingsViewData
 
     public static string TelHref(SiteSettingsDto s) =>
         "tel:" + new string(s.Hotline.Where(char.IsDigit).ToArray());
+
+    public static string ZaloHref(SiteSettingsDto s)
+    {
+        if (!string.IsNullOrWhiteSpace(s.ZaloUrl)) return s.ZaloUrl.Trim();
+        var digits = new string(s.Hotline.Where(char.IsDigit).ToArray());
+        return string.IsNullOrEmpty(digits) ? "https://zalo.me/" : $"https://zalo.me/{digits}";
+    }
+
+    public static string MapsSearchUrl(SiteSettingsDto s) =>
+        "https://www.google.com/maps/search/?api=1&query=" +
+        Uri.EscapeDataString(string.IsNullOrWhiteSpace(s.Address) ? s.SiteName : s.Address);
 }

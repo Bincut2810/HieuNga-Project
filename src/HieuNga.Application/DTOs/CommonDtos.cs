@@ -102,4 +102,8 @@ public record HomepageDto(
     IReadOnlyList<MotorcycleListItemDto> FeaturedMotorcycles,
     IReadOnlyList<PromotionDto> Promotions,
     IReadOnlyList<BranchDto> Branches,
-    IReadOnlyList<ReviewDto> Testimonials);
+    IReadOnlyList<ReviewDto> Testimonials,
+    IReadOnlyList<MotorcycleCategoryCountDto> CategoryCounts,
+    IReadOnlyList<BlogPostListItemDto> LatestPosts,
+    IReadOnlyList<FinanceBankDto> FinanceBanks,
+    IReadOnlyList<ServiceItemListDto> Services);

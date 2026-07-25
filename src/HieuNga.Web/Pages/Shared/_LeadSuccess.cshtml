@@ -1,0 +1,43 @@
+@using HieuNga.Web.Filters
+@model (string Title, string Message, string? NextHint)
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var zaloUrl = SiteSettingsViewData.ZaloHref(site);
+    var mapsUrl = SiteSettingsViewData.MapsSearchUrl(site);
+    var title = string.IsNullOrWhiteSpace(Model.Title) ? "Đã nhận yêu cầu!" : Model.Title;
+    var message = string.IsNullOrWhiteSpace(Model.Message)
+        ? "Cảm ơn bạn. Đội ngũ Xe Máy Hiếu Nga sẽ liên hệ sớm."
+        : Model.Message;
+    var next = Model.NextHint ?? "Giữ máy — tư vấn viên gọi lại trong giờ hành chính.";
+}
+<div class="lead-success reveal" role="status" aria-live="polite">
+    <div class="lead-success-mark" aria-hidden="true">✓</div>
+    <h2 class="lead-success-title">@title</h2>
+    <p class="lead-success-msg">@message</p>
+
+    <div class="lead-success-steps">
+        <h3>Bước tiếp theo</h3>
+        <ol>
+            <li>@next</li>
+            <li>Thời gian phản hồi dự kiến: <strong>trong 30 phút</strong> (giờ hành chính).</li>
+            <li>Giờ làm việc: <strong>@(site.OpeningHours)</strong></li>
+        </ol>
+    </div>
+
+    <div class="lead-success-dealer">
+        <p class="font-semibold text-honda-dark">@site.SiteName</p>
+        <p class="text-sm text-gray-500 mt-1">@site.Address</p>
+        <p class="text-sm text-gray-500 mt-1">@site.OpeningHours</p>
+    </div>
+
+    <div class="lead-success-actions">
+        <a href="@telHref" hx-boost="false" class="btn-primary touch-press">Gọi @site.Hotline</a>
+        <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="btn-secondary touch-press">Chat Zalo</a>
+        <a href="@mapsUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press">Google Maps</a>
+    </div>
+
+    <p class="lead-success-privacy">
+        Thông tin của bạn chỉ dùng để tư vấn mua xe / dịch vụ tại Xe Máy Hiếu Nga — không chia sẻ bên thứ ba.
+    </p>
+</div>

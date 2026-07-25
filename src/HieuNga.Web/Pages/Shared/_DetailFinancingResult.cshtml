@@ -1,4 +1,13 @@
 @model InstallmentCalculationDto
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var xe = ViewData["CtaXe"] as string;
+    var consultUrl = string.IsNullOrWhiteSpace(xe)
+        ? "/lien-he?intent=tra-gop&source=detail"
+        : $"/lien-he?intent=tra-gop&xe={Uri.EscapeDataString(xe)}&source=detail";
+}
 <div class="detail-finance-result animate-fade-in w-full">
     <div class="text-center lg:text-left">
         @if (!string.IsNullOrEmpty(Model.BankName))
@@ -31,7 +40,7 @@
         </div>
     </div>
     <div class="flex flex-col sm:flex-row gap-3 mt-8">
-        <a href="/lien-he" class="btn-primary flex-1 text-center justify-center">Đăng ký tư vấn trả góp</a>
-        <a href="tel:0905123456" class="btn-secondary flex-1 text-center justify-center">Gọi tư vấn viên</a>
+        <a href="@consultUrl" class="btn-primary flex-1 text-center justify-center touch-press">Đăng ký tư vấn trả góp</a>
+        <a href="@telHref" hx-boost="false" class="btn-secondary flex-1 text-center justify-center touch-press">Gọi @site.Hotline</a>
     </div>
 </div>

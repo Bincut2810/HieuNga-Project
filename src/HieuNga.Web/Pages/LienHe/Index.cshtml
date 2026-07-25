@@ -1,99 +1,168 @@
 @page "/lien-he"
 @model HieuNga.Web.Pages.LienHe.IndexModel
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var zaloUrl = SiteSettingsViewData.ZaloHref(site);
+    var mapsUrl = SiteSettingsViewData.MapsSearchUrl(site);
+    var headBranch = Model.Branches.FirstOrDefault(b => b.IsHeadOffice) ?? Model.Branches.FirstOrDefault();
+    ViewData["CtaIntent"] = Model.Intent;
+    ViewData["CtaXe"] = Model.SelectedMotorcycle?.Slug;
+    ViewData["CtaXeId"] = Model.SelectedMotorcycle?.Id.ToString();
+    ViewData["CtaService"] = Model.ServiceSlug;
+    ViewData["CtaSource"] = Model.LeadSource;
+    ViewData["CtaShow"] = "consult,call,zalo,testride,finance,messenger";
+    ViewData["CtaLayout"] = "row";
+    ViewData["CtaConsultLabel"] = Model.SubmitLabel;
+    ViewData["VehicleChangeUrl"] = $"/xe?from=lien-he&intent={Uri.EscapeDataString(Model.Intent)}";
+    ViewData["VehicleFinanceUrl"] = Model.SelectedMotorcycle is null
+        ? "/tra-gop?source=contact"
+        : $"/tra-gop?xe={Uri.EscapeDataString(Model.SelectedMotorcycle.Slug)}&source=contact";
+}
 
-<partial name="_PageHero" model='("Liên hệ", "Showroom HEAD — Tư vấn tận tâm, phản hồi nhanh", "Contact")' />
-
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="grid lg:grid-cols-3 gap-6 mb-16">
-        <a href="tel:0905123456" class="bg-white border rounded-2xl p-8 hover:shadow-lg hover:border-honda-red transition text-center group">
-            <div class="w-14 h-14 mx-auto bg-red-50 rounded-xl flex items-center justify-center text-honda-red text-2xl group-hover:scale-110 transition">📞</div>
-            <h3 class="font-bold mt-4">Hotline</h3>
-            <p class="text-honda-red text-xl font-bold mt-2">0905 123 456</p>
-            <p class="text-xs text-gray-400 mt-2">Hỗ trợ 8:00 — 18:00</p>
-        </a>
-        <a href="https://zalo.me/0905123456" target="_blank" rel="noopener" class="bg-white border rounded-2xl p-8 hover:shadow-lg hover:border-honda-red transition text-center group">
-            <div class="w-14 h-14 mx-auto bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-2xl font-bold group-hover:scale-110 transition">Zalo</div>
-            <h3 class="font-bold mt-4">Chat Zalo</h3>
-            <p class="text-gray-600 mt-2 text-sm">Nhắn tin nhanh — tư vấn trả góp</p>
-        </a>
-        <a href="/dat-lich-lai-thu" class="bg-honda-dark text-white rounded-2xl p-8 hover:shadow-lg transition text-center group">
-            <div class="w-14 h-14 mx-auto bg-white/10 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition">🏍</div>
-            <h3 class="font-bold mt-4">Đặt lái thử</h3>
-            <p class="text-gray-400 mt-2 text-sm">Miễn phí tại showroom</p>
-        </a>
+<section class="lead-page">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 pb-4">
+        <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
+            <a href="/" class="hover:text-honda-red transition focus-ring rounded">Trang chủ</a>
+            <span class="mx-2" aria-hidden="true">/</span>
+            <span class="text-honda-dark font-medium">Liên hệ</span>
+        </nav>
+        <p class="section-eyebrow">Chăm sóc khách hàng</p>
+        <h1 class="section-title">@Model.PageHeading</h1>
+        <p class="section-subtitle max-w-2xl">@Model.PageSubheading</p>
     </div>
 
-    <div class="grid lg:grid-cols-2 gap-12">
-        <div class="space-y-8">
-            @foreach (var branch in Model.Branches)
-            {
-                <div class="bg-white border rounded-2xl p-8">
-                    @if (branch.IsHeadOffice) { <span class="text-xs font-bold text-honda-red">HEAD OFFICE</span> }
-                    <h3 class="text-xl font-bold mt-1">@branch.Name</h3>
-                    <p class="text-gray-600 mt-2">@branch.Address</p>
-                    @if (!string.IsNullOrEmpty(branch.OpeningHours))
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+        <partial name="_UniversalCta" />
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 md:pb-16">
+        @if (Model.Success)
+        {
+            <partial name="_LeadSuccess" model='("Đã gửi yêu cầu tư vấn!", "Chúng tôi đã nhận thông tin của bạn.", "Tư vấn viên sẽ gọi lại theo số bạn đã để lại.")' />
+        }
+        else
+        {
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-10">
+                <div class="lg:col-span-5 space-y-6">
+                    @if (Model.SelectedMotorcycle is not null)
                     {
-                        <p class="text-sm text-gray-500 mt-3">🕐 @branch.OpeningHours</p>
+                        <partial name="_LeadVehicleCard" model="Model.SelectedMotorcycle" />
                     }
-                    <div class="flex flex-wrap gap-4 mt-4">
-                        @if (!string.IsNullOrEmpty(branch.Hotline))
+
+                    <partial name="_LeadTrust" />
+
+                    <div class="lead-branch-card">
+                        @if (headBranch is not null)
                         {
-                            <a href="tel:@branch.Hotline" class="text-honda-red font-semibold">@branch.Hotline</a>
+                            @if (headBranch.IsHeadOffice)
+                            {
+                                <span class="section-eyebrow">HEAD Office</span>
+                            }
+                            <h2 class="text-lg font-bold text-honda-dark mt-1">@headBranch.Name</h2>
+                            <p class="mt-2 text-sm text-gray-600">@headBranch.Address</p>
+                            @if (!string.IsNullOrEmpty(headBranch.OpeningHours))
+                            {
+                                <p class="mt-2 text-sm text-gray-500">@headBranch.OpeningHours</p>
+                            }
+                            else
+                            {
+                                <p class="mt-2 text-sm text-gray-500">@site.OpeningHours</p>
+                            }
+                            <p class="mt-3">
+                                <a href="@telHref" hx-boost="false" class="text-honda-red font-bold hover:underline focus-ring rounded">@(headBranch.Hotline ?? site.Hotline)</a>
+                            </p>
                         }
-                        @if (!string.IsNullOrEmpty(branch.Email))
+                        else
                         {
-                            <a href="mailto:@branch.Email" class="text-sm text-gray-500 hover:text-honda-red">@branch.Email</a>
+                            <h2 class="text-lg font-bold text-honda-dark">@site.SiteName</h2>
+                            <p class="mt-2 text-sm text-gray-600">@site.Address</p>
+                            <p class="mt-2 text-sm text-gray-500">@site.OpeningHours</p>
+                            <p class="mt-3">
+                                <a href="@telHref" hx-boost="false" class="text-honda-red font-bold hover:underline focus-ring rounded">@site.Hotline</a>
+                            </p>
                         }
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <a href="@mapsUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press text-sm">Google Maps</a>
+                            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press text-sm">Zalo</a>
+                            @if (Model.Intent != "lai-thu")
+                            {
+                                <a href="@(Model.SelectedMotorcycle is null ? "/dat-lich-lai-thu?source=contact" : $"/dat-lich-lai-thu?xeId={Model.SelectedMotorcycle.Id}&source=contact")"
+                                   class="detail-ghost-btn touch-press text-sm">Đặt lịch xem xe</a>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Model.Branches.Count > 1)
+                    {
+                        <div class="space-y-3">
+                            @foreach (var b in Model.Branches.Where(x => headBranch is null || x.Id != headBranch.Id).Take(3))
+                            {
+                                <div class="lead-branch-mini">
+                                    <p class="font-semibold text-honda-dark text-sm">@b.Name</p>
+                                    <p class="text-xs text-gray-500 mt-1">@b.Address</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="lg:col-span-7">
+                    <div class="lead-form-card">
+                        <h2 class="text-xl font-bold text-honda-dark">@Model.SubmitLabel</h2>
+                        <p class="text-sm text-gray-500 mt-1">Điền thông tin — phản hồi trong ~30 phút (giờ hành chính)</p>
+
+                        <form method="post" class="mt-6 space-y-4" novalidate>
+                            <div asp-validation-summary="All" class="text-red-600 text-sm" role="alert"></div>
+                            <input type="hidden" asp-for="IntentField" value="@Model.Intent" />
+                            <input type="hidden" asp-for="SourceField" value="@Model.LeadSource" />
+                            <input type="hidden" asp-for="XeSlugField" value="@(Model.SelectedMotorcycle?.Slug)" />
+                            <input type="hidden" asp-for="ServiceField" value="@Model.ServiceSlug" />
+                            <input type="hidden" asp-for="MotorcycleId" />
+
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label asp-for="CustomerName" class="block text-sm font-medium mb-1">Họ tên *</label>
+                                    <input asp-for="CustomerName" autocomplete="name" class="lead-input" required />
+                                </div>
+                                <div>
+                                    <label asp-for="Phone" class="block text-sm font-medium mb-1">Số điện thoại *</label>
+                                    <input asp-for="Phone" autocomplete="tel" inputmode="tel" class="lead-input" required />
+                                </div>
+                            </div>
+                            <div>
+                                <label asp-for="Email" class="block text-sm font-medium mb-1">Email</label>
+                                <input asp-for="Email" type="email" autocomplete="email" class="lead-input" />
+                            </div>
+                            @if (Model.Branches.Count > 1)
+                            {
+                                <div>
+                                    <label asp-for="BranchId" class="block text-sm font-medium mb-1">Chi nhánh</label>
+                                    <select asp-for="BranchId" class="lead-input">
+                                        @foreach (var b in Model.Branches)
+                                        {
+                                            <option value="@b.Id">@b.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            <div>
+                                <label asp-for="Subject" class="block text-sm font-medium mb-1">Chủ đề</label>
+                                <input asp-for="Subject" class="lead-input" />
+                            </div>
+                            <div>
+                                <label asp-for="Message" class="block text-sm font-medium mb-1">Nội dung</label>
+                                <textarea asp-for="Message" rows="4" class="lead-input"></textarea>
+                            </div>
+                            <p class="text-xs text-gray-400">
+                                Bằng việc gửi form, bạn đồng ý để Xe Máy Hiếu Nga liên hệ tư vấn. Thông tin được bảo mật.
+                            </p>
+                            <button type="submit" class="btn-primary w-full touch-press justify-center">@Model.SubmitLabel</button>
+                        </form>
                     </div>
                 </div>
-            }
-
-            <div class="rounded-2xl overflow-hidden border aspect-video bg-gray-100">
-                <iframe title="Bản đồ showroom"
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3835.5897499999997!2d108.2208!3d16.0544!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTbCsDAzJzE1LjgiTiAxMDjCsDEzJzE0LjkiRQ!5e0!3m2!1svi!2s!4v1"
-                        class="w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
-        </div>
-
-        <div>
-            @if (Model.Success)
-            {
-                <div class="bg-green-50 border border-green-200 rounded-2xl p-8">
-                    <p class="text-green-800 font-bold text-lg">Đã gửi yêu cầu tư vấn!</p>
-                    <p class="text-green-600 text-sm mt-2">Chúng tôi sẽ liên hệ trong vòng 30 phút (giờ hành chính).</p>
-                </div>
-            }
-            else
-            {
-                <div class="bg-white border rounded-2xl p-8 shadow-sm">
-                    <h2 class="text-2xl font-bold">Gửi yêu cầu tư vấn</h2>
-                    <p class="text-gray-500 text-sm mt-2">Để lại thông tin — tư vấn viên HEAD sẽ gọi lại</p>
-                    <form method="post" class="mt-8 space-y-5">
-                        <div asp-validation-summary="All" class="text-red-600 text-sm"></div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Họ tên *</label>
-                            <input asp-for="CustomerName" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-honda-red outline-none" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Số điện thoại *</label>
-                            <input asp-for="Phone" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-honda-red outline-none" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Email</label>
-                            <input asp-for="Email" type="email" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-honda-red outline-none" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Chủ đề</label>
-                            <input asp-for="Subject" placeholder="VD: Tư vấn trả góp SH 160i" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-honda-red outline-none" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Nội dung</label>
-                            <textarea asp-for="Message" rows="4" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-honda-red outline-none"></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary w-full">Gửi yêu cầu</button>
-                    </form>
-                </div>
-            }
-        </div>
+        }
     </div>
 </section>

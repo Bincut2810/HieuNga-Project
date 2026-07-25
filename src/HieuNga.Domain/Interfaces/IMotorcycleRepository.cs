@@ -19,4 +19,7 @@ public interface IMotorcycleRepository : IRepository<Motorcycle>
         string? sort = null);
 
     Task<IReadOnlyDictionary<MotorcycleCategory, int>> GetPublishedCategoryCountsAsync(CancellationToken ct = default);
+
+    /// <summary>One representative thumbnail URL per published category (for homepage showcase).</summary>
+    Task<IReadOnlyDictionary<MotorcycleCategory, string?>> GetPublishedCategoryThumbnailsAsync(CancellationToken ct = default);
 }

@@ -95,4 +95,23 @@ public class MotorcycleRepository(HieuNgaDbContext context)
             .ToListAsync(ct);
         return rows.ToDictionary(x => x.Category, x => x.Count);
     }
+
+    public async Task<IReadOnlyDictionary<MotorcycleCategory, string?>> GetPublishedCategoryThumbnailsAsync(CancellationToken ct = default)
+    {
+        var rows = await context.Motorcycles.AsNoTracking()
+            .Where(m => m.IsPublished && !m.IsDeleted)
+            .OrderByDescending(m => m.IsFeatured)
+            .ThenBy(m => m.SortOrder)
+            .ThenByDescending(m => m.CreatedAt)
+            .Select(m => new { m.Category, m.ThumbnailUrl })
+            .ToListAsync(ct);
+
+        var map = new Dictionary<MotorcycleCategory, string?>();
+        foreach (var row in rows)
+        {
+            if (map.ContainsKey(row.Category)) continue;
+            map[row.Category] = row.ThumbnailUrl;
+        }
+        return map;
+    }
 }

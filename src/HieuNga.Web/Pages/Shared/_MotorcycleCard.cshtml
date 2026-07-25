@@ -5,7 +5,7 @@
     var imageUrl = MotorcycleImageCatalog.ResolveThumbnail(Model.Slug, Model.ThumbnailUrl);
     var fallbackUrl = MotorcycleImageCatalog.GetThumbnail(Model.Slug);
 }
-<a href="/xe/@Model.Slug" class="card-motorcycle group block relative @(Model.IsAvailable ? "" : "opacity-90")">
+<a href="/xe/@Model.Slug" class="card-motorcycle group block relative reveal @(Model.IsAvailable ? "" : "opacity-90")">
     <div class="img-wrap relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
         <img src="@imageUrl"
              data-fallback="@fallbackUrl"
@@ -39,7 +39,7 @@
                 <p class="text-honda-red font-bold text-xl tracking-tight">@Model.BasePrice.ToVnd()</p>
                 <p class="text-xs text-gray-500 mt-0.5">Từ <span class="font-semibold text-honda-dark">@Model.BasePrice.ToEstimatedMonthly()</span>/tháng</p>
             </div>
-            <span class="shrink-0 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-honda-red group-hover:bg-honda-red group-hover:text-white transition-all duration-300 group-hover:shadow-lg group-hover:shadow-red-500/25">
+            <span class="card-cta-reveal shrink-0 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-honda-red group-hover:bg-honda-red group-hover:text-white transition-all duration-300 group-hover:shadow-lg group-hover:shadow-red-500/25 md:opacity-100">
                 <svg class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </span>
         </div>

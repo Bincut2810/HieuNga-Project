@@ -1,0 +1,36 @@
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+}
+<aside class="lead-trust" aria-label="Cam kết Hiếu Nga">
+    <ul class="lead-trust-list">
+        <li>
+            <span class="lead-trust-icon" aria-hidden="true">✓</span>
+            <div>
+                <p class="lead-trust-title">Đại lý HEAD chính hãng</p>
+                <p class="lead-trust-desc">Honda Việt Nam — bảo hành &amp; phụ tùng chính hãng</p>
+            </div>
+        </li>
+        <li>
+            <span class="lead-trust-icon" aria-hidden="true">⏱</span>
+            <div>
+                <p class="lead-trust-title">Phản hồi trong 30 phút</p>
+                <p class="lead-trust-desc">Trong giờ hành chính: @site.OpeningHours</p>
+            </div>
+        </li>
+        <li>
+            <span class="lead-trust-icon" aria-hidden="true">🛡</span>
+            <div>
+                <p class="lead-trust-title">Bảo mật thông tin</p>
+                <p class="lead-trust-desc">Chỉ dùng để tư vấn — không spam, không bán dữ liệu</p>
+            </div>
+        </li>
+        <li>
+            <span class="lead-trust-icon" aria-hidden="true">🏍</span>
+            <div>
+                <p class="lead-trust-title">Hỗ trợ tận showroom</p>
+                <p class="lead-trust-desc">@site.Address</p>
+            </div>
+        </li>
+    </ul>
+</aside>

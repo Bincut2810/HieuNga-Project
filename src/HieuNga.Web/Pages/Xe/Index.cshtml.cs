@@ -24,7 +24,11 @@ public class IndexModel(IMotorcycleService motorcycleService) : PageModel
     {
         await LoadAsync(ct);
 
-        if (Request.Headers.ContainsKey("HX-Request"))
+        // Only return the grid partial for in-page filter requests targeting #catalog-grid.
+        // Boosted navigations (e.g. homepage chips → /xe?category=0) also send HX-Request but
+        // target #main-content and use hx-select="#main-content" — a bare partial has no
+        // #main-content, so the listing would render blank.
+        if (IsCatalogGridHtmxRequest())
             return Partial("_CatalogGrid", Result);
 
         this.SetSeo(null, "Danh sách xe máy Honda | Xe Máy Hiếu Nga",
@@ -36,6 +40,15 @@ public class IndexModel(IMotorcycleService motorcycleService) : PageModel
     {
         await LoadAsync(ct);
         return Partial("_CatalogGrid", Result);
+    }
+
+    private bool IsCatalogGridHtmxRequest()
+    {
+        if (!Request.Headers.ContainsKey("HX-Request"))
+            return false;
+
+        var target = Request.Headers["HX-Target"].ToString();
+        return string.Equals(target, "catalog-grid", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task LoadAsync(CancellationToken ct)

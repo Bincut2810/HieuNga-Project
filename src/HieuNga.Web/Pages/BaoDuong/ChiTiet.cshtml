@@ -1,8 +1,11 @@
 @page "/bao-duong/{slug}"
 @model HieuNga.Web.Pages.BaoDuong.ChiTietModel
+@using HieuNga.Web.Filters
 @{
     var s = Model.Service!;
     var bookUrl = $"/bao-duong?service={s.Slug}#booking";
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
 }
 
 <section class="bg-gray-50 border-b border-gray-100">
@@ -34,7 +37,7 @@
 
                 <div class="mt-6 flex flex-wrap gap-3">
                     <a href="@bookUrl" class="btn-primary">Đặt lịch dịch vụ này</a>
-                    <a href="tel:0905123456" hx-boost="false" class="btn-secondary">Gọi ngay</a>
+                    <a href="@telHref" hx-boost="false" class="btn-secondary">Gọi ngay</a>
                 </div>
             </div>
         </div>

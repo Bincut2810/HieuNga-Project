@@ -1,7 +1,10 @@
 @page "/bao-duong"
-
 @model HieuNga.Web.Pages.BaoDuong.IndexModel
-
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+}
 
 
 <partial name="_PageHero" model='("Bảo dưỡng chính hãng", "Kỹ thuật HEAD — Phụ tùng Honda, quy trình chuẩn", "Service")' />
@@ -112,7 +115,7 @@
 
             </ul>
 
-            <a href="tel:0905123456" hx-boost="false" class="btn-primary mt-8 inline-flex">Gọi xưởng dịch vụ</a>
+            <a href="@telHref" hx-boost="false" class="btn-primary mt-8 inline-flex">Gọi xưởng dịch vụ</a>
 
         </div>
 

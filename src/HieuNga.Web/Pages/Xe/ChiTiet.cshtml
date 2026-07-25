@@ -13,7 +13,7 @@
         ? Model.DefaultDownPayment
         : Math.Round(activePrice * 0.2m / 500_000) * 500_000;
     var monthlyEstimate = Model.InitialFinance?.MonthlyPayment ?? (activePrice - defaultDown) / Math.Max(1, Model.DefaultTermMonths);
-    var relatedBikes = Model.Related.Take(4).ToList();
+    var relatedBikes = Model.Related.Take(6).ToList();
     var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
     var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}";
     var categoryLabel = m.Category.ToDisplayName();
@@ -24,19 +24,17 @@
     var gallery = m.GalleryUrls.Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().ToList();
     if (gallery.Count == 0 && !string.IsNullOrWhiteSpace(heroImage))
         gallery = [heroImage];
+    foreach (var c in m.Colors.Where(c => !string.IsNullOrWhiteSpace(c.ImageUrl)))
+    {
+        if (!gallery.Contains(c.ImageUrl!))
+            gallery.Add(c.ImageUrl!);
+    }
     var colorBoot = m.Colors.Select(c => new
     {
         id = c.Id.ToString(),
         name = c.Name,
         hex = c.HexCode,
         imageUrl = string.IsNullOrWhiteSpace(c.ImageUrl) ? heroImage : c.ImageUrl
-    }).ToList();
-    var featureBoot = m.Features.Select(f => new
-    {
-        id = f.Id.ToString(),
-        title = f.Title,
-        description = f.Description ?? "",
-        imageUrl = f.ImageUrl
     }).ToList();
     var financeBoot = new
     {
@@ -67,93 +65,133 @@
         heroSrc = heroImage,
         name = m.Name
     });
-    var featureBootJson = JsonSerializer.Serialize(featureBoot);
     var spinJson = JsonSerializer.Serialize(m.SpinFrameUrls);
     var engineLabel = m.EngineCc.HasValue ? $"{m.EngineCc} cc" : null;
     var schemaAvailability = Model.IsAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+    ViewData["CtaXe"] = m.Slug;
+    ViewData["CtaSource"] = "detail";
+    ViewData["CtaIntent"] = "mua-xe";
+    var purchaseHighlights = m.Highlights.Take(4).ToList();
+    if (purchaseHighlights.Count == 0)
+    {
+        purchaseHighlights =
+        [
+            "Honda chính hãng tại HEAD Hiếu Nga",
+            "Hỗ trợ trả góp linh hoạt",
+            "Bảo dưỡng chuẩn quy trình HEAD",
+            "Tư vấn & thủ tục nhanh tại showroom"
+        ];
+    }
+
+    // Spec groups for V2
+    var specGroups = new List<(string Id, string Title, List<(string Label, string Value)> Items)>();
+    var currentGroupTitle = "Tổng quan";
+    var currentItems = new List<(string Label, string Value)>();
+    void FlushSpecGroup()
+    {
+        if (currentItems.Count == 0) return;
+        var slug = "spec-" + System.Text.RegularExpressions.Regex.Replace(
+            currentGroupTitle.ToLowerInvariant(), @"[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]+", "-")
+            .Trim('-');
+        if (string.IsNullOrWhiteSpace(slug) || slug == "spec-") slug = "spec-" + (specGroups.Count + 1);
+        specGroups.Add((slug, currentGroupTitle, currentItems.ToList()));
+        currentItems = new List<(string Label, string Value)>();
+    }
+    foreach (var spec in m.Specifications)
+    {
+        if (string.Equals(spec.Icon, "group", StringComparison.OrdinalIgnoreCase))
+        {
+            FlushSpecGroup();
+            currentGroupTitle = string.IsNullOrWhiteSpace(spec.Label) ? "Thông số" : spec.Label;
+        }
+        else
+        {
+            currentItems.Add((spec.Label, spec.Value));
+        }
+    }
+    FlushSpecGroup();
+    if (specGroups.Count == 0 && (engineLabel is not null || !string.IsNullOrWhiteSpace(m.Transmission) || !string.IsNullOrWhiteSpace(m.FuelType)))
+    {
+        specGroups.Add(("spec-overview", "Tổng quan", new List<(string, string)>
+        {
+            ("Động cơ", engineLabel ?? "—"),
+            ("Hộp số", string.IsNullOrWhiteSpace(m.Transmission) ? "—" : m.Transmission),
+            ("Nhiên liệu", string.IsNullOrWhiteSpace(m.FuelType) ? "—" : m.FuelType),
+            ("Bảo hành", Model.Warranty ?? "Liên hệ showroom")
+        }));
+    }
 }
 
 <div class="detail-page bg-white" x-data="detailColorHero(@Html.Raw(colorBootJson))">
     <script type="application/json" id="motorcycle-finance-config">@Html.Raw(financeBootJson)</script>
 
-    @* ─── 1. Hero: purchase info + CTAs above the fold ─── *@
-    <section class="detail-hero relative overflow-hidden border-b border-gray-100 bg-gradient-to-b from-gray-50 via-white to-white">
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 pb-8 md:pb-10">
-            <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
-                <a href="/" class="hover:text-honda-red transition">Trang chủ</a>
-                <span class="mx-2">/</span>
-                <a href="/xe" class="hover:text-honda-red transition">Mua xe</a>
-                <span class="mx-2">/</span>
-                <a href="/xe?category=@((int)m.Category)" class="hover:text-honda-red transition">@categoryLabel</a>
-                <span class="mx-2">/</span>
+    @* ─── PHASE 1: Hero V2 ─── *@
+    <section class="detail-hero relative overflow-hidden border-b border-gray-100 bg-gradient-to-b from-gray-50 via-white to-white" aria-label="Thông tin mua xe">
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 pb-10 md:pb-14">
+            <nav class="text-sm text-gray-400 mb-5" aria-label="Breadcrumb">
+                <a href="/" class="hover:text-honda-red transition focus-ring rounded">Trang chủ</a>
+                <span class="mx-2" aria-hidden="true">/</span>
+                <a href="/xe" class="hover:text-honda-red transition focus-ring rounded">Mua xe</a>
+                <span class="mx-2" aria-hidden="true">/</span>
+                <a href="/xe?category=@((int)m.Category)" class="hover:text-honda-red transition focus-ring rounded">@categoryLabel</a>
+                <span class="mx-2" aria-hidden="true">/</span>
                 <span class="text-honda-dark font-medium">@m.Name</span>
             </nav>
 
-            <div class="grid lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                 <div class="lg:col-span-7 order-1">
-                    <div class="detail-hero-media img-wrap relative aspect-[5/4] md:aspect-[16/11] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100">
-                        <div class="absolute inset-0 bg-gray-100 animate-pulse detail-hero-skeleton" x-show="!heroReady" x-cloak></div>
+                    <div class="detail-hero-media img-wrap relative aspect-[5/4] md:aspect-[16/11] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 detail-lift">
+                        <div class="absolute inset-0 bg-gray-100 animate-pulse detail-hero-skeleton" x-show="!heroReady" x-cloak aria-hidden="true"></div>
                         <img :src="heroSrc" src="@heroImage" alt="@m.Name"
-                             class="img-media absolute inset-0 w-full h-full object-contain md:object-cover p-4 md:p-6 transition-opacity duration-300"
+                             class="img-media absolute inset-0 w-full h-full object-contain md:object-cover p-4 md:p-8 detail-img-fade"
                              width="1200" height="825" fetchpriority="high" decoding="async"
                              @@load="heroReady = true"
                              @@error="heroReady = true" />
                         <div class="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
-                            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md shadow-sm @(Model.IsAvailable ? "bg-emerald-600 text-white" : "bg-gray-700 text-white")">
-                                @Model.AvailabilityLabel
-                            </span>
-                            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md bg-white/95 text-honda-dark shadow-sm">@categoryLabel</span>
+                            <span class="detail-badge @(Model.IsAvailable ? "detail-badge-stock" : "detail-badge-out")">@Model.AvailabilityLabel</span>
+                            <span class="detail-badge detail-badge-cat">@categoryLabel</span>
                         </div>
+                        <button type="button"
+                                class="detail-zoom-btn touch-press"
+                                @@click="openLightbox()"
+                                aria-label="Xem ảnh toàn màn hình">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                            <span>Phóng to</span>
+                        </button>
                     </div>
 
-                    @if (m.Colors.Any())
+                    @* Gallery thumbnail strip *@
+                    @if (gallery.Count > 0)
                     {
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between gap-3 mb-2">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Màu sắc</p>
-                                <p class="text-sm font-semibold text-honda-dark" x-text="selected?.name || 'Chọn màu'"></p>
-                            </div>
-                            <div class="flex flex-wrap gap-2.5" role="listbox" aria-label="Chọn màu xe">
-                                <template x-for="c in colors" :key="'hero-' + c.id">
-                                    <button type="button" @@click="applyColor(c.id)"
-                                            class="touch-press relative w-10 h-10 rounded-full border-2 transition shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-honda-red focus-visible:ring-offset-2"
-                                            :class="selectedId === c.id ? 'border-honda-red scale-110 ring-2 ring-honda-red/25' : 'border-white ring-1 ring-black/10'"
-                                            :style="'background:' + c.hex"
-                                            :title="c.name"
-                                            :aria-label="c.name"
-                                            :aria-selected="selectedId === c.id"
-                                            role="option"></button>
-                                </template>
-                            </div>
-                        </div>
-                    }
-
-                    @if (gallery.Count > 1)
-                    {
-                        <div class="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" aria-label="Thư viện ảnh">
+                        <div class="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" role="list" aria-label="Thư viện ảnh">
                             <template x-for="(url, i) in gallery" :key="'g-' + i">
-                                <button type="button" @@click="selectGallery(url)"
-                                        class="touch-press shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition bg-gray-50"
-                                        :class="heroSrc === url ? 'border-honda-red' : 'border-transparent opacity-80 hover:opacity-100'">
-                                    <img :src="url" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="128" height="96" />
+                                <button type="button"
+                                        @@click="selectGallery(url, i)"
+                                        @@dblclick="openLightbox(i)"
+                                        class="touch-press shrink-0 w-[4.5rem] h-14 rounded-xl overflow-hidden border-2 transition bg-gray-50 detail-thumb"
+                                        :class="heroSrc === url ? 'border-honda-red ring-2 ring-honda-red/20' : 'border-transparent opacity-80 hover:opacity-100'"
+                                        role="listitem"
+                                        :aria-label="'Ảnh ' + (i + 1)"
+                                        :aria-current="heroSrc === url ? 'true' : 'false'">
+                                    <img :src="url" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="144" height="112" />
                                 </button>
                             </template>
                         </div>
                     }
                 </div>
 
-                <div class="lg:col-span-5 order-2 space-y-4">
+                <div class="lg:col-span-5 order-2 space-y-5">
                     <div>
-                        <h1 class="text-2xl sm:text-3xl lg:text-[2rem] font-bold text-honda-dark leading-tight tracking-tight">@m.Name</h1>
+                        <h1 class="text-2xl sm:text-3xl lg:text-[2.15rem] font-bold text-honda-dark leading-tight tracking-tight">@m.Name</h1>
                         @if (!string.IsNullOrEmpty(m.ShortDescription))
                         {
-                            <p class="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-3">@m.ShortDescription</p>
+                            <p class="mt-2.5 text-gray-600 text-sm md:text-[0.95rem] leading-relaxed">@m.ShortDescription</p>
                         }
                     </div>
 
-                    <div class="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
+                    <div class="detail-price-card">
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Giá niêm yết</p>
-                        <p class="text-3xl font-bold text-honda-red mt-1 tabular-nums"
+                        <p class="text-3xl md:text-4xl font-bold text-honda-red mt-1 tabular-nums tracking-tight"
                            x-text="$store.motorcycleDetail ? $store.motorcycleDetail.formatVnd($store.motorcycleDetail.price) : '@activePrice.ToVnd()'"></p>
                         @if (Model.ShowInstallmentCalculator)
                         {
@@ -165,76 +203,161 @@
                         }
                     </div>
 
-                    <dl class="grid grid-cols-2 gap-2 text-sm">
-                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Tình trạng</dt>
-                            <dd class="mt-0.5 font-semibold @(Model.IsAvailable ? "text-emerald-700" : "text-gray-600")">@Model.AvailabilityLabel</dd>
+                    <dl class="detail-highlight-grid" aria-label="Thông tin mua nhanh">
+                        <div class="detail-highlight-cell">
+                            <dt>Tình trạng</dt>
+                            <dd class="@(Model.IsAvailable ? "text-emerald-700" : "text-gray-600")">@Model.AvailabilityLabel</dd>
                         </div>
-                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Loại xe</dt>
-                            <dd class="mt-0.5 font-semibold text-honda-dark">@categoryLabel</dd>
+                        <div class="detail-highlight-cell">
+                            <dt>Loại xe</dt>
+                            <dd>@categoryLabel</dd>
                         </div>
-                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Động cơ</dt>
-                            <dd class="mt-0.5 font-semibold text-honda-dark">@(engineLabel ?? "—")</dd>
+                        <div class="detail-highlight-cell">
+                            <dt>Động cơ</dt>
+                            <dd>@(engineLabel ?? "—")</dd>
                         </div>
-                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Hộp số</dt>
-                            <dd class="mt-0.5 font-semibold text-honda-dark">@(string.IsNullOrWhiteSpace(m.Transmission) ? "—" : m.Transmission)</dd>
+                        <div class="detail-highlight-cell">
+                            <dt>Hộp số</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(m.Transmission) ? "—" : m.Transmission)</dd>
                         </div>
-                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Tiêu hao</dt>
-                            <dd class="mt-0.5 font-semibold text-honda-dark">@(Model.FuelConsumption ?? (string.IsNullOrWhiteSpace(m.FuelType) ? "—" : m.FuelType))</dd>
+                        <div class="detail-highlight-cell">
+                            <dt>Tiêu hao</dt>
+                            <dd>@(Model.FuelConsumption ?? (string.IsNullOrWhiteSpace(m.FuelType) ? "—" : m.FuelType))</dd>
                         </div>
-                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bảo hành</dt>
-                            <dd class="mt-0.5 font-semibold text-honda-dark">@(Model.Warranty ?? "Liên hệ showroom")</dd>
+                        <div class="detail-highlight-cell">
+                            <dt>Bảo hành</dt>
+                            <dd>@(Model.Warranty ?? "Liên hệ showroom")</dd>
                         </div>
                     </dl>
 
-                    <div class="space-y-2.5 pt-1">
-                        <a href="@consultUrl" class="btn-primary touch-press w-full py-3.5 text-center justify-center">Tư vấn mua xe</a>
-                        <div class="grid grid-cols-2 gap-2">
+                    <ul class="detail-purchase-points" aria-label="Điểm mua nhanh">
+                        @foreach (var h in purchaseHighlights)
+                        {
+                            <li><span aria-hidden="true">✓</span><span>@h</span></li>
+                        }
+                    </ul>
+
+                    <div class="detail-cta-stack">
+                        <a href="@consultUrl" class="btn-primary touch-press detail-ripple w-full py-3.5 text-center justify-center">Tư vấn mua xe</a>
+                        <div class="grid grid-cols-2 gap-2.5">
                             @if (Model.ShowInstallmentCalculator)
                             {
-                                <a href="#financing" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Trả góp</a>
+                                <a href="#financing" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Tính trả góp</a>
                             }
                             else
                             {
-                                <a href="/tra-gop" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Trả góp</a>
+                                <a href="/tra-gop" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Tính trả góp</a>
                             }
                             <a href="@viewBikeUrl" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Đặt lịch xem xe</a>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <a href="@telHref" hx-boost="false" class="touch-press inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">
-                                Gọi ngay
-                            </a>
-                            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false"
-                               class="touch-press inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">
-                                Chat Zalo
-                            </a>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <a href="@telHref" hx-boost="false" class="detail-ghost-btn touch-press">Gọi ngay</a>
+                            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press">Chat Zalo</a>
                         </div>
+                        <a href="/so-sanh?handler=Add&amp;id=@m.Id"
+                           hx-get="/so-sanh?handler=Add&amp;id=@m.Id"
+                           hx-target="#compare-toast"
+                           hx-swap="innerHTML"
+                           hx-push-url="false"
+                           hx-boost="false"
+                           class="detail-compare-link touch-press">+ Thêm vào so sánh</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    @* ─── 2. 360 Viewer ─── *@
+    @* ─── PHASE 2: Gallery lightbox ─── *@
+    <div class="detail-lightbox"
+         x-show="lightboxOpen"
+         x-cloak
+         x-transition.opacity
+         role="dialog"
+         aria-modal="true"
+         aria-label="Thư viện ảnh @m.Name"
+         @@keydown.escape.window="closeLightbox()">
+        <div class="detail-lightbox-backdrop" @@click="closeLightbox()" aria-hidden="true"></div>
+        <div class="detail-lightbox-panel"
+             @@touchstart.passive="onLightboxTouchStart($event)"
+             @@touchend.passive="onLightboxTouchEnd($event)">
+            <button type="button" class="detail-lightbox-close" @@click="closeLightbox()" aria-label="Đóng">×</button>
+            <button type="button" class="detail-lightbox-nav detail-lightbox-prev" @@click="lightboxPrev()" aria-label="Ảnh trước">‹</button>
+            <div class="detail-lightbox-stage">
+                <img :src="lightboxSrc" :alt="name + ' — ảnh ' + (lightboxIndex + 1)"
+                     class="detail-lightbox-img" decoding="async" />
+            </div>
+            <button type="button" class="detail-lightbox-nav detail-lightbox-next" @@click="lightboxNext()" aria-label="Ảnh sau">›</button>
+            <p class="detail-lightbox-counter tabular-nums" x-text="(lightboxIndex + 1) + ' / ' + gallery.length"></p>
+        </div>
+    </div>
+
+    @* ─── PHASE 3: Color Experience ─── *@
+    @if (m.Colors.Any())
+    {
+        <section class="detail-section reveal" aria-labelledby="color-heading" id="mau-sac">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6">
+                    <div>
+                        <p class="section-eyebrow">Tuỳ chọn</p>
+                        <h2 id="color-heading" class="section-title">Màu sắc</h2>
+                    </div>
+                    <p class="text-sm font-semibold text-honda-dark" x-text="selected?.name || 'Chọn màu'"></p>
+                </div>
+                <div class="grid lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+                    <div class="lg:col-span-7">
+                        <div class="detail-color-preview img-wrap aspect-[16/11] rounded-2xl overflow-hidden bg-gray-50 border border-gray-100">
+                            <div class="absolute inset-0 bg-gray-100 animate-pulse" x-show="!heroReady" x-cloak aria-hidden="true"></div>
+                            <img :src="heroSrc" alt="" class="img-media absolute inset-0 w-full h-full object-contain p-6 detail-img-fade"
+                                 width="960" height="660" loading="lazy" decoding="async"
+                                 @@load="heroReady = true" />
+                        </div>
+                    </div>
+                    <div class="lg:col-span-5">
+                        <div class="detail-color-cards" role="listbox" aria-label="Chọn màu xe">
+                            <template x-for="c in colors" :key="'cc-' + c.id">
+                                <button type="button"
+                                        @@click="applyColor(c.id)"
+                                        class="detail-color-card touch-press"
+                                        :class="selectedId === c.id ? 'is-selected' : ''"
+                                        role="option"
+                                        :aria-selected="selectedId === c.id"
+                                        :aria-label="c.name">
+                                    <span class="detail-color-swatch" :style="'background:' + c.hex" aria-hidden="true"></span>
+                                    <span class="detail-color-meta">
+                                        <span class="detail-color-name" x-text="c.name"></span>
+                                        <span class="detail-color-hint" x-show="selectedId === c.id">Đang chọn</span>
+                                    </span>
+                                    <span class="detail-color-thumb" aria-hidden="true">
+                                        <img :src="c.imageUrl" alt="" loading="lazy" decoding="async" width="72" height="54" />
+                                    </span>
+                                </button>
+                            </template>
+                        </div>
+                        <p class="mt-4 text-xs text-gray-400">Màu đã chọn được lưu tạm trên thiết bị của bạn.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ─── PHASE 4: 360 Viewer Premium ─── *@
     @if (m.SpinFrameUrls.Count >= 2)
     {
-        <section class="py-8 md:py-12 bg-gray-50 border-b border-gray-100" aria-labelledby="spin-heading">
+        <section class="detail-section detail-section-muted reveal" aria-labelledby="spin-heading" id="xem-360">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
                  x-data="detailSpin360(@Html.Raw(spinJson))">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
                     <div>
-                        <h2 id="spin-heading" class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Xem 360°</h2>
-                        <p class="mt-1 text-sm text-gray-500">Kéo để xoay xe · Vuốt trên điện thoại</p>
+                        <p class="section-eyebrow">Trải nghiệm</p>
+                        <h2 id="spin-heading" class="section-title">Xem 360°</h2>
+                        <p class="section-subtitle">Kéo · Vuốt · Phát tự động</p>
                     </div>
-                    <button type="button" @@click="toggleFullscreen()"
-                            class="touch-press self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 rounded-lg bg-white hover:border-honda-red hover:text-honda-red transition">
-                        Toàn màn hình
-                    </button>
+                    <div class="detail-spin-toolbar" role="toolbar" aria-label="Điều khiển 360">
+                        <button type="button" class="detail-spin-btn" @@click="togglePlay()" :aria-pressed="playing.toString()" x-text="playing ? 'Tạm dừng' : 'Phát'"></button>
+                        <button type="button" class="detail-spin-btn" @@click="toggleAutoRotate()" :aria-pressed="autoRotate.toString()" :class="autoRotate ? 'is-on' : ''">Tự xoay</button>
+                        <button type="button" class="detail-spin-btn" @@click="reset()" aria-label="Đặt lại khung đầu">Reset</button>
+                        <button type="button" class="detail-spin-btn" @@click="toggleFullscreen()">Toàn màn hình</button>
+                    </div>
                 </div>
                 <div class="detail-spin-stage relative aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-gray-100 select-none touch-none cursor-grab active:cursor-grabbing"
                      x-ref="stage"
@@ -245,221 +368,291 @@
                      @@touchstart.passive="onPointerDown($event)"
                      @@touchmove.passive="onPointerMove($event)"
                      @@touchend="onPointerUp()">
-                    <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10" x-show="loading" x-transition.opacity>
+                    <div class="absolute inset-0 flex items-center justify-center bg-white/85 z-10" x-show="loading" x-transition.opacity>
                         <div class="flex flex-col items-center gap-2">
                             <span class="detail-spin-loader" aria-hidden="true"></span>
-                            <span class="text-xs font-medium text-gray-500">Đang tải 360°…</span>
+                            <span class="text-xs font-medium text-gray-500">Đang tải 360°… <span class="tabular-nums" x-text="Math.round(loadRatio * 100) + '%'"></span></span>
                         </div>
                     </div>
                     <img :src="src" alt="360 @m.Name"
                          class="absolute inset-0 w-full h-full object-contain p-4 pointer-events-none transition-opacity duration-150"
                          :class="loading ? 'opacity-40' : 'opacity-100'"
                          draggable="false" decoding="async" width="960" height="600" />
-                    <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="showHint && !dragging && !loading" x-transition.opacity>
-                        <span class="px-3 py-1.5 rounded-full bg-black/55 text-white text-[11px] font-medium backdrop-blur-sm">← Kéo để xoay →</span>
+                    <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="showHint && !dragging && !loading && !playing" x-transition.opacity>
+                        <span class="detail-spin-hint">← Kéo hoặc vuốt để xoay →</span>
                     </div>
                 </div>
-                <p class="mt-3 text-center text-xs text-gray-400 tabular-nums">
-                    Khung <span x-text="index + 1"></span> / <span x-text="frames.length"></span>
+                <p class="mt-3 text-center text-xs text-gray-400 tabular-nums" aria-live="polite">
+                    Khung <span x-text="frameLabel"></span>
                 </p>
             </div>
         </section>
     }
 
-    @* ─── 3. Feature showcase ─── *@
+    @* ─── PHASE 5: Features Experience ─── *@
     @if (m.Features.Any())
     {
-        <section class="py-8 md:py-12 border-b border-gray-100" aria-labelledby="feature-heading">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
-                 x-data="detailFeatureShowcase(@Html.Raw(featureBootJson))">
-                <h2 id="feature-heading" class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight mb-5">Điểm nổi bật</h2>
-                <div class="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-                    <div class="lg:col-span-8 relative">
-                        <div class="relative aspect-[16/10] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100">
-                            <template x-if="current">
-                                <img :src="current.imageUrl" :alt="current.title"
-                                     class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+        <section class="detail-section reveal" aria-labelledby="feature-heading" id="tinh-nang">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <p class="section-eyebrow">Trải nghiệm</p>
+                <h2 id="feature-heading" class="section-title mb-8 md:mb-10">Điểm nổi bật</h2>
+                <div class="detail-feature-stack">
+                    @{ var fi = 0; }
+                    @foreach (var feat in m.Features)
+                    {
+                        var reverse = fi % 2 == 1;
+                        <article class="detail-feature-row @(reverse ? "is-reverse" : "") reveal @(reverse ? "reveal-left" : "reveal-right")">
+                            <div class="detail-feature-media img-wrap">
+                                <img src="@feat.ImageUrl" alt="@feat.Title"
+                                     class="img-media detail-feature-img"
                                      loading="lazy" decoding="async" width="960" height="600" />
-                            </template>
-                        </div>
-                        <div class="absolute inset-x-0 bottom-0 flex justify-between p-3 pointer-events-none">
-                            <button type="button" @@click="prev()" class="touch-press pointer-events-auto w-10 h-10 rounded-full bg-white/90 shadow flex items-center justify-center" aria-label="Trước">‹</button>
-                            <button type="button" @@click="next()" class="touch-press pointer-events-auto w-10 h-10 rounded-full bg-white/90 shadow flex items-center justify-center" aria-label="Sau">›</button>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-4 space-y-4">
-                        <template x-if="current">
-                            <div>
-                                <h3 class="text-lg font-bold text-honda-dark" x-text="current.title"></h3>
-                                <p class="mt-2 text-sm text-gray-600 leading-relaxed" x-text="current.description"></p>
                             </div>
-                        </template>
-                        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                            <template x-for="(item, i) in items" :key="item.id">
-                                <button type="button" @@click="go(i)"
-                                        class="touch-press shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition"
-                                        :class="active === i ? 'border-honda-red' : 'border-transparent opacity-70 hover:opacity-100'">
-                                    <img :src="item.imageUrl" alt="" class="w-full h-full object-cover" loading="lazy" width="80" height="64" />
-                                </button>
-                            </template>
-                        </div>
-                    </div>
+                            <div class="detail-feature-copy">
+                                <span class="detail-feature-icon" aria-hidden="true">@(fi + 1)</span>
+                                <h3 class="detail-feature-title">@feat.Title</h3>
+                                @if (!string.IsNullOrWhiteSpace(feat.Description))
+                                {
+                                    <p class="detail-feature-desc">@feat.Description</p>
+                                }
+                            </div>
+                        </article>
+                        fi++;
+                    }
                 </div>
             </div>
         </section>
     }
     else if (m.Highlights.Any())
     {
-        <section class="py-8 md:py-12 border-b border-gray-100">
+        <section class="detail-section reveal" aria-labelledby="feature-heading">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Điểm nổi bật</h2>
-                <ul class="mt-4 grid sm:grid-cols-2 gap-3 max-w-4xl">
+                <h2 id="feature-heading" class="section-title">Điểm nổi bật</h2>
+                <ul class="mt-5 grid sm:grid-cols-2 gap-3 max-w-4xl">
                     @foreach (var h in m.Highlights)
                     {
-                        <li class="flex gap-2 text-sm text-gray-700"><span class="text-honda-red font-bold">✓</span><span>@h</span></li>
+                        <li class="detail-highlight-li"><span class="text-honda-red font-bold" aria-hidden="true">✓</span><span>@h</span></li>
                     }
                 </ul>
             </div>
         </section>
     }
 
-    @* ─── 4. Technology ─── *@
+    @* ─── PHASE 6: Technology Experience ─── *@
     @if (m.Technologies.Any())
     {
-        <section class="py-8 md:py-12 bg-gray-50 border-b border-gray-100" aria-labelledby="tech-heading">
+        <section class="detail-section detail-section-muted reveal" aria-labelledby="tech-heading" id="cong-nghe"
+                 x-data="detailTechAccordion()">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 id="tech-heading" class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight mb-6">Công nghệ</h2>
-                <div class="space-y-8 md:space-y-12">
-                    @{ var ti = 0; }
+                <p class="section-eyebrow">Công nghệ Honda</p>
+                <h2 id="tech-heading" class="section-title mb-8">Công nghệ trên xe</h2>
+                <div class="detail-tech-list">
                     @foreach (var tech in m.Technologies)
                     {
-                        var reverse = ti % 2 == 1;
-                        <div class="grid md:grid-cols-2 gap-5 md:gap-8 items-center @(reverse ? "md:[direction:rtl]" : "")">
-                            <div class="@(reverse ? "md:[direction:ltr]" : "")">
-                                <div class="relative aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-gray-100">
-                                    <img src="@tech.ImageUrl" alt="@tech.Title" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" width="800" height="500" />
+                        var techId = tech.Id.ToString();
+                        <div class="detail-tech-item" data-tech-id="@techId">
+                            <button type="button"
+                                    class="detail-tech-trigger touch-press"
+                                    @@click="toggle('@techId')"
+                                    :aria-expanded="isOpen('@techId').toString()"
+                                    aria-controls="tech-panel-@techId">
+                                <span class="detail-tech-thumb">
+                                    <img src="@tech.ImageUrl" alt="" loading="lazy" decoding="async" width="96" height="72" />
+                                </span>
+                                <span class="detail-tech-title">@tech.Title</span>
+                                <span class="detail-tech-chevron" aria-hidden="true" :class="isOpen('@techId') ? 'is-open' : ''">›</span>
+                            </button>
+                            <div id="tech-panel-@techId"
+                                 class="detail-tech-panel"
+                                 x-show="isOpen('@techId')"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-cloak>
+                                <div class="detail-tech-panel-inner">
+                                    <div class="detail-tech-illust img-wrap">
+                                        <img src="@tech.ImageUrl" alt="@tech.Title" loading="lazy" decoding="async" width="800" height="500" />
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(tech.Description))
+                                    {
+                                        <p class="detail-tech-desc">@tech.Description</p>
+                                    }
                                 </div>
                             </div>
-                            <div class="@(reverse ? "md:[direction:ltr]" : "")">
-                                <h3 class="text-lg md:text-xl font-bold text-honda-dark">@tech.Title</h3>
-                                @if (!string.IsNullOrWhiteSpace(tech.Description))
-                                {
-                                    <p class="mt-3 text-sm md:text-base text-gray-600 leading-relaxed">@tech.Description</p>
-                                }
-                            </div>
                         </div>
-                        ti++;
                     }
                 </div>
             </div>
         </section>
     }
 
-    @* ─── 5. Specifications ─── *@
-    @if (m.Specifications.Any() || !string.IsNullOrEmpty(m.Description))
+    @* ─── PHASE 7: Specifications ─── *@
+    @if (specGroups.Any() || !string.IsNullOrEmpty(m.Description))
     {
-        <section class="py-8 md:py-12 border-b border-gray-100" aria-labelledby="spec-heading"
-                 x-data="detailSpecsAccordion()">
+        <section class="detail-section reveal" aria-labelledby="spec-heading" id="thong-so"
+                 x-data="detailSpecsNav()">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <button type="button" class="w-full flex items-center justify-between md:cursor-default touch-press" @@click="open = !open" id="spec-heading">
-                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Thông số kỹ thuật</h2>
-                    <span class="md:hidden text-honda-red text-sm font-semibold" x-text="open ? 'Thu gọn' : 'Xem'"></span>
-                </button>
-                <div class="mt-4" x-show="open" x-transition>
-                    @if (m.Specifications.Any())
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+                    <div>
+                        <p class="section-eyebrow">Chi tiết kỹ thuật</p>
+                        <h2 id="spec-heading" class="section-title">Thông số kỹ thuật</h2>
+                    </div>
+                    <button type="button" class="detail-print-btn touch-press" onclick="window.print()" aria-label="In thông số">In thông số</button>
+                </div>
+
+                <div class="detail-specs-layout">
+                    @if (specGroups.Count > 1)
                     {
-                        <div class="rounded-xl border border-gray-100 overflow-hidden bg-white">
-                            <dl class="divide-y divide-gray-100">
-                                @foreach (var spec in m.Specifications)
+                        <nav class="detail-specs-nav" aria-label="Nhóm thông số">
+                            <ul>
+                                @foreach (var g in specGroups)
                                 {
-                                    if (string.Equals(spec.Icon, "group", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <div class="px-4 py-3 bg-gray-50">
-                                            <p class="text-sm font-bold text-honda-dark">@spec.Label</p>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-4 px-4 py-3">
-                                            <dt class="text-sm text-gray-500">@spec.Label</dt>
-                                            <dd class="text-sm font-semibold text-honda-dark sm:text-right">@spec.Value</dd>
-                                        </div>
-                                    }
+                                    <li>
+                                        <a href="#@g.Id"
+                                           data-spec-nav
+                                           class="detail-specs-nav-link"
+                                           :class="active === '@g.Id' ? 'is-active' : ''"
+                                           @@click="go('@g.Id', $event)">@g.Title</a>
+                                    </li>
                                 }
-                            </dl>
-                        </div>
+                            </ul>
+                        </nav>
                     }
-                    else
-                    {
-                        <p class="text-sm text-gray-500 py-4">Thông số chi tiết sẽ được cập nhật sớm.</p>
-                    }
-                    @if (!string.IsNullOrEmpty(m.Description))
-                    {
-                        <div class="prose prose-sm md:prose-base prose-gray max-w-3xl mt-6 prose-headings:text-honda-dark">
-                            @Html.Raw(m.Description)
-                        </div>
-                    }
+
+                    <div class="detail-specs-panels">
+                        @foreach (var g in specGroups)
+                        {
+                            <details class="detail-spec-group" id="@g.Id" open>
+                                <summary class="detail-spec-summary">@g.Title</summary>
+                                <dl class="detail-spec-table">
+                                    @foreach (var item in g.Items)
+                                    {
+                                        <div class="detail-spec-row">
+                                            <dt>@item.Label</dt>
+                                            <dd>@item.Value</dd>
+                                        </div>
+                                    }
+                                </dl>
+                            </details>
+                        }
+
+                        @if (!string.IsNullOrEmpty(m.Description))
+                        {
+                            <div class="prose prose-sm md:prose-base prose-gray max-w-3xl mt-8 prose-headings:text-honda-dark detail-desc">
+                                @Html.Raw(m.Description)
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </section>
     }
 
-    @* ─── 6. Finance calculator (logic unchanged) ─── *@
+    @* ─── PHASE 8: Purchase Experience ─── *@
+    <section class="detail-section detail-section-muted reveal" aria-labelledby="purchase-heading" id="mua-xe">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="section-eyebrow">Cam kết HEAD</p>
+            <h2 id="purchase-heading" class="section-title">Trải nghiệm mua xe tại Hiếu Nga</h2>
+            <p class="section-subtitle">Hỗ trợ đầy đủ từ showroom đến bảo dưỡng</p>
+            <div class="detail-purchase-grid mt-8">
+                @{
+                    var purchaseCards = new (string Title, string Desc)[]
+                    {
+                        ("Bảo hành chính hãng", Model.Warranty ?? "Theo tiêu chuẩn Honda Việt Nam tại đại lý HEAD."),
+                        ("Hỗ trợ chính thức", "Tư vấn rõ ràng — báo giá minh bạch tại Xe Máy Hiếu Nga."),
+                        ("Nhắc bảo dưỡng", "Lịch bảo dưỡng định kỳ theo km tại xưởng HEAD."),
+                        ("Tóm tắt trả góp", Model.ShowInstallmentCalculator
+                            ? $"Ước tính từ ~{((long)monthlyEstimate):N0} ₫/tháng — tính chi tiết bên dưới."
+                            : "Tính trả góp nhanh trên trang Tra góp."),
+                        ("Hỗ trợ đại lý", "Thủ tục giấy tờ, đăng ký nhanh tại showroom."),
+                        ("Hỗ trợ bảo hiểm", "Tư vấn gói bảo hiểm phù hợp khi nhận xe.")
+                    };
+                }
+                @foreach (var card in purchaseCards)
+                {
+                    <article class="detail-purchase-card detail-lift">
+                        <h3>@card.Title</h3>
+                        <p>@card.Desc</p>
+                    </article>
+                }
+            </div>
+            <div class="mt-8 flex flex-wrap gap-2.5">
+                <a href="@consultUrl" class="btn-primary touch-press">Tư vấn mua xe</a>
+                <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="btn-secondary touch-press">Tính trả góp</a>
+                <a href="@viewBikeUrl" class="detail-ghost-btn touch-press">Đặt lịch xem xe</a>
+            </div>
+        </div>
+    </section>
+
+    @* ─── Finance calculator (logic unchanged) ─── *@
     @if (Model.ShowInstallmentCalculator)
     {
         <partial name="Shared/_DetailFinanceCalculator" model="@((Motorcycle: m, MotorcycleId: m.Id, DefaultDown: defaultDown))" />
     }
 
-    @* ─── 7. Related ─── *@
+    @* ─── PHASE 9: Related Motorcycles ─── *@
     @if (relatedBikes.Any())
     {
-        <section class="py-8 md:py-12 border-b border-gray-100">
+        <section class="detail-section reveal" aria-labelledby="related-heading">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
-                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Xe cùng phân khúc</h2>
-                    <a href="/xe?category=@((int)m.Category)" class="text-sm font-semibold text-honda-red hover:underline">Xem thêm @categoryLabel →</a>
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+                    <div>
+                        <p class="section-eyebrow">Gợi ý</p>
+                        <h2 id="related-heading" class="section-title">Xe cùng phân khúc</h2>
+                    </div>
+                    <a href="/xe?category=@((int)m.Category)" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Xem thêm @categoryLabel →</a>
                 </div>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
                     @foreach (var bike in relatedBikes)
                     {
-                        <partial name="_MotorcycleCard" model="bike" />
+                        <partial name="_DetailRelatedCard" model="bike" />
                     }
                 </div>
             </div>
         </section>
     }
 
-    @* ─── 8. Soft closing CTA ─── *@
-    <section class="py-8 md:py-12">
+    @* Soft closing CTA *@
+    <section class="detail-section">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-6 md:p-8">
+            <div class="detail-close-cta reveal">
                 <h2 class="text-lg md:text-xl font-bold text-honda-dark">Cần tư vấn mẫu @m.Name?</h2>
                 <p class="mt-2 text-sm text-gray-500">Showroom Xe Máy Hiếu Nga hỗ trợ mua xe, trả góp và đặt lịch xem xe.</p>
-                <div class="mt-4 flex flex-col sm:flex-row flex-wrap gap-2.5">
+                <div class="mt-5 flex flex-col sm:flex-row flex-wrap gap-2.5">
                     <a href="@consultUrl" class="btn-primary touch-press justify-center text-sm">Tư vấn mua xe</a>
                     <a href="@viewBikeUrl" class="btn-secondary touch-press justify-center text-sm">Đặt lịch xem xe</a>
-                    <a href="@telHref" hx-boost="false" class="touch-press inline-flex items-center justify-center px-5 py-3 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">Gọi @site.Hotline</a>
+                    <a href="@telHref" hx-boost="false" class="detail-ghost-btn touch-press">Gọi @site.Hotline</a>
                 </div>
             </div>
         </div>
     </section>
 </div>
 
-<div class="detail-sticky-bar fixed bottom-0 inset-x-0 z-[60] lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200"
+@* ─── PHASE 10: Sticky Mobile ─── *@
+<div class="detail-sticky-bar fixed bottom-0 inset-x-0 z-[60] lg:hidden"
      x-data="detailStickyCta()"
      x-show="visible"
-     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter="transition ease-out duration-250"
      x-transition:enter-start="translate-y-full opacity-0"
      x-transition:enter-end="translate-y-0 opacity-100"
-     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave="transition ease-in duration-180"
      x-transition:leave-start="translate-y-0 opacity-100"
      x-transition:leave-end="translate-y-full opacity-0"
-     x-cloak>
-    <div class="grid grid-cols-4 divide-x divide-gray-100">
-        <a href="@telHref" hx-boost="false" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-medium text-honda-charcoal hover:bg-gray-50">Gọi</a>
-        <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-medium text-honda-charcoal hover:bg-gray-50">Zalo</a>
-        <a href="@consultUrl" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-semibold text-honda-charcoal hover:bg-gray-50">Tư vấn</a>
-        <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-semibold text-honda-red hover:bg-red-50">Trả góp</a>
+     x-cloak
+     role="navigation"
+     aria-label="Thao tác nhanh">
+    <div class="detail-sticky-inner">
+        <a href="@telHref" hx-boost="false" class="detail-sticky-item touch-press">
+            <span class="detail-sticky-label">Gọi</span>
+        </a>
+        <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-sticky-item touch-press">
+            <span class="detail-sticky-label">Zalo</span>
+        </a>
+        <a href="@consultUrl" class="detail-sticky-item touch-press">
+            <span class="detail-sticky-label">Tư vấn</span>
+        </a>
+        <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="detail-sticky-item detail-sticky-primary touch-press">
+            <span class="detail-sticky-label">Trả góp</span>
+        </a>
     </div>
 </div>
 

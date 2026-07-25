@@ -1,43 +1,124 @@
 @page "/dat-lich-lai-thu"
 @model HieuNga.Web.Pages.DatLichLaiThu.IndexModel
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    ViewData["VehicleChangeUrl"] = "/xe?from=dat-lich";
+    ViewData["VehicleFinanceUrl"] = Model.SelectedMotorcycle is null
+        ? "/tra-gop?source=test-ride"
+        : $"/tra-gop?xe={Uri.EscapeDataString(Model.SelectedMotorcycle.Slug)}&source=test-ride";
+}
 
-<section class="max-w-xl mx-auto px-4 py-16">
-    <h1 class="text-3xl font-bold text-center">Đặt lịch lái thử</h1>
-    <p class="text-gray-500 text-center mt-2 mb-10">Trải nghiệm xe Honda — miễn phí</p>
+<section class="lead-page">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 pb-4">
+        <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
+            <a href="/" class="hover:text-honda-red transition focus-ring rounded">Trang chủ</a>
+            <span class="mx-2" aria-hidden="true">/</span>
+            <span class="text-honda-dark font-medium">Đặt lịch xem xe</span>
+        </nav>
+        <p class="section-eyebrow">Trải nghiệm showroom</p>
+        <h1 class="section-title">Đặt lịch xem / lái thử</h1>
+        <p class="section-subtitle max-w-2xl">Chọn chi nhánh, thời gian và để lại thông tin — xác nhận miễn phí tại HEAD Hiếu Nga.</p>
+    </div>
 
-    @if (Model.Success)
-    {
-        <div class="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-            <p class="text-green-800 font-semibold text-lg">Đặt lịch thành công!</p>
-            <p class="text-green-600 text-sm mt-2">Chúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.</p>
-        </div>
-    }
-    else
-    {
-        <form method="post" class="space-y-5">
-            <div asp-validation-summary="All" class="text-red-600 text-sm"></div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Họ tên *</label>
-                <input asp-for="CustomerName" class="w-full px-4 py-3 border rounded-lg" />
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 md:pb-16">
+        @if (Model.Success)
+        {
+            <partial name="_LeadSuccess" model='("Đặt lịch thành công!", "Chúng tôi đã nhận lịch xem xe của bạn.", "Showroom sẽ gọi xác nhận trước giờ hẹn.")' />
+        }
+        else
+        {
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-10">
+                <div class="lg:col-span-5 space-y-6">
+                    @if (Model.SelectedMotorcycle is not null)
+                    {
+                        <partial name="_LeadVehicleCard" model="Model.SelectedMotorcycle" />
+                    }
+                    else
+                    {
+                        <div class="lead-form-card">
+                            <h2 class="font-bold text-honda-dark">Chưa chọn xe?</h2>
+                            <p class="text-sm text-gray-500 mt-2">Bạn vẫn có thể đặt lịch — hoặc chọn mẫu trước.</p>
+                            <a href="/xe" class="btn-secondary inline-flex mt-4 touch-press">Xem danh mục xe</a>
+                        </div>
+                    }
+                    <partial name="_LeadTrust" />
+                </div>
+
+                <div class="lg:col-span-7">
+                    <div class="lead-form-card">
+                        <h2 class="text-xl font-bold text-honda-dark">Thông tin đặt lịch</h2>
+                        <p class="text-sm text-gray-500 mt-1">Giờ làm việc: @site.OpeningHours</p>
+
+                        <form method="post" class="mt-6 space-y-4" novalidate>
+                            <div asp-validation-summary="All" class="text-red-600 text-sm" role="alert"></div>
+                            <input type="hidden" asp-for="MotorcycleId" />
+                            <input type="hidden" asp-for="SourceField" value="@Model.LeadSource" />
+
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label asp-for="CustomerName" class="block text-sm font-medium mb-1">Họ tên *</label>
+                                    <input asp-for="CustomerName" autocomplete="name" class="lead-input" required />
+                                </div>
+                                <div>
+                                    <label asp-for="Phone" class="block text-sm font-medium mb-1">Số điện thoại *</label>
+                                    <input asp-for="Phone" autocomplete="tel" inputmode="tel" class="lead-input" required />
+                                </div>
+                            </div>
+                            <div>
+                                <label asp-for="Email" class="block text-sm font-medium mb-1">Email</label>
+                                <input asp-for="Email" type="email" autocomplete="email" class="lead-input" />
+                            </div>
+
+                            @if (Model.Branches.Any())
+                            {
+                                <div>
+                                    <label asp-for="BranchId" class="block text-sm font-medium mb-1">Chi nhánh *</label>
+                                    <select asp-for="BranchId" class="lead-input" required>
+                                        @foreach (var b in Model.Branches)
+                                        {
+                                            <option value="@b.Id">@b.Name — @b.Address</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label asp-for="PreferredDate" class="block text-sm font-medium mb-1">Ngày mong muốn *</label>
+                                    <input asp-for="PreferredDate" type="date" class="lead-input" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                </div>
+                                <div>
+                                    <label asp-for="PreferredTime" class="block text-sm font-medium mb-1">Giờ</label>
+                                    <select asp-for="PreferredTime" class="lead-input">
+                                        @foreach (var t in DatLichLaiThu.IndexModel.TimeSlots)
+                                        {
+                                            <option value="@t">@t</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label asp-for="Notes" class="block text-sm font-medium mb-1">Ghi chú</label>
+                                <textarea asp-for="Notes" rows="3" class="lead-input" placeholder="VD: Muốn xem màu đỏ, mang theo CMND…"></textarea>
+                            </div>
+
+                            <div class="lead-confirm-card" aria-label="Tóm tắt đặt lịch">
+                                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Xác nhận nhanh</p>
+                                <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                                    <li>Xe: <strong>@(Model.SelectedMotorcycle?.Name ?? "Để tư vấn viên gợi ý")</strong></li>
+                                    <li>Hình thức: Xem / lái thử tại showroom</li>
+                                    <li>Phản hồi: trong 30 phút (giờ hành chính)</li>
+                                </ul>
+                            </div>
+
+                            <p class="text-xs text-gray-400">Thông tin chỉ dùng để xác nhận lịch hẹn tại Xe Máy Hiếu Nga.</p>
+                            <button type="submit" class="btn-primary w-full touch-press justify-center">Xác nhận đặt lịch</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Số điện thoại *</label>
-                <input asp-for="Phone" class="w-full px-4 py-3 border rounded-lg" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Email</label>
-                <input asp-for="Email" type="email" class="w-full px-4 py-3 border rounded-lg" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Ngày mong muốn *</label>
-                <input asp-for="PreferredDate" type="date" class="w-full px-4 py-3 border rounded-lg" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Ghi chú</label>
-                <textarea asp-for="Notes" rows="3" class="w-full px-4 py-3 border rounded-lg"></textarea>
-            </div>
-            <input type="hidden" asp-for="MotorcycleId" />
-            <button type="submit" class="btn-primary w-full">Gửi yêu cầu</button>
-        </form>
-    }
+        }
+    </div>
 </section>

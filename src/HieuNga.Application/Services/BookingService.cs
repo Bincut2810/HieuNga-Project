@@ -1,3 +1,4 @@
+using HieuNga.Application;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Domain.Entities;
@@ -58,8 +59,15 @@ public class BookingService(IRepository<Booking> bookingRepo, IRepository<Mainte
             Phone = dto.Phone,
             Email = dto.Email,
             PreferredDate = DateTime.Today.AddDays(1),
-            Notes = $"[{dto.Subject}] {dto.Message}",
-            BranchId = dto.BranchId
+            Notes = LeadAttribution.BuildNotes(
+                dto.LeadSource,
+                dto.Intent,
+                dto.XeSlug,
+                dto.ServiceSlug,
+                dto.Subject,
+                dto.Message),
+            BranchId = dto.BranchId,
+            MotorcycleId = dto.MotorcycleId
         };
 
         await bookingRepo.AddAsync(booking, ct);

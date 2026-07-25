@@ -1,8 +1,9 @@
 @model (MotorcycleDetailDto Motorcycle, Guid MotorcycleId, decimal DefaultDown)
 @{
     var m = Model.Motorcycle;
-    var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
-    var testRideUrl = $"/lien-he?intent=lai-thu&xe={Uri.EscapeDataString(m.Slug)}";
+    var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}&source=detail";
+    var testRideUrl = $"/dat-lich-lai-thu?xeId={Model.MotorcycleId}&source=detail";
+    var financeConsultUrl = $"/lien-he?intent=tra-gop&xe={Uri.EscapeDataString(m.Slug)}&source=detail";
 }
 
 <section id="financing" class="py-10 md:py-14 bg-white scroll-mt-[5.5rem]">
@@ -141,7 +142,7 @@
                     </div>
 
                     <div class="p-4 md:p-5 border-t border-gray-100 bg-white grid sm:grid-cols-3 gap-2">
-                        <a href="@consultUrl"
+                        <a href="@financeConsultUrl"
                            class="touch-press flex items-center justify-center px-4 py-3 bg-honda-red text-white font-semibold rounded-lg hover:bg-red-700 transition text-sm text-center">
                             Tư vấn trả góp
                         </a>

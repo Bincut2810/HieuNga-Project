@@ -2,46 +2,104 @@
 @{
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
+    var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? null : site.ZaloUrl;
+    var facebookUrl = string.IsNullOrWhiteSpace(site.FacebookUrl) ? null : site.FacebookUrl;
 }
-<footer class="bg-honda-dark text-white mt-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div class="md:col-span-1">
-                <h3 class="text-xl font-bold mb-4">Xe Máy Hiếu Nga</h3>
-                <p class="text-gray-400 text-sm leading-relaxed max-w-md">
-                    Đại lý Honda HEAD chính hãng tại Đà Nẵng. Xe chính hãng, dịch vụ sửa chữa &amp; bảo dưỡng chuyên nghiệp.
+<footer class="site-footer bg-honda-dark text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-16">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
+            <div class="sm:col-span-2 lg:col-span-4">
+                <p class="text-xl font-bold tracking-tight">Xe Máy Hiếu Nga</p>
+                <p class="text-gray-400 text-sm leading-relaxed mt-3 max-w-sm">
+                    @(site.FooterText ?? "Đại lý Honda HEAD chính hãng tại Đà Nẵng — mua xe, trả góp và dịch vụ bảo dưỡng chuyên nghiệp.")
                 </p>
-                <div class="mt-6 space-y-2 text-sm">
+                <div class="mt-5 space-y-2 text-sm">
                     <p>
-                        <span class="text-gray-500">Hotline:</span>
-                        <a href="@telHref" hx-boost="false" class="text-white font-semibold hover:text-honda-red transition ml-1">@site.Hotline</a>
+                        <a href="@telHref" hx-boost="false" class="font-semibold text-white hover:text-honda-red transition focus-ring rounded">@site.Hotline</a>
                     </p>
-                    <p class="text-gray-400">
-                        <span class="text-gray-500">Showroom:</span>
-                        @site.Address
-                    </p>
-                    <p class="text-gray-400">@site.OpeningHours</p>
+                    @if (!string.IsNullOrWhiteSpace(site.Address))
+                    {
+                        <p class="text-gray-400">@site.Address</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(site.OpeningHours))
+                    {
+                        <p class="text-gray-500 text-xs">@site.OpeningHours</p>
+                    }
+                </div>
+                <div class="mt-6 flex flex-wrap gap-3" aria-label="Mạng xã hội">
+                    @if (!string.IsNullOrWhiteSpace(zaloUrl))
+                    {
+                        <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="home-social-link focus-ring">Zalo</a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(facebookUrl))
+                    {
+                        <a href="@facebookUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="home-social-link focus-ring">Facebook</a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(site.Email))
+                    {
+                        <a href="mailto:@site.Email" hx-boost="false" class="home-social-link focus-ring">Email</a>
+                    }
                 </div>
             </div>
-            <div>
-                <h4 class="font-semibold mb-4">Liên kết</h4>
-                <ul class="space-y-2 text-sm text-gray-400">
-                    <li><a href="/xe" class="hover:text-white transition">Mua xe</a></li>
-                    <li><a href="/bao-duong" class="hover:text-white transition">Dịch vụ sửa chữa &amp; bảo dưỡng</a></li>
-                    <li><a href="/lien-he" class="hover:text-white transition">Liên hệ &amp; tư vấn</a></li>
+
+            <div class="lg:col-span-2">
+                <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">Xe máy</h4>
+                <ul class="space-y-2.5 text-sm text-gray-400">
+                    <li><a href="/xe" class="hover:text-white transition">Danh mục xe</a></li>
+                    <li><a href="/xe?FeaturedOnly=true" class="hover:text-white transition">Xe nổi bật</a></li>
+                    <li><a href="/xe?category=0" class="hover:text-white transition">Scooter</a></li>
+                    <li><a href="/so-sanh" class="hover:text-white transition">So sánh xe</a></li>
                 </ul>
             </div>
-            <div>
-                <h4 class="font-semibold mb-4 text-gray-300">Khác</h4>
-                <ul class="space-y-2 text-xs text-gray-500">
-                    <li><a href="/khuyen-mai" class="hover:text-gray-300 transition">Khuyến mãi</a></li>
-                    <li><a href="/admin" hx-boost="false" class="hover:text-gray-300 transition">Quản trị</a></li>
+
+            <div class="lg:col-span-2">
+                <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">Dịch vụ</h4>
+                <ul class="space-y-2.5 text-sm text-gray-400">
+                    <li><a href="/bao-duong" class="hover:text-white transition">Bảo dưỡng</a></li>
+                    <li><a href="/bao-duong#booking" class="hover:text-white transition">Đặt lịch dịch vụ</a></li>
+                    <li><a href="/dat-lich-lai-thu" class="hover:text-white transition">Đặt lịch xem xe</a></li>
+                    <li><a href="/lien-he" class="hover:text-white transition">Tư vấn &amp; liên hệ</a></li>
                 </ul>
+            </div>
+
+            <div class="lg:col-span-2">
+                <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">Tài chính</h4>
+                <ul class="space-y-2.5 text-sm text-gray-400">
+                    <li><a href="/tra-gop" class="hover:text-white transition">Tính trả góp</a></li>
+                    <li><a href="/khuyen-mai" class="hover:text-white transition">Khuyến mãi</a></li>
+                    <li><a href="/tin-tuc" class="hover:text-white transition">Tin tức</a></li>
+                    <li><a href="/lien-he?intent=tra-gop" class="hover:text-white transition">Tư vấn trả góp</a></li>
+                </ul>
+            </div>
+
+            <div class="lg:col-span-2">
+                <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">Liên hệ</h4>
+                <ul class="space-y-2.5 text-sm text-gray-400">
+                    <li><a href="/lien-he" class="hover:text-white transition">Form liên hệ</a></li>
+                    <li><a href="@telHref" hx-boost="false" class="hover:text-white transition">Gọi hotline</a></li>
+                    @if (!string.IsNullOrWhiteSpace(zaloUrl))
+                    {
+                        <li><a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="hover:text-white transition">Chat Zalo</a></li>
+                    }
+                </ul>
+                <form class="home-newsletter mt-5" action="#" method="post" onsubmit="return false;" aria-label="Đăng ký nhận tin (sắp có)">
+                    <label for="home-newsletter-email" class="sr-only">Email nhận tin</label>
+                    <div class="home-newsletter-row">
+                        <input id="home-newsletter-email" type="email" name="email" autocomplete="email"
+                               placeholder="Email nhận ưu đãi"
+                               class="home-newsletter-input"
+                               disabled
+                               aria-disabled="true" />
+                        <button type="button" class="home-newsletter-btn" disabled title="Sắp ra mắt">Đăng ký</button>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-2">Newsletter sắp ra mắt — giữ chỗ email của bạn.</p>
+                </form>
             </div>
         </div>
-        <div class="border-t border-white/10 mt-12 pt-8 text-sm text-gray-500 flex flex-col sm:flex-row justify-between gap-4">
+
+        <div class="border-t border-white/10 mt-12 pt-8 flex flex-col sm:flex-row justify-between gap-4 text-sm text-gray-500">
             <p>&copy; @DateTime.Now.Year Xe Máy Hiếu Nga. All rights reserved.</p>
-            <p>@(site.FooterText ?? "HEAD Dealer chính hãng Honda Việt Nam")</p>
+            <p>HEAD Dealer · Honda Việt Nam · Đà Nẵng</p>
         </div>
     </div>
 </footer>

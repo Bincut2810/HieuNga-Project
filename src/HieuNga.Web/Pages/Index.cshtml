@@ -1,219 +1,673 @@
 @page
 @model HieuNga.Web.Pages.IndexModel
 @using HieuNga.Domain
+@using HieuNga.Web.Filters
+@using HieuNga.Web.Extensions
 @{
     var d = Model.Data;
-    var featuredBikes = d.FeaturedMotorcycles.Take(4).ToList();
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var featuredBikes = d.FeaturedMotorcycles.Take(6).ToList();
     var headBranch = d.Branches.FirstOrDefault(b => b.IsHeadOffice) ?? d.Branches.FirstOrDefault();
-    var hotline = headBranch?.Hotline ?? headBranch?.Phone ?? "0905 123 456";
+    var hotline = headBranch?.Hotline ?? headBranch?.Phone ?? site.Hotline;
     var hotlineTel = new string(hotline.Where(char.IsDigit).ToArray());
-    if (string.IsNullOrEmpty(hotlineTel)) hotlineTel = "0905123456";
+    if (string.IsNullOrEmpty(hotlineTel)) hotlineTel = new string(site.Hotline.Where(char.IsDigit).ToArray());
+    var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? "https://zalo.me/" : site.ZaloUrl;
+    var banks = d.FinanceBanks.Take(4).ToList();
+    var defaultRate = banks.FirstOrDefault()?.RateLabel ?? "0,79%/tháng";
+    var samplePrice = featuredBikes.FirstOrDefault()?.BasePrice ?? 42_000_000m;
+    var down30 = Math.Round(samplePrice * 0.30m, 0);
+    var down40 = Math.Round(samplePrice * 0.40m, 0);
+    var branchAddress = headBranch?.Address ?? site.Address;
+    var mapsSearchUrl = "https://www.google.com/maps/search/?api=1&query=" + Uri.EscapeDataString(branchAddress ?? "Xe Máy Hiếu Nga Đà Nẵng");
+    var newsPosts = d.LatestPosts.ToList();
+    var featuredPost = newsPosts.FirstOrDefault();
+    var sidePosts = newsPosts.Skip(1).Take(3).ToList();
 }
 
 <div class="homepage bg-white overflow-x-hidden">
-    @* ─── 1. Hero ─── *@
-    <section class="border-b border-gray-100 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-16">
-            <div class="max-w-3xl">
-                <p class="text-xs font-bold uppercase tracking-widest text-honda-red">Honda HEAD · Đà Nẵng</p>
-                <h1 class="mt-3 text-2xl sm:text-3xl md:text-4xl font-bold text-honda-dark leading-tight tracking-tight">
-                    Xe Máy Hiếu Nga — Mua xe &amp; dịch vụ sửa chữa, bảo dưỡng uy tín
-                </h1>
-                <p class="mt-4 text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl">
-                    Tư vấn xe Honda, hỗ trợ trả góp, đặt lịch bảo dưỡng và sửa chữa nhanh tại Xe Máy Hiếu Nga.
-                </p>
-                <div class="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
-                    <a href="/xe" class="btn-primary px-6 py-3.5 text-center justify-center">Xem xe đang bán</a>
-                    <a href="/bao-duong#booking" class="btn-secondary px-6 py-3.5 text-center justify-center">Đặt lịch dịch vụ</a>
+    @* ─── PHASE 1: Flagship Hero Carousel ─── *@
+    <section class="home-hero"
+             aria-roledescription="carousel"
+             aria-label="Banner trang chủ"
+             data-home-hero
+             data-interval="6000"
+             tabindex="0">
+        @if (d.HeroBanners.Any())
+        {
+            <div class="home-hero-track" data-hero-track>
+                @{ var bi = 0; }
+                @foreach (var banner in d.HeroBanners)
+                {
+                    var isFirst = bi == 0;
+                    <article class="home-hero-slide @(isFirst ? "is-active" : null)"
+                             data-hero-slide
+                             id="home-hero-slide-@bi"
+                             role="group"
+                             aria-roledescription="slide"
+                             aria-label="Banner @(bi + 1) / @d.HeroBanners.Count"
+                             style="@(isFirst ? null : "visibility:hidden")"
+                             aria-hidden="@(isFirst ? "false" : "true")">
+                        <div class="home-hero-media" data-parallax="0.08">
+                            <picture>
+                                @if (!string.IsNullOrWhiteSpace(banner.MobileImageUrl))
+                                {
+                                    <source media="(max-width: 767px)" srcset="@banner.MobileImageUrl" />
+                                }
+                                <img src="@banner.ImageUrl"
+                                     alt="@banner.Title"
+                                     class="home-hero-img img-media"
+                                     width="1920" height="900"
+                                     fetchpriority="@(isFirst ? "high" : "auto")"
+                                     loading="@(isFirst ? "eager" : "lazy")"
+                                     decoding="async" />
+                            </picture>
+                            <div class="home-hero-shade" aria-hidden="true"></div>
+                        </div>
+                        <div class="home-hero-content">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                                <p class="section-eyebrow text-white/80">Xe Máy Hiếu Nga · HEAD Đà Nẵng</p>
+                                <h1 class="home-hero-title">@banner.Title</h1>
+                                @if (!string.IsNullOrWhiteSpace(banner.Subtitle))
+                                {
+                                    <p class="home-hero-sub">@banner.Subtitle</p>
+                                }
+                                <div class="home-hero-actions">
+                                    @if (!string.IsNullOrWhiteSpace(banner.CtaUrl))
+                                    {
+                                        <a href="@banner.CtaUrl" class="btn-primary">@(banner.CtaText ?? "Khám phá")</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/xe" class="btn-primary">Xem xe đang bán</a>
+                                    }
+                                    <a href="/tra-gop" class="btn-secondary home-hero-btn-ghost">Tính trả góp</a>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    bi++;
+                }
+            </div>
+            @if (d.HeroBanners.Count > 1)
+            {
+                <div class="home-hero-controls">
+                    <button type="button" class="home-hero-nav" data-hero-prev aria-label="Slide trước">‹</button>
+                    <div class="home-hero-dots" data-hero-dots role="tablist" aria-label="Chọn banner"></div>
+                    <button type="button" class="home-hero-nav" data-hero-next aria-label="Slide sau">›</button>
                 </div>
-                <a href="tel:@hotlineTel" class="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-gray-600 hover:text-honda-red transition">
-                    <svg class="w-4 h-4 text-honda-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                    Gọi hotline @hotline
+                <div class="home-hero-progress" aria-hidden="true">
+                    <div class="home-hero-progress-bar" data-hero-progress></div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="home-hero-fallback">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+                    <p class="section-eyebrow">Honda HEAD · Đà Nẵng</p>
+                    <h1 class="home-hero-title text-honda-dark">Xe Máy Hiếu Nga</h1>
+                    <p class="home-hero-sub text-gray-600 max-w-2xl">Showroom Honda hiện đại — mua xe chính hãng, trả góp linh hoạt và dịch vụ HEAD.</p>
+                    <div class="home-hero-actions">
+                        <a href="/xe" class="btn-primary">Xem xe đang bán</a>
+                        <a href="/bao-duong#booking" class="btn-secondary">Đặt lịch dịch vụ</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+
+    @* Quick actions *@
+    <section class="home-quick reveal" aria-label="Lối tắt">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="home-quick-grid">
+                <a href="/xe" class="home-quick-card touch-press">
+                    <span class="home-quick-icon" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8a1 1 0 001-1v-3m4-6h2l3 4v5a1 1 0 01-1 1h-1"/></svg>
+                    </span>
+                    <span class="home-quick-label">Mua xe</span>
+                </a>
+                <a href="/tra-gop" class="home-quick-card touch-press">
+                    <span class="home-quick-icon" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                    <span class="home-quick-label">Trả góp</span>
+                </a>
+                <a href="/bao-duong" class="home-quick-card touch-press">
+                    <span class="home-quick-icon" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </span>
+                    <span class="home-quick-label">Dịch vụ</span>
+                </a>
+                <a href="/lien-he" class="home-quick-card touch-press">
+                    <span class="home-quick-icon" aria-hidden="true">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                    </span>
+                    <span class="home-quick-label">Liên hệ</span>
                 </a>
             </div>
         </div>
     </section>
 
-    @* ─── 2. Two core business cards ─── *@
-    <section class="py-10 md:py-14">
+    @* ─── PHASE 2: Category Experience ─── *@
+    <section class="page-section reveal" aria-labelledby="home-cat-heading">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-2 gap-5 md:gap-6">
-                <div class="rounded-2xl border border-gray-100 bg-white p-6 md:p-8 shadow-sm">
-                    <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-honda-red mb-4">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8a1 1 0 001-1v-3m4-6h2l3 4v5a1 1 0 01-1 1h-1"/></svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-honda-dark">Mua xe Honda</h2>
-                    <p class="mt-2 text-sm text-gray-600 leading-relaxed">
-                        Xem mẫu xe đang bán, giá niêm yết, hỗ trợ trả góp và tư vấn chọn xe phù hợp tại showroom HEAD.
-                    </p>
-                    <a href="/xe" class="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-honda-red hover:underline">
-                        Xem danh sách xe
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
+                <div>
+                    <p class="section-eyebrow">Danh mục</p>
+                    <h2 id="home-cat-heading" class="section-title">Khám phá theo dòng xe</h2>
+                    <p class="section-subtitle">Scooter · Xe số · Xe côn tay · PKL · Xe điện</p>
                 </div>
-                <div class="rounded-2xl border border-gray-100 bg-white p-6 md:p-8 shadow-sm">
-                    <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-honda-dark mb-4">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-honda-dark">Sửa chữa / bảo dưỡng</h2>
-                    <p class="mt-2 text-sm text-gray-600 leading-relaxed">
-                        Bảo dưỡng định kỳ, thay nhớt, kiểm tra động cơ, điện, phanh và phụ tùng chính hãng Honda.
-                    </p>
-                    <a href="/bao-duong#booking" class="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-honda-red hover:underline">
-                        Đặt lịch dịch vụ
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <a href="/xe" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Xem tất cả xe →</a>
+            </div>
+            <div class="home-cat-grid">
+                @{ var ci = 0; }
+                @foreach (var cat in d.CategoryCounts)
+                {
+                    var delay = "reveal-delay-" + ((ci % 3) + 1);
+                    <a href="/xe?category=@((int)cat.Category)"
+                       class="home-cat-card touch-press group reveal reveal-scale @delay">
+                        <div class="home-cat-media img-wrap">
+                            @if (!string.IsNullOrWhiteSpace(cat.ImageUrl))
+                            {
+                                <img src="@cat.ImageUrl"
+                                     alt="@cat.Label"
+                                     class="home-cat-img img-media"
+                                     width="640" height="480"
+                                     loading="lazy" decoding="async" />
+                            }
+                            else
+                            {
+                                <div class="home-cat-placeholder" aria-hidden="true">
+                                    <span>@cat.Label.Substring(0, 1)</span>
+                                </div>
+                            }
+                            <div class="home-cat-overlay" aria-hidden="true"></div>
+                        </div>
+                        <div class="home-cat-body">
+                            <span class="home-cat-count">@(cat.Count > 0 ? $"{cat.Count} mẫu" : "Sắp cập nhật")</span>
+                            <h3 class="home-cat-title">@cat.Label</h3>
+                            <span class="home-cat-cta">@(cat.Count > 0 ? "Khám phá" : "Xem danh mục") →</span>
+                        </div>
                     </a>
-                </div>
+                    ci++;
+                }
             </div>
         </div>
     </section>
 
-    @* ─── 3. Featured motorcycles ─── *@
+    @* ─── PHASE 3: Featured Showcase ─── *@
     @if (featuredBikes.Any())
     {
-        <section class="py-10 md:py-14 bg-gray-50 border-y border-gray-100">
+        <section class="page-section bg-gray-50 border-y border-gray-100 reveal" aria-labelledby="home-featured-heading">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
                     <div>
-                        <h2 class="text-2xl md:text-3xl font-bold text-honda-dark tracking-tight">Xe nổi bật</h2>
-                        <p class="mt-2 text-sm text-gray-500">Mẫu xe Honda phổ biến tại showroom Hiếu Nga</p>
+                        <p class="section-eyebrow">Showroom</p>
+                        <h2 id="home-featured-heading" class="section-title">Xe nổi bật</h2>
+                        <p class="section-subtitle">Mẫu xe đang được quan tâm tại Xe Máy Hiếu Nga</p>
                     </div>
-                    <a href="/xe?FeaturedOnly=true" class="text-sm font-semibold text-honda-red hover:underline shrink-0">Xem xe nổi bật →</a>
+                    <a href="/xe?FeaturedOnly=true" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded shrink-0">Xem xe nổi bật →</a>
                 </div>
-                <nav class="flex flex-wrap gap-2 mb-8" aria-label="Lọc theo loại xe">
-                    @foreach (var (value, label) in MotorcycleCategoryLabels.All)
-                    {
-                        <a href="/xe?category=@((int)value)"
-                           class="inline-flex items-center px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-gray-200 bg-white text-honda-dark hover:border-honda-red hover:text-honda-red transition">
-                            @label
-                        </a>
-                    }
-                </nav>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8" data-stagger>
                     @foreach (var bike in featuredBikes)
                     {
-                        <partial name="_MotorcycleCard" model="bike" />
+                        <partial name="_HomeFeaturedCard" model="bike" />
                     }
                 </div>
             </div>
         </section>
     }
 
-    @* ─── 4. Service categories ─── *@
-    <section class="py-10 md:py-14">
+    @* ─── PHASE 4: Why Hiếu Nga ─── *@
+    <section class="page-section reveal" aria-labelledby="home-why-heading">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-8">
-                <h2 class="text-2xl md:text-3xl font-bold text-honda-dark tracking-tight">Dịch vụ xưởng HEAD</h2>
-                <p class="mt-2 text-sm text-gray-500">Sửa chữa và bảo dưỡng xe máy Honda chính hãng</p>
-            </div>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            <p class="section-eyebrow">Cam kết</p>
+            <h2 id="home-why-heading" class="section-title">Vì sao chọn Xe Máy Hiếu Nga?</h2>
+            <p class="section-subtitle">Trải nghiệm showroom hiện đại — từ mua xe đến bảo dưỡng</p>
+            <div class="home-why-grid mt-10" data-stagger>
                 @{
-                    var serviceItems = new[]
+                    var whyItems = new (string Icon, string Title, string Desc)[]
                     {
-                        ("Bảo dưỡng định kỳ", "Kiểm tra tổng thể theo km, đảm bảo xe vận hành ổn định."),
-                        ("Thay nhớt", "Nhớt chính hãng Honda, thay đúng quy trình và định mức."),
-                        ("Kiểm tra động cơ", "Chẩn đoán tiếng động, hao mòn và hiệu suất động cơ."),
-                        ("Điện / bình ắc quy", "Kiểm tra hệ thống điện, đèn, còi và bình ắc quy."),
-                        ("Phanh / lốp", "Bảo dưỡng phanh, thay má phanh và kiểm tra lốp an toàn."),
-                        ("Phụ tùng chính hãng", "Linh kiện Honda chính hãng, minh bạch báo giá trước khi thay.")
+                        ("shield", "Bảo hành chính hãng", "Xe Honda mới với bảo hành theo tiêu chuẩn Honda Việt Nam."),
+                        ("finance", "Trả góp linh hoạt", "Hỗ trợ nhiều ngân hàng — ước tính trước khi đến showroom."),
+                        ("wrench", "Bảo dưỡng HEAD", "Xưởng dịch vụ chuẩn quy trình, kỹ thuật viên chuyên môn."),
+                        ("parts", "Phụ tùng chính hãng", "Linh kiện & nhớt Honda — báo giá minh bạch."),
+                        ("insurance", "Hỗ trợ bảo hiểm", "Tư vấn gói bảo hiểm phù hợp khi nhận xe."),
+                        ("docs", "Thủ tục nhanh", "Hỗ trợ giấy tờ đăng ký, sang tên tại chỗ."),
+                        ("truck", "Giao xe tận nhà", "Điều phối giao xe theo khu vực Đà Nẵng & lân cận.")
                     };
                 }
-                @foreach (var (title, desc) in serviceItems)
+                @for (var wi = 0; wi < whyItems.Length; wi++)
                 {
-                    <div class="rounded-xl border border-gray-100 bg-white p-5 md:p-6">
-                        <h3 class="font-bold text-honda-dark text-sm md:text-base">@title</h3>
-                        <p class="mt-2 text-sm text-gray-500 leading-relaxed">@desc</p>
+                    var item = whyItems[wi];
+                    var whyDelay = (wi % 3) + 1;
+                    <div class="home-why-card reveal reveal-up reveal-delay-@whyDelay">
+                        <span class="home-why-icon" aria-hidden="true" data-icon="@item.Icon">
+                            @switch (item.Icon)
+                            {
+                                case "shield":
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M12 3l8 3v6c0 5-3.5 8.5-8 9.5C7.5 20.5 4 17 4 12V6l8-3z"/></svg>
+                                    break;
+                                case "finance":
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    break;
+                                case "wrench":
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    break;
+                                case "parts":
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                    break;
+                                case "insurance":
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                    break;
+                                case "docs":
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    break;
+                                default:
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                    break;
+                            }
+                        </span>
+                        <h3 class="home-why-title">@item.Title</h3>
+                        <p class="home-why-desc">@item.Desc</p>
                     </div>
                 }
-            </div>
-            <div class="mt-8 text-center sm:text-left">
-                <a href="/bao-duong#booking" class="btn-primary inline-flex justify-center">Đặt lịch sửa chữa / bảo dưỡng</a>
             </div>
         </div>
     </section>
 
-    @* ─── 5. Why choose ─── *@
-    <section class="py-10 md:py-14 bg-gray-50 border-y border-gray-100">
+    @* ─── PHASE 5: Finance Highlight ─── *@
+    <section class="page-section reveal reveal-left" aria-labelledby="home-finance-heading">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-honda-dark tracking-tight">Vì sao chọn Xe Máy Hiếu Nga?</h2>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-8">
-                @{
-                    var trustPoints = new[]
-                    {
-                        ("HEAD Honda uy tín", "Đại lý hạng cao trong hệ thống Honda Việt Nam."),
-                        ("Kỹ thuật viên chuyên môn", "Đội ngũ được đào tạo quy trình chuẩn Honda."),
-                        ("Phụ tùng chính hãng", "Linh kiện và nhớt Honda 100% chính hãng."),
-                        ("Tư vấn rõ ràng", "Báo giá minh bạch, hỗ trợ nhanh qua hotline và Zalo.")
-                    };
-                }
-                @foreach (var (title, desc) in trustPoints)
-                {
-                    <div class="rounded-xl border border-gray-100 bg-white p-5">
-                        <span class="flex w-8 h-8 rounded-full bg-red-50 text-honda-red items-center justify-center text-sm font-bold mb-3">✓</span>
-                        <h3 class="font-bold text-honda-dark text-sm">@title</h3>
-                        <p class="mt-2 text-xs sm:text-sm text-gray-500 leading-relaxed">@desc</p>
+            <div class="home-finance">
+                <div class="home-finance-copy">
+                    <p class="section-eyebrow text-white/70">Tài chính</p>
+                    <h2 id="home-finance-heading" class="text-2xl md:text-3xl font-bold text-white tracking-tight">Trả góp rõ ràng, lãi suất từ @defaultRate</h2>
+                    <p class="mt-3 text-sm text-white/75 max-w-lg leading-relaxed">
+                        Ước tính trả trước và khoản tháng trước khi đến showroom. Công thức tính giữ nguyên trên trang trả góp.
+                    </p>
+                    <div class="home-finance-examples">
+                        <div class="home-finance-example">
+                            <span class="home-finance-example-label">Trả trước ~30%</span>
+                            <span class="home-finance-example-value">@down30.ToVnd()</span>
+                        </div>
+                        <div class="home-finance-example">
+                            <span class="home-finance-example-label">Trả trước ~40%</span>
+                            <span class="home-finance-example-value">@down40.ToVnd()</span>
+                        </div>
+                        <div class="home-finance-example">
+                            <span class="home-finance-example-label">Ước tính / tháng</span>
+                            <span class="home-finance-example-value">từ @samplePrice.ToEstimatedMonthly()</span>
+                        </div>
                     </div>
+                    <a href="/tra-gop" class="home-finance-cta touch-press">Mở máy tính trả góp</a>
+                </div>
+                <div class="home-finance-banks" aria-label="Ngân hàng đối tác">
+                    @if (banks.Any())
+                    {
+                        @foreach (var bank in banks)
+                        {
+                            <div class="home-finance-bank">
+                                <span class="home-finance-bank-logo" aria-hidden="true" style="--bank-color:@bank.Color">@bank.Initials</span>
+                                <div class="home-finance-bank-meta">
+                                    <span class="home-finance-bank-name">@bank.Name</span>
+                                    <span class="home-finance-bank-rate">@bank.RateLabel</span>
+                                    @if (!string.IsNullOrWhiteSpace(bank.Trust))
+                                    {
+                                        <span class="home-finance-bank-trust">@bank.Trust</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="home-finance-bank"><span class="home-finance-bank-logo" aria-hidden="true">HD</span><div class="home-finance-bank-meta"><span class="home-finance-bank-name">HD Bank</span><span class="home-finance-bank-rate">0,79%/tháng</span></div></div>
+                        <div class="home-finance-bank"><span class="home-finance-bank-logo" aria-hidden="true">MB</span><div class="home-finance-bank-meta"><span class="home-finance-bank-name">MB Bank</span><span class="home-finance-bank-rate">0,79%/tháng</span></div></div>
+                        <div class="home-finance-bank"><span class="home-finance-bank-logo" aria-hidden="true">JA</span><div class="home-finance-bank-meta"><span class="home-finance-bank-name">JACCS</span><span class="home-finance-bank-rate">0,79%/tháng</span></div></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* ─── PHASE 6: Services ─── *@
+    <section class="page-section bg-gray-50 border-y border-gray-100 reveal" aria-labelledby="home-svc-heading">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
+                <div>
+                    <p class="section-eyebrow">Xưởng HEAD</p>
+                    <h2 id="home-svc-heading" class="section-title">Dịch vụ bảo dưỡng</h2>
+                    <p class="section-subtitle">Quy trình chuẩn Honda — đặt lịch nhanh</p>
+                </div>
+                <a href="/bao-duong#booking" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Đặt lịch dịch vụ →</a>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6" data-stagger>
+                @if (d.Services.Any())
+                {
+                    @foreach (var svc in d.Services)
+                    {
+                        <article class="home-service-card group reveal">
+                            <div class="home-service-visual" aria-hidden="true" data-icon="@svc.IconKey">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            </div>
+                            <div class="home-service-body">
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">@svc.Category</p>
+                                <h3 class="mt-1 font-bold text-honda-dark group-hover:text-honda-red transition-colors">@svc.Name</h3>
+                                @if (!string.IsNullOrWhiteSpace(svc.EstimatedDuration))
+                                {
+                                    <p class="mt-2 text-sm text-gray-500">Thời gian ước tính: @svc.EstimatedDuration</p>
+                                }
+                                else
+                                {
+                                    <p class="mt-2 text-sm text-gray-500">Đặt lịch tại xưởng HEAD Hiếu Nga</p>
+                                }
+                                <a href="/bao-duong/@svc.Slug" class="home-service-book touch-press">Đặt lịch</a>
+                            </div>
+                        </article>
+                    }
+                }
+                else
+                {
+                    var fallbackServices = new[]
+                    {
+                        ("Bảo dưỡng định kỳ", "Kiểm tra tổng thể theo km"),
+                        ("Thay nhớt chính hãng", "Nhớt Honda đúng định mức"),
+                        ("Kiểm tra động cơ", "Chẩn đoán & hiệu suất"),
+                        ("Điện / ắc quy", "Hệ thống điện an toàn"),
+                        ("Phanh / lốp", "An toàn vận hành"),
+                        ("Phụ tùng chính hãng", "Báo giá minh bạch")
+                    };
+                    foreach (var (title, desc) in fallbackServices)
+                    {
+                        <article class="home-service-card group reveal">
+                            <div class="home-service-visual" aria-hidden="true">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            </div>
+                            <div class="home-service-body">
+                                <h3 class="font-bold text-honda-dark group-hover:text-honda-red transition-colors">@title</h3>
+                                <p class="mt-2 text-sm text-gray-500">@desc</p>
+                                <a href="/bao-duong#booking" class="home-service-book touch-press">Đặt lịch</a>
+                            </div>
+                        </article>
+                    }
                 }
             </div>
         </div>
     </section>
 
-    @* ─── 6. Quick contact CTA ─── *@
-    <section class="py-10 md:py-14">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="rounded-2xl border border-gray-100 bg-white p-6 md:p-10 shadow-sm text-center md:text-left">
-                <h2 class="text-xl md:text-2xl font-bold text-honda-dark">Cần tư vấn nhanh?</h2>
-                <p class="mt-2 text-sm text-gray-500 max-w-xl md:mx-0 mx-auto">
-                    Liên hệ đội ngũ Xe Máy Hiếu Nga để được tư vấn mua xe hoặc đặt lịch dịch vụ.
-                </p>
-                <div class="mt-6 flex flex-col sm:flex-row flex-wrap gap-3 justify-center md:justify-start">
-                    <a href="/lien-he?intent=mua-xe" class="btn-primary justify-center">Tư vấn mua xe</a>
-                    <a href="/bao-duong#booking" class="btn-secondary justify-center">Đặt lịch dịch vụ</a>
-                    <a href="tel:@hotlineTel" class="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-honda-dark border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">
-                        Gọi ngay
+    @* ─── PHASE 7: Latest Promotions (horizontal carousel) ─── *@
+    @if (d.Promotions.Any())
+    {
+        <section class="page-section reveal" aria-labelledby="home-promo-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+                    <div>
+                        <p class="section-eyebrow">Ưu đãi</p>
+                        <h2 id="home-promo-heading" class="section-title">Khuyến mãi đang diễn ra</h2>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="home-carousel-nav" data-promo-nav>
+                            <button type="button" class="home-carousel-btn" data-promo-prev aria-label="Khuyến mãi trước">‹</button>
+                            <button type="button" class="home-carousel-btn" data-promo-next aria-label="Khuyến mãi sau">›</button>
+                        </div>
+                        <a href="/khuyen-mai" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Tất cả →</a>
+                    </div>
+                </div>
+                <div class="home-promo-rail" data-promo-rail tabindex="0" aria-label="Danh sách khuyến mãi">
+                    @foreach (var promo in d.Promotions)
+                    {
+                        var endIso = promo.EndDate.ToString("o");
+                        <a href="/khuyen-mai/@promo.Slug" class="home-promo-slide group">
+                            <div class="home-promo-media img-wrap">
+                                <img src="@(promo.ImageUrl ?? "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80")"
+                                     alt="@promo.Title"
+                                     class="img-media home-promo-img"
+                                     width="960" height="540"
+                                     loading="lazy" decoding="async" />
+                                <div class="home-promo-shade" aria-hidden="true"></div>
+                                <span class="home-promo-countdown" data-countdown="@endIso" aria-label="Thời hạn khuyến mãi">
+                                    Đến @promo.EndDate.ToString("dd/MM")
+                                </span>
+                            </div>
+                            <div class="home-promo-body">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-honda-red">@promo.Type</span>
+                                <h3 class="mt-1 text-lg md:text-xl font-bold text-honda-dark group-hover:text-honda-red transition-colors line-clamp-2">@promo.Title</h3>
+                                @if (!string.IsNullOrEmpty(promo.Summary))
+                                {
+                                    <p class="mt-2 text-sm text-gray-500 line-clamp-2">@promo.Summary</p>
+                                }
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ─── PHASE 8: News (magazine) ─── *@
+    @if (featuredPost is not null)
+    {
+        <section class="page-section bg-gray-50 border-y border-gray-100 reveal reveal-right" aria-labelledby="home-news-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
+                    <div>
+                        <p class="section-eyebrow">Tin tức</p>
+                        <h2 id="home-news-heading" class="section-title">Góc tạp chí Hiếu Nga</h2>
+                    </div>
+                    <a href="/tin-tuc" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Xem tất cả tin →</a>
+                </div>
+                <div class="home-news-magazine">
+                    @{
+                        var featuredRead = Math.Max(1, ((featuredPost.Summary?.Length ?? 180) + 400) / 400);
+                    }
+                    <a href="/tin-tuc/@featuredPost.Slug" class="home-news-feature group">
+                        <div class="home-news-feature-media img-wrap">
+                            <img src="@(featuredPost.ThumbnailUrl ?? "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1200&q=80")"
+                                 alt="@featuredPost.Title"
+                                 class="img-media home-news-feature-img"
+                                 width="1200" height="750"
+                                 loading="lazy" decoding="async" />
+                        </div>
+                        <div class="home-news-feature-body">
+                            <div class="home-news-meta">
+                                @if (featuredPost.PublishedAt.HasValue)
+                                {
+                                    <time datetime="@featuredPost.PublishedAt.Value.ToString("yyyy-MM-dd")">@featuredPost.PublishedAt.Value.ToString("dd/MM/yyyy")</time>
+                                }
+                                <span aria-hidden="true">·</span>
+                                <span>@featuredRead phút đọc</span>
+                            </div>
+                            <h3 class="home-news-feature-title">@featuredPost.Title</h3>
+                            @if (!string.IsNullOrEmpty(featuredPost.Summary))
+                            {
+                                <p class="home-news-feature-summary">@featuredPost.Summary</p>
+                            }
+                            <span class="home-news-read">Đọc bài →</span>
+                        </div>
                     </a>
+                    <div class="home-news-side">
+                        @foreach (var post in sidePosts)
+                        {
+                            var readMins = Math.Max(1, ((post.Summary?.Length ?? 120) + 300) / 350);
+                            <a href="/tin-tuc/@post.Slug" class="home-news-side-card group">
+                                <div class="home-news-side-media img-wrap">
+                                    <img src="@(post.ThumbnailUrl ?? "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=600&q=80")"
+                                         alt="@post.Title"
+                                         class="img-media"
+                                         width="320" height="220"
+                                         loading="lazy" decoding="async" />
+                                </div>
+                                <div>
+                                    <div class="home-news-meta">
+                                        @if (post.PublishedAt.HasValue)
+                                        {
+                                            <time datetime="@post.PublishedAt.Value.ToString("yyyy-MM-dd")">@post.PublishedAt.Value.ToString("dd/MM/yyyy")</time>
+                                        }
+                                        <span aria-hidden="true">·</span>
+                                        <span>@readMins phút</span>
+                                    </div>
+                                    <h3 class="home-news-side-title">@post.Title</h3>
+                                </div>
+                            </a>
+                        }
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    }
 
-    @* ─── 7. Branch / contact ─── *@
-    <section class="py-10 md:py-14 bg-gray-50 border-t border-gray-100 pb-16 md:pb-20">
+    @* ─── PHASE 9: Customer Reviews slider ─── *@
+    @if (d.Testimonials.Any())
+    {
+        <section class="page-section reveal" aria-labelledby="home-review-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+                    <div>
+                        <p class="section-eyebrow">Khách hàng</p>
+                        <h2 id="home-review-heading" class="section-title">Đánh giá từ khách hàng</h2>
+                    </div>
+                    <div class="home-carousel-nav" data-review-nav>
+                        <button type="button" class="home-carousel-btn" data-review-prev aria-label="Đánh giá trước">‹</button>
+                        <button type="button" class="home-carousel-btn" data-review-next aria-label="Đánh giá sau">›</button>
+                    </div>
+                </div>
+                <div class="home-review-slider"
+                     data-review-slider
+                     data-interval="5500"
+                     aria-roledescription="carousel"
+                     aria-label="Đánh giá khách hàng"
+                     tabindex="0">
+                    <div class="home-review-track" data-review-track>
+                        @foreach (var review in d.Testimonials)
+                        {
+                            var initials = string.Concat(review.CustomerName
+                                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                .TakeLast(2)
+                                .Select(p => char.ToUpperInvariant(p[0])));
+                            if (string.IsNullOrEmpty(initials)) initials = "?";
+                            <blockquote class="home-review-slide" data-review-slide>
+                                <div class="home-review-stars" aria-label="@review.Rating sao">
+                                    @for (var s = 0; s < review.Rating; s++)
+                                    {
+                                        <span aria-hidden="true">★</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(review.Title))
+                                {
+                                    <p class="home-review-title">@review.Title</p>
+                                }
+                                <p class="home-review-content">“@review.Content”</p>
+                                <footer class="home-review-footer">
+                                    <span class="home-review-avatar" aria-hidden="true">@initials</span>
+                                    <div>
+                                        <cite class="home-review-name">@review.CustomerName</cite>
+                                        <p class="home-review-branch">
+                                            @(headBranch?.Name ?? site.SiteName)
+                                            @if (!string.IsNullOrWhiteSpace(review.MotorcycleName))
+                                            {
+                                                <span> · @review.MotorcycleName</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </footer>
+                            </blockquote>
+                        }
+                    </div>
+                    <div class="home-review-dots" data-review-dots role="tablist" aria-label="Chọn đánh giá"></div>
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ─── PHASE 10: Branches ─── *@
+    <section class="page-section bg-gray-50 border-t border-gray-100 reveal" aria-labelledby="home-branch-heading">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-bold text-honda-dark tracking-tight">Showroom &amp; liên hệ</h2>
-            @if (headBranch is not null)
-            {
-                <div class="mt-6 rounded-2xl border border-gray-100 bg-white p-6 md:p-8 max-w-2xl">
-                    @if (headBranch.IsHeadOffice)
+            <p class="section-eyebrow">Showroom</p>
+            <h2 id="home-branch-heading" class="section-title">Chi nhánh &amp; liên hệ</h2>
+            <p class="section-subtitle">
+                <span data-counter="@Math.Max(1, d.Branches.Count)" data-counter-suffix="+">0</span> điểm giao dịch sẵn sàng hỗ trợ bạn
+            </p>
+            <div class="home-branch-layout mt-10">
+                <div class="home-branch-map-card">
+                    @if (!string.IsNullOrWhiteSpace(headBranch?.MapEmbedUrl))
                     {
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-honda-red">HEAD Office</span>
+                        <div class="home-branch-map">
+                            <iframe src="@headBranch.MapEmbedUrl"
+                                    title="Bản đồ @(headBranch?.Name ?? site.SiteName)"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    allowfullscreen></iframe>
+                        </div>
                     }
-                    <h3 class="text-lg font-bold text-honda-dark mt-1">@headBranch.Name</h3>
-                    <p class="mt-2 text-sm text-gray-600">@headBranch.Address</p>
-                    @if (!string.IsNullOrEmpty(headBranch.OpeningHours))
+                    else
                     {
-                        <p class="mt-2 text-sm text-gray-500">@headBranch.OpeningHours</p>
+                        <div class="home-branch-map home-branch-map-fallback" aria-hidden="true">
+                            <div class="home-branch-map-placeholder">
+                                <svg class="w-10 h-10 text-honda-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <p>Xe Máy Hiếu Nga · Đà Nẵng</p>
+                            </div>
+                        </div>
                     }
-                    <p class="mt-4">
-                        <a href="tel:@hotlineTel" class="text-honda-red font-bold hover:underline">@hotline</a>
-                    </p>
+                    <div class="home-branch-info">
+                        @if (headBranch is not null)
+                        {
+                            @if (headBranch.IsHeadOffice)
+                            {
+                                <span class="section-eyebrow">HEAD Office</span>
+                            }
+                            <h3 class="text-xl font-bold text-honda-dark mt-1">@headBranch.Name</h3>
+                            <p class="mt-3 text-sm text-gray-600 leading-relaxed">@headBranch.Address</p>
+                            @if (!string.IsNullOrEmpty(headBranch.OpeningHours))
+                            {
+                                <p class="mt-2 text-sm text-gray-500">Giờ mở cửa: @headBranch.OpeningHours</p>
+                            }
+                            <p class="mt-4">
+                                <a href="@telHref" hx-boost="false" class="text-honda-red font-bold text-lg hover:underline focus-ring rounded">@hotline</a>
+                            </p>
+                        }
+                        else
+                        {
+                            <h3 class="text-xl font-bold text-honda-dark">@site.SiteName</h3>
+                            <p class="mt-3 text-sm text-gray-600">@site.Address</p>
+                            <p class="mt-2 text-sm text-gray-500">@site.OpeningHours</p>
+                            <p class="mt-4">
+                                <a href="@telHref" hx-boost="false" class="text-honda-red font-bold text-lg hover:underline focus-ring rounded">@site.Hotline</a>
+                            </p>
+                        }
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <a href="@mapsSearchUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="btn-primary">Mở Google Maps</a>
+                            <a href="/lien-he?intent=mua-xe" class="btn-secondary">Tư vấn mua xe</a>
+                            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="inline-flex items-center justify-center px-5 py-3 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition focus-ring">Chat Zalo</a>
+                        </div>
+                    </div>
                 </div>
-            }
-            else
-            {
-                <div class="mt-6 rounded-2xl border border-gray-100 bg-white p-6 md:p-8 max-w-2xl">
-                    <h3 class="text-lg font-bold text-honda-dark">Xe Máy Hiếu Nga Đà Nẵng</h3>
-                    <p class="mt-2 text-sm text-gray-600">123 Nguyễn Văn Linh, Đà Nẵng</p>
-                    <p class="mt-2 text-sm text-gray-500">T2–T7: 8:00–18:00 · CN: 8:00–17:00</p>
-                    <p class="mt-4">
-                        <a href="tel:0905123456" class="text-honda-red font-bold hover:underline">0905 123 456</a>
-                    </p>
-                </div>
-            }
-            <a href="/lien-he" class="inline-flex items-center gap-2 mt-6 text-sm font-semibold text-honda-red hover:underline">
-                Xem thông tin liên hệ
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </a>
+                @if (d.Branches.Count > 1)
+                {
+                    <div class="home-branch-list">
+                        @foreach (var b in d.Branches.Where(x => headBranch is null || x.Id != headBranch.Id).Take(4))
+                        {
+                            var bMaps = "https://www.google.com/maps/search/?api=1&query=" + Uri.EscapeDataString(b.Address);
+                            <div class="home-branch-mini">
+                                <h4 class="font-semibold text-honda-dark">@b.Name</h4>
+                                <p class="text-sm text-gray-500 mt-1">@b.Address</p>
+                                @if (!string.IsNullOrEmpty(b.OpeningHours))
+                                {
+                                    <p class="text-xs text-gray-400 mt-1">@b.OpeningHours</p>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(b.Hotline ?? b.Phone))
+                                {
+                                    <p class="text-sm text-honda-red font-semibold mt-2">@(b.Hotline ?? b.Phone)</p>
+                                }
+                                <a href="@bMaps" target="_blank" rel="noopener noreferrer" hx-boost="false" class="inline-block mt-2 text-xs font-semibold text-honda-dark hover:text-honda-red">Chỉ đường →</a>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </div>
     </section>
 </div>
+
+<script src="~/js/homepage.js" asp-append-version="true"></script>

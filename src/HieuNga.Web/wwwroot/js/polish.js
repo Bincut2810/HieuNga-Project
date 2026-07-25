@@ -1,5 +1,6 @@
 /**
- * Honda Hiếu Nga — global UX polish (HTMX app navigation, header, images)
+ * Honda Hiếu Nga — global UX polish (HTMX, header, images, motion)
+ * Sprint 4.1 — no GSAP; IntersectionObserver + CSS only
  */
 (function () {
   'use strict';
@@ -95,6 +96,127 @@
     scope.querySelectorAll('.reveal:not(.is-visible)').forEach((el) => revealObserver.observe(el));
   }
 
+  /* ─── Stagger: ensure direct children of [data-stagger] get .reveal ─── */
+  function initStagger(root) {
+    const scope = root || document;
+    scope.querySelectorAll('[data-stagger]').forEach((group) => {
+      Array.from(group.children).forEach((child) => {
+        if (!child.classList.contains('reveal')) child.classList.add('reveal');
+      });
+    });
+  }
+
+  /* ─── Light parallax ─── */
+  let parallaxNodes = [];
+  let parallaxRaf = 0;
+
+  function collectParallax(root) {
+    const scope = root || document;
+    const found = Array.from(scope.querySelectorAll('[data-parallax]'));
+    if (scope === document) {
+      parallaxNodes = found;
+    } else {
+      const set = new Set(parallaxNodes.concat(found));
+      parallaxNodes = Array.from(set);
+    }
+  }
+
+  function tickParallax() {
+    parallaxRaf = 0;
+    if (prefersReducedMotion || !parallaxNodes.length) return;
+    const vh = window.innerHeight || 1;
+    parallaxNodes.forEach((el) => {
+      if (!el.isConnected) return;
+      const speed = parseFloat(el.getAttribute('data-parallax') || '0.12');
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const offset = ((mid - vh / 2) / vh) * -40 * speed;
+      el.style.transform = 'translate3d(0,' + offset.toFixed(2) + 'px,0)';
+    });
+  }
+
+  function onParallaxScroll() {
+    if (parallaxRaf || prefersReducedMotion) return;
+    parallaxRaf = requestAnimationFrame(tickParallax);
+  }
+
+  /* ─── Counters ─── */
+  let counterObserver;
+
+  function animateCounter(el) {
+    if (el.dataset.counted === '1') return;
+    el.dataset.counted = '1';
+    const target = parseFloat(el.getAttribute('data-counter') || '0');
+    const suffix = el.getAttribute('data-counter-suffix') || '';
+    const prefix = el.getAttribute('data-counter-prefix') || '';
+    const decimals = parseInt(el.getAttribute('data-counter-decimals') || '0', 10);
+    if (prefersReducedMotion || !Number.isFinite(target)) {
+      el.textContent = prefix + target + suffix;
+      return;
+    }
+    const duration = 1100;
+    const start = performance.now();
+    function frame(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const value = target * eased;
+      el.textContent =
+        prefix +
+        (decimals > 0 ? value.toFixed(decimals) : Math.round(value).toLocaleString('vi-VN')) +
+        suffix;
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function initCounters(root) {
+    const scope = root || document;
+    const nodes = scope.querySelectorAll('[data-counter]:not([data-counted="1"])');
+    if (!nodes.length) return;
+    if (prefersReducedMotion) {
+      nodes.forEach(animateCounter);
+      return;
+    }
+    if (!counterObserver) {
+      counterObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              animateCounter(entry.target);
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.35 }
+      );
+    }
+    nodes.forEach((el) => counterObserver.observe(el));
+  }
+
+  /* ─── Button ripple ─── */
+  function setRipplePoint(btn, clientX, clientY) {
+    const rect = btn.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    btn.style.setProperty('--rx', x + '%');
+    btn.style.setProperty('--ry', y + '%');
+    btn.classList.remove('is-rippling');
+    void btn.offsetWidth;
+    btn.classList.add('is-rippling');
+    window.setTimeout(() => btn.classList.remove('is-rippling'), 420);
+  }
+
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (prefersReducedMotion || e.button !== 0) return;
+      const btn = e.target.closest('.btn-primary, .btn-ripple');
+      if (!btn || btn.disabled || btn.classList.contains('is-disabled') || btn.classList.contains('is-loading')) return;
+      setRipplePoint(btn, e.clientX, e.clientY);
+    },
+    { passive: true }
+  );
+
   /* ─── Active nav link ─── */
   function updateNavActive() {
     const path = window.location.pathname.replace(/\/$/, '') || '/';
@@ -121,6 +243,7 @@
   function onScroll() {
     if (!header) return;
     header.classList.toggle('is-scrolled', window.scrollY > 16);
+    onParallaxScroll();
   }
 
   /* ─── Bảo dưỡng booking preselect from ?service=slug (client fallback) ─── */
@@ -154,11 +277,15 @@
   /* ─── Main page initializer (idempotent) ─── */
   function initPage(root) {
     const scope = root && root.nodeType === 1 ? root : document;
+    initStagger(scope);
     initImages(scope);
     initReveals(scope);
+    collectParallax(scope);
+    initCounters(scope);
     updateNavActive();
     initMotorcycleFinance(scope);
     initBookingFromQuery();
+    tickParallax();
 
     if (!scope.querySelector || !scope.querySelector('.detail-page')) {
       document.body.classList.remove('detail-sticky-visible');
@@ -205,8 +332,11 @@
     if (target.id === 'main-content') {
       onMainContentSwap(e);
     } else {
+      initStagger(target);
       initImages(target);
       initReveals(target);
+      collectParallax(target);
+      initCounters(target);
     }
     if (target.id === 'catalog-grid' || target.id === 'blog-grid') {
       target.classList.remove('is-loading');
@@ -238,7 +368,7 @@
   );
   document.addEventListener(
     'touchend',
-    (e) => {
+    () => {
       document.querySelectorAll('.touch-press.is-pressed').forEach((el) => el.classList.remove('is-pressed'));
     },
     { passive: true }
@@ -297,6 +427,7 @@
   );
 
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onParallaxScroll, { passive: true });
   onScroll();
 
   document.addEventListener('DOMContentLoaded', () => initPage(document));

@@ -38,4 +38,9 @@ public record CreateConsultationDto(
     string? Email,
     string? Subject,
     string? Message,
-    Guid? BranchId);
+    Guid? BranchId,
+    Guid? MotorcycleId = null,
+    string? LeadSource = null,
+    string? Intent = null,
+    string? XeSlug = null,
+    string? ServiceSlug = null);

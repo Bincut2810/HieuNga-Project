@@ -1,0 +1,114 @@
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var zaloUrl = SiteSettingsViewData.ZaloHref(site);
+    var facebookUrl = string.IsNullOrWhiteSpace(site.FacebookUrl) ? null : site.FacebookUrl;
+
+    var intent = ViewData["CtaIntent"] as string;
+    var xe = ViewData["CtaXe"] as string;
+    var service = ViewData["CtaService"] as string;
+    var source = ViewData["CtaSource"] as string ?? "cta";
+    var layout = (ViewData["CtaLayout"] as string ?? "stack").ToLowerInvariant();
+
+    string Q(string basePath, params (string k, string? v)[] pairs)
+    {
+        var qs = new List<string>();
+        foreach (var (k, v) in pairs)
+        {
+            if (!string.IsNullOrWhiteSpace(v))
+                qs.Add($"{k}={Uri.EscapeDataString(v)}");
+        }
+        return qs.Count == 0 ? basePath : basePath + "?" + string.Join("&", qs);
+    }
+
+    var consultUrl = Q("/lien-he", ("intent", intent ?? "mua-xe"), ("xe", xe), ("service", service), ("source", source));
+    var testRideUrl = string.IsNullOrWhiteSpace(ViewData["CtaXeId"] as string)
+        ? Q("/dat-lich-lai-thu", ("source", source))
+        : Q("/dat-lich-lai-thu", ("xeId", ViewData["CtaXeId"] as string), ("source", source));
+    var financeUrl = Q("/tra-gop", ("xe", xe), ("source", source));
+    var serviceUrl = Q("/bao-duong", ("service", service)) + "#booking";
+    var show = (ViewData["CtaShow"] as string ?? "consult,call,zalo,testride,finance,service").ToLowerInvariant();
+}
+
+@if (layout == "row" || layout == "inline")
+{
+    <div class="univ-cta univ-cta-row" role="group" aria-label="Liên hệ nhanh">
+        @if (show.Contains("consult"))
+        {
+            <a href="@consultUrl" class="btn-primary touch-press univ-cta-btn">Tư vấn</a>
+        }
+        @if (show.Contains("call"))
+        {
+            <a href="@telHref" hx-boost="false" class="btn-secondary touch-press univ-cta-btn">Gọi ngay</a>
+        }
+        @if (show.Contains("zalo"))
+        {
+            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press univ-cta-btn">Zalo</a>
+        }
+        @if (show.Contains("messenger") && facebookUrl is not null)
+        {
+            <a href="@facebookUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press univ-cta-btn" title="Messenger (Facebook)">Messenger</a>
+        }
+        else if (show.Contains("messenger"))
+        {
+            <span class="detail-ghost-btn univ-cta-btn opacity-60 cursor-not-allowed" title="Messenger sắp có" aria-disabled="true">Messenger</span>
+        }
+        @if (show.Contains("testride"))
+        {
+            <a href="@testRideUrl" class="detail-ghost-btn touch-press univ-cta-btn">Đặt xem xe</a>
+        }
+        @if (show.Contains("finance"))
+        {
+            <a href="@financeUrl" class="detail-ghost-btn touch-press univ-cta-btn">Trả góp</a>
+        }
+        @if (show.Contains("service"))
+        {
+            <a href="@serviceUrl" class="detail-ghost-btn touch-press univ-cta-btn">Đặt dịch vụ</a>
+        }
+    </div>
+}
+else
+{
+    <div class="univ-cta univ-cta-stack" role="group" aria-label="Liên hệ nhanh">
+        @if (show.Contains("consult"))
+        {
+            <a href="@consultUrl" class="btn-primary touch-press w-full justify-center">@(ViewData["CtaConsultLabel"] as string ?? "Tư vấn mua xe")</a>
+        }
+        <div class="grid grid-cols-2 gap-2.5">
+            @if (show.Contains("call"))
+            {
+                <a href="@telHref" hx-boost="false" class="btn-secondary touch-press justify-center text-sm">Gọi @site.Hotline</a>
+            }
+            @if (show.Contains("zalo"))
+            {
+                <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="btn-secondary touch-press justify-center text-sm">Chat Zalo</a>
+            }
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+            @if (show.Contains("testride"))
+            {
+                <a href="@testRideUrl" class="detail-ghost-btn touch-press text-sm">Đặt lịch xem xe</a>
+            }
+            @if (show.Contains("finance"))
+            {
+                <a href="@financeUrl" class="detail-ghost-btn touch-press text-sm">Tính trả góp</a>
+            }
+        </div>
+        @if (show.Contains("service"))
+        {
+            <a href="@serviceUrl" class="detail-ghost-btn touch-press w-full justify-center text-sm">Đặt lịch dịch vụ</a>
+        }
+        @if (show.Contains("messenger"))
+        {
+            @if (facebookUrl is not null)
+            {
+                <a href="@facebookUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="text-center text-xs font-semibold text-gray-500 hover:text-honda-red">Messenger (Facebook)</a>
+            }
+            else
+            {
+                <p class="text-center text-xs text-gray-400">Messenger — sắp kết nối</p>
+            }
+        }
+    </div>
+}
