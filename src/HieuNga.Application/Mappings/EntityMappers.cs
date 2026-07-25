@@ -119,7 +119,19 @@ public static class EntityMappers
 
 
 
-    public static BannerDto ToDto(this Banner b) => new(b.Id, b.Title, b.Subtitle, b.ImageUrl, b.MobileImageUrl, b.CtaText, b.CtaUrl);
+    public static BannerDto ToDto(this Banner b) => new(
+        b.Id,
+        b.Title,
+        b.Subtitle,
+        b.ImageUrl,
+        b.MobileImageUrl,
+        b.CtaText,
+        b.CtaUrl,
+        b.SecondaryCtaText,
+        b.SecondaryCtaUrl,
+        b.Badge,
+        Math.Clamp(b.OverlayStrength, 0, 100),
+        b.TextAlignment);
 
 
 

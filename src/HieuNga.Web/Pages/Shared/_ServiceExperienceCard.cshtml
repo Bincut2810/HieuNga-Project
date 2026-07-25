@@ -1,0 +1,26 @@
+@model HieuNga.Application.DTOs.ServiceItemListDto
+@{
+    var thumb = Model.ThumbnailUrl
+        ?? "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&q=80";
+    var summary = Model.ShortDescription ?? Model.Category;
+}
+<a href="/dich-vu/@Model.Slug" class="svc-exp-card group reveal card-elevate">
+    <div class="svc-exp-media img-wrap">
+        <img src="@thumb"
+             alt=""
+             class="img-media svc-exp-img"
+             loading="lazy"
+             decoding="async"
+             width="800"
+             height="600" />
+        <div class="svc-exp-shade" aria-hidden="true"></div>
+        <span class="svc-exp-badge">HEAD</span>
+    </div>
+    <div class="svc-exp-body">
+        <h3 class="svc-exp-title">@Model.Name</h3>
+        <p class="svc-exp-summary">@summary</p>
+        <span class="svc-exp-cta">Xem chi tiết
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </span>
+    </div>
+</a>

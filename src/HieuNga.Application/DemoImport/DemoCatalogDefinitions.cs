@@ -2,7 +2,7 @@ using HieuNga.Domain.Enums;
 
 namespace HieuNga.Application.DemoImport;
 
-/// <summary>In-memory demo dealership lineup (presentation seed). Editable later via CMS.</summary>
+/// <summary>In-memory demo dealership lineup sized to Sprint 3.6.1 inventory targets.</summary>
 public static class DemoCatalogDefinitions
 {
     public const string SharedAssetsFolder = "_Shared";
@@ -14,65 +14,57 @@ public static class DemoCatalogDefinitions
         var list = new List<DemoMotorcycleMetadata>();
         var sort = 0;
 
-        // ── Scooter (5) ──
-        list.Add(Bike("Vision", "demo-vision", "Scooter", 35_990_000, 110, "Tự động", true, sort++,
+        // ── Xe tay ga / Scooter (6) ──
+        list.Add(Bike("Honda Vision", "demo-vision", "Scooter", 35_990_000, 110, "Tự động", true, sort++,
             "Xe tay ga đô thị gọn nhẹ, phù hợp đi lại hàng ngày."));
-        list.Add(Bike("Lead", "demo-lead", "Scooter", 39_490_000, 125, "Tự động", true, sort++,
-            "Scooter tiện nghi, cốp rộng, phù hợp gia đình trẻ."));
-        list.Add(Bike("Air Blade 160", "demo-air-blade-160", "Scooter", 57_690_000, 160, "Tự động", true, sort++,
+        list.Add(Bike("Honda Lead", "demo-lead", "Scooter", 39_490_000, 125, "Tự động", true, sort++,
+            "Tay ga tiện nghi, cốp rộng, phù hợp gia đình trẻ."));
+        list.Add(Bike("Honda Air Blade 160", "demo-air-blade-160", "Scooter", 57_690_000, 160, "Tự động", true, sort++,
             "Tay ga thể thao 160cc, thiết kế năng động."));
-        list.Add(Bike("SH160i", "demo-sh160i", "Scooter", 99_990_000, 160, "Tự động", true, sort++,
-            "Scooter cao cấp, phong cách châu Âu."));
-        list.Add(Bike("Vario 160", "demo-vario-160", "Scooter", 51_990_000, 160, "Tự động", false, sort++,
+        list.Add(Bike("Honda SH160i", "demo-sh160i", "Scooter", 99_990_000, 160, "Tự động", true, sort++,
+            "Xe tay ga cao cấp, phong cách châu Âu."));
+        list.Add(Bike("Honda Vario 160", "demo-vario-160", "Scooter", 51_990_000, 160, "Tự động", false, sort++,
             "Tay ga cá tính, phù hợp giới trẻ đô thị."));
+        list.Add(Bike("Honda PCX 160", "demo-pcx-160", "Scooter", 72_990_000, 160, "Tự động", true, sort++,
+            "Tay ga trung cấp êm ái, phù hợp đi phố hàng ngày."));
 
-        // ── Xe số (5) ──
-        list.Add(Bike("Wave Alpha", "demo-wave-alpha", "XeSo", 18_500_000, 110, "Số", true, sort++,
+        // ── Xe số (4) ──
+        list.Add(Bike("Honda Wave Alpha", "demo-wave-alpha", "XeSo", 18_500_000, 110, "Số", true, sort++,
             "Xe số tiết kiệm, bền bỉ cho nhu cầu cơ bản."));
-        list.Add(Bike("Wave RSX", "demo-wave-rsx", "XeSo", 22_690_000, 110, "Số", false, sort++,
+        list.Add(Bike("Honda Wave RSX", "demo-wave-rsx", "XeSo", 22_690_000, 110, "Số", false, sort++,
             "Xe số thể thao nhẹ, dễ vận hành."));
-        list.Add(Bike("Blade", "demo-blade", "XeSo", 21_390_000, 110, "Số", false, sort++,
+        list.Add(Bike("Honda Blade", "demo-blade", "XeSo", 21_390_000, 110, "Số", false, sort++,
             "Xe số phổ thông, chi phí sử dụng thấp."));
-        list.Add(Bike("Future 125", "demo-future-125", "XeSo", 31_500_000, 125, "Số", true, sort++,
+        list.Add(Bike("Honda Future 125", "demo-future-125", "XeSo", 31_500_000, 125, "Số", true, sort++,
             "Xe số 125cc êm ái, phù hợp đi đường dài."));
-        list.Add(Bike("Super Cub C125", "demo-super-cub-c125", "XeSo", 86_500_000, 125, "Số", true, sort++,
-            "Biểu tượng cổ điển, phong cách retro."));
 
-        // ── Xe côn tay (5) ──
-        list.Add(Bike("Winner X", "demo-winner-x", "ConTay", 46_160_000, 150, "Côn tay", true, sort++,
+        // ── Xe côn tay (4) ──
+        list.Add(Bike("Honda Winner X", "demo-winner-x", "ConTay", 46_160_000, 150, "Côn tay", true, sort++,
             "Underbone thể thao, phù hợp người mới chơi côn."));
-        list.Add(Bike("CB150 Verza", "demo-cb150-verza", "ConTay", 42_900_000, 150, "Côn tay", false, sort++,
+        list.Add(Bike("Honda CB150 Verza", "demo-cb150-verza", "ConTay", 42_900_000, 150, "Côn tay", false, sort++,
             "Naked entry, dễ kiểm soát trong phố."));
-        list.Add(Bike("CBR150R", "demo-cbr150r", "ConTay", 72_500_000, 150, "Côn tay", true, sort++,
+        list.Add(Bike("Honda CBR150R", "demo-cbr150r", "ConTay", 72_500_000, 150, "Côn tay", true, sort++,
             "Sportbike 150cc đậm chất đường đua."));
-        list.Add(Bike("CBR250RR", "demo-cbr250rr", "ConTay", 179_000_000, 250, "Côn tay", true, sort++,
-            "Sport 250 phân khúc cao hơn cho người đam mê."));
-        list.Add(Bike("Sonic 150R", "demo-sonic-150r", "ConTay", 42_500_000, 150, "Côn tay", false, sort++,
+        list.Add(Bike("Honda Sonic 150R", "demo-sonic-150r", "ConTay", 42_500_000, 150, "Côn tay", false, sort++,
             "Underbone cá tính, phù hợp giới trẻ."));
 
-        // ── Xe phân khối lớn (5) ──
-        list.Add(Bike("CB500 Hornet", "demo-cb500-hornet", "PhanKhoiLon", 189_000_000, 500, "Côn tay", true, sort++,
+        // ── Xe phân khối lớn (4) ──
+        list.Add(Bike("Honda CB500 Hornet", "demo-cb500-hornet", "PhanKhoiLon", 189_000_000, 500, "Côn tay", true, sort++,
             "Naked mid-size linh hoạt đường phố và tour ngắn."));
-        list.Add(Bike("CBR650R", "demo-cbr650r", "PhanKhoiLon", 268_000_000, 650, "Côn tay", true, sort++,
+        list.Add(Bike("Honda CBR650R", "demo-cbr650r", "PhanKhoiLon", 268_000_000, 650, "Côn tay", true, sort++,
             "Sport mid-size cân bằng hiệu suất và tiện dụng."));
-        list.Add(Bike("CB650R", "demo-cb650r", "PhanKhoiLon", 246_000_000, 650, "Côn tay", false, sort++,
+        list.Add(Bike("Honda CB650R", "demo-cb650r", "PhanKhoiLon", 246_000_000, 650, "Côn tay", false, sort++,
             "Neo Sports Café mạnh mẽ, phong cách hiện đại."));
-        list.Add(Bike("Africa Twin", "demo-africa-twin", "PhanKhoiLon", 569_000_000, 1084, "Côn tay", true, sort++,
-            "Adventure touring — demo phân khúc lớn."));
-        list.Add(Bike("Rebel 500", "demo-rebel-500", "PhanKhoiLon", 187_000_000, 500, "Côn tay", false, sort++,
+        list.Add(Bike("Honda Rebel 500", "demo-rebel-500", "PhanKhoiLon", 187_000_000, 500, "Côn tay", false, sort++,
             "Cruiser cá tính, tư thế ngồi thoải mái."));
 
-        // ── Xe điện (5) ──
-        list.Add(Bike("ICON e:", "demo-icon-e", "Electric", 21_990_000, null, "Tự động (điện)", true, sort++,
+        // ── Xe điện (3) ──
+        list.Add(Bike("Honda ICON e:", "demo-icon-e", "Electric", 21_990_000, null, "Tự động (điện)", true, sort++,
             "Xe điện đô thị nhỏ gọn — dữ liệu demo trình bày."));
-        list.Add(Bike("CUV e:", "demo-cuv-e", "Electric", 34_990_000, null, "Tự động (điện)", true, sort++,
+        list.Add(Bike("Honda CUV e:", "demo-cuv-e", "Electric", 34_990_000, null, "Tự động (điện)", true, sort++,
             "Xe điện đa dụng, phù hợp đi phố."));
-        list.Add(Bike("EM1 e:", "demo-em1-e", "Electric", 29_990_000, null, "Tự động (điện)", false, sort++,
+        list.Add(Bike("Honda EM1 e:", "demo-em1-e", "Electric", 29_990_000, null, "Tự động (điện)", false, sort++,
             "Xe điện cá nhân, vận hành êm."));
-        list.Add(Bike("Demo Electric 1", "demo-electric-1", "Electric", 19_500_000, null, "Tự động (điện)", false, sort++,
-            "Mẫu điện demo bổ sung cho danh mục."));
-        list.Add(Bike("Demo Electric 2", "demo-electric-2", "Electric", 27_500_000, null, "Tự động (điện)", false, sort++,
-            "Mẫu điện demo thứ hai — thay nội dung trong CMS."));
 
         return list;
     }
@@ -98,6 +90,7 @@ public static class DemoCatalogDefinitions
             _ => "≈ 3.5–5.5 L/100km (demo)"
         };
         var warranty = isElectric ? "2 năm pin + 1 năm xe (demo)" : "3 năm hoặc 30.000 km (demo)";
+        var thumb = CategoryThumbPath(category);
 
         return new DemoMotorcycleMetadata
         {
@@ -111,14 +104,14 @@ public static class DemoCatalogDefinitions
             ShortDescription = shortDesc,
             DescriptionHtml =
                 $"<p><strong>{name}</strong> là mẫu xe demo tại Xe Máy Hiếu Nga phục vụ trình bày website và CMS. " +
-                "Giá, thông số và mô tả có thể chỉnh sửa trong Admin. Ảnh hiện tại là placeholder — thay bằng ảnh thật qua Media.</p>",
+                "Giá, thông số và mô tả có thể chỉnh sửa trong Admin.</p>",
             EngineCc = engineCc,
             FuelType = fuel,
             Transmission = transmission,
             Highlights =
             [
                 "Dữ liệu demo — chỉnh sửa trong CMS",
-                "Đầy đủ media placeholder (gallery / màu / 360°)",
+                "Ảnh local ổn định (không phụ thuộc CDN)",
                 "Máy tính trả góp bật mặc định"
             ],
             Specifications =
@@ -128,7 +121,6 @@ public static class DemoCatalogDefinitions
                 new DemoSpecItem { Icon = "⛽", Label = "Nhiên liệu", Value = fuel },
                 new DemoSpecItem { Icon = "📉", Label = "Mức tiêu hao", Value = consumption },
                 new DemoSpecItem { Icon = "🛡️", Label = "Bảo hành", Value = warranty },
-                new DemoSpecItem { Icon = "group", Label = "Thông tin chung", Value = "" },
                 new DemoSpecItem { Icon = "🏷️", Label = "Phân khúc", Value = CategoryLabel(category) },
                 new DemoSpecItem { Icon = "📦", Label = "Tình trạng", Value = "Còn hàng (demo)" }
             ],
@@ -145,46 +137,35 @@ public static class DemoCatalogDefinitions
             ],
             Colors =
             [
-                new DemoColorItem { Name = "Đen", Hex = "#1A1A1A", Image = "black.jpg" },
-                new DemoColorItem { Name = "Trắng", Hex = "#F5F5F5", Image = "white.jpg" },
-                new DemoColorItem { Name = "Đỏ", Hex = "#E40521", Image = "red.jpg" }
+                new DemoColorItem { Name = "Đen", Hex = "#1A1A1A" },
+                new DemoColorItem { Name = "Trắng", Hex = "#F5F5F5" },
+                new DemoColorItem { Name = "Đỏ", Hex = "#E40521" }
             ],
             Features =
             [
                 new DemoContentCard
                 {
                     Title = "Thiết kế nổi bật",
-                    Description = $"Điểm nhấn thiết kế demo cho {name}. Thay nội dung trong CMS.",
-                    Image = "feature-01.jpg"
+                    Description = $"Điểm nhấn thiết kế demo cho {name}. Thay nội dung trong CMS."
                 },
                 new DemoContentCard
                 {
                     Title = "Vận hành hàng ngày",
-                    Description = "Nội dung feature demo — editable trong tab Features.",
-                    Image = "feature-02.jpg"
+                    Description = "Nội dung feature demo — editable trong tab Features."
                 }
             ],
             Technology =
             [
                 new DemoContentCard
                 {
-                    Title = "Công nghệ an toàn",
-                    Description = "Mô tả technology demo cho trang chi tiết.",
-                    Image = "tech-01.jpg"
-                },
-                new DemoContentCard
-                {
-                    Title = "Tiện ích thông minh",
-                    Description = "Card công nghệ thứ hai — thay bằng nội dung thật sau.",
-                    Image = "tech-02.jpg"
+                    Title = "Công nghệ nổi bật",
+                    Description = "Thông tin công nghệ demo — chỉnh trong CMS."
                 }
             ],
             Seo = new DemoSeoMetadata
             {
                 MetaTitle = $"{name} | Xe Máy Hiếu Nga",
-                MetaDescription = $"{shortDesc} Giá demo từ {price:N0} ₫ tại showroom Đà Nẵng.",
-                MetaKeywords = $"{name}, xe may hieu nga, {CategoryLabel(category)}",
-                CanonicalUrl = $"/xe/{slug}"
+                MetaDescription = shortDesc
             },
             Finance = new DemoFinanceDefaults
             {
@@ -192,14 +173,25 @@ public static class DemoCatalogDefinitions
                 DefaultDownPaymentPercent = 20,
                 DefaultTermMonths = 12
             },
-            Assets = new DemoAssetHints()
+            Assets = new DemoAssetHints { Thumbnail = thumb }
         };
     }
+
+    private static string CategoryThumbPath(string category) =>
+        DemoPackageCatalog.ParseCategory(category) switch
+        {
+            MotorcycleCategory.Scooter => "/images/motorcycles/honda-vision-2025.svg",
+            MotorcycleCategory.ConTay => "/images/motorcycles/honda-winner-x.svg",
+            MotorcycleCategory.PhanKhoiLon => "/images/motorcycles/honda-cb150r.svg",
+            MotorcycleCategory.XeSo => "/images/motorcycles/default.svg",
+            MotorcycleCategory.Electric => "/images/motorcycles/default.svg",
+            _ => "/images/motorcycles/default.svg"
+        };
 
     private static string CategoryLabel(string category) =>
         DemoPackageCatalog.ParseCategory(category) switch
         {
-            MotorcycleCategory.Scooter => "Scooter",
+            MotorcycleCategory.Scooter => "Xe tay ga",
             MotorcycleCategory.XeSo => "Xe số",
             MotorcycleCategory.ConTay => "Xe côn tay",
             MotorcycleCategory.PhanKhoiLon => "Xe phân khối lớn",

@@ -31,12 +31,12 @@
         secondaryHref = "/lien-he?intent=mua-xe&source=listing";
         secondaryLabel = "Tư vấn";
     }
-    else if (path.StartsWith("/bao-duong"))
+    else if (path.StartsWith("/bao-duong") || path.StartsWith("/dich-vu"))
     {
         primaryHref = "/bao-duong#booking";
         primaryLabel = "Đặt lịch";
-        secondaryHref = "/lien-he?intent=bao-duong&source=service";
-        secondaryLabel = "Tư vấn";
+        secondaryHref = path.StartsWith("/dich-vu/") ? "/dich-vu" : "/lien-he?intent=bao-duong&source=service";
+        secondaryLabel = path.StartsWith("/dich-vu/") ? "Tất cả" : "Tư vấn";
     }
     else if (path.StartsWith("/khuyen-mai"))
     {

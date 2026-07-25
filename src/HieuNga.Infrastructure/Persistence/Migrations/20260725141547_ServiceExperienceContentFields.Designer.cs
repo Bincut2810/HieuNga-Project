@@ -3,6 +3,7 @@ using System;
 using HieuNga.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HieuNga.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HieuNgaDbContext))]
-    partial class HieuNgaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260725141547_ServiceExperienceContentFields")]
+    partial class ServiceExperienceContentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,9 +119,6 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Badge")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -144,17 +144,8 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Property<string>("MobileImageUrl")
                         .HasColumnType("text");
 
-                    b.Property<int>("OverlayStrength")
-                        .HasColumnType("integer");
-
                     b.Property<int>("Position")
                         .HasColumnType("integer");
-
-                    b.Property<string>("SecondaryCtaText")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SecondaryCtaUrl")
-                        .HasColumnType("text");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
@@ -164,9 +155,6 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Subtitle")
                         .HasColumnType("text");
-
-                    b.Property<int>("TextAlignment")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Title")
                         .IsRequired()

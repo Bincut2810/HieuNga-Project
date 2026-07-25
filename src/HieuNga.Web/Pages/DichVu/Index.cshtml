@@ -1,0 +1,90 @@
+@page "/dich-vu"
+@model HieuNga.Web.Pages.DichVu.IndexModel
+@using HieuNga.Web.Filters
+@{
+    var site = SiteSettingsViewData.Get(ViewData);
+}
+
+<section class="svc-hero">
+    <div class="svc-hero-media" aria-hidden="true">
+        <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1800&q=80"
+             alt=""
+             class="svc-hero-img"
+             width="1800"
+             height="1000"
+             fetchpriority="high"
+             decoding="async" />
+        <div class="svc-hero-shade"></div>
+    </div>
+    <div class="svc-hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p class="section-eyebrow text-white/80">HEAD Service</p>
+        <h1 class="svc-hero-title">Dịch vụ Honda chuẩn HEAD</h1>
+        <p class="svc-hero-sub">Bảo dưỡng · Sửa chữa · Nhớt chính hãng · Bảo hiểm · Chăm sóc xe tại Xe Máy Hiếu Nga Đà Nẵng</p>
+        <div class="svc-hero-actions">
+            <a href="/bao-duong#booking" class="btn-primary touch-press">Đặt lịch dịch vụ</a>
+            <a href="#danh-muc" class="btn-secondary touch-press svc-hero-ghost">Xem dịch vụ</a>
+        </div>
+    </div>
+</section>
+
+<section id="danh-muc" class="page-section" aria-labelledby="svc-list-heading">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
+            <div>
+                <p class="section-eyebrow">Danh mục</p>
+                <h2 id="svc-list-heading" class="section-title">Trải nghiệm dịch vụ</h2>
+                <p class="section-subtitle">Sáu nhóm dịch vụ HEAD — chạm vào từng thẻ để xem chi tiết</p>
+            </div>
+            <a href="/bao-duong#booking" class="btn-primary touch-press shrink-0">Đặt lịch ngay</a>
+        </div>
+
+        @if (Model.Services.Any())
+        {
+            <div class="svc-card-grid" data-stagger>
+                @foreach (var svc in Model.Services)
+                {
+                    <partial name="Shared/_ServiceExperienceCard" model="svc" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>Đang cập nhật dịch vụ</h3>
+                <p>Vui lòng liên hệ hotline @site.Hotline để được tư vấn.</p>
+                <a href="/bao-duong#booking" class="btn-primary mt-6 inline-flex">Đặt lịch dịch vụ</a>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.PricingDisclaimer))
+        {
+            <p class="mt-8 text-sm text-gray-500 max-w-3xl">@Model.PricingDisclaimer</p>
+        }
+    </div>
+</section>
+
+<section class="page-section bg-gray-50 border-y border-gray-100" aria-labelledby="svc-book-heading">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="svc-cta-band reveal">
+            <div>
+                <p class="section-eyebrow">Đặt lịch</p>
+                <h2 id="svc-book-heading" class="section-title">Sẵn sàng mang xe đến xưởng?</h2>
+                <p class="section-subtitle">Đặt lịch bảo dưỡng / sửa chữa — xác nhận qua điện thoại trong giờ hành chính.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <a href="/bao-duong#booking" class="btn-primary touch-press">Đặt lịch dịch vụ</a>
+                <a href="/lien-he?intent=bao-duong&amp;source=dich-vu" class="btn-secondary touch-press">Tư vấn nhanh</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="page-section" aria-labelledby="svc-branch-heading">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p class="section-eyebrow">Xưởng HEAD</p>
+        <h2 id="svc-branch-heading" class="section-title">Chi nhánh bảo dưỡng</h2>
+        <div class="mt-8">
+            <partial name="_BranchCards" model="Model.Branches" />
+        </div>
+    </div>
+</section>

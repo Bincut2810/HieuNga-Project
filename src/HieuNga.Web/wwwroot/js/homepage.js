@@ -1,6 +1,6 @@
 /**
  * Homepage flagship — hero carousel, promo rail, review slider.
- * No animation libraries. Keyboard + swipe + pause on hover.
+ * No animation libraries. Keyboard + swipe + pause on hover / hidden tab.
  */
 (function () {
   'use strict';
@@ -23,6 +23,7 @@
     const prevBtn = hero.querySelector('[data-hero-prev]');
     const nextBtn = hero.querySelector('[data-hero-next]');
     const progress = hero.querySelector('[data-hero-progress]');
+    const live = hero.querySelector('[data-hero-live]');
     const intervalMs = Math.max(4000, parseInt(hero.dataset.interval || '6000', 10) || 6000);
     const reduceMotion = prefersReducedMotion();
     let index = 0;
@@ -32,14 +33,15 @@
     let progressStart = 0;
 
     slides.forEach((slide, i) => {
-      slide.style.visibility = '';
       if (dotsWrap) {
         const dot = document.createElement('button');
         dot.type = 'button';
         dot.className = 'home-hero-dot' + (i === 0 ? ' is-active' : '');
         dot.setAttribute('role', 'tab');
         dot.setAttribute('aria-label', 'Banner ' + (i + 1));
+        dot.setAttribute('aria-controls', slide.id || ('home-hero-slide-' + i));
         dot.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+        dot.tabIndex = i === 0 ? 0 : -1;
         dot.addEventListener('click', () => go(i, true));
         dotsWrap.appendChild(dot);
       }
@@ -57,19 +59,23 @@
 
     function runProgress() {
       stopProgress();
-      if (reduceMotion || paused || !progress) {
+      if (reduceMotion || paused || !progress || document.hidden) {
         setProgress(0);
         return;
       }
       progressStart = performance.now();
       setProgress(0);
       function frame(now) {
-        if (paused) return;
+        if (paused || document.hidden) return;
         const t = (now - progressStart) / intervalMs;
         setProgress(t);
         if (t < 1) progressRaf = requestAnimationFrame(frame);
       }
       progressRaf = requestAnimationFrame(frame);
+    }
+
+    function announce() {
+      if (live) live.textContent = 'Banner ' + (index + 1) + ' / ' + slides.length;
     }
 
     function go(next, user) {
@@ -84,23 +90,31 @@
           const on = i === index;
           dot.classList.toggle('is-active', on);
           dot.setAttribute('aria-selected', on ? 'true' : 'false');
+          dot.tabIndex = on ? 0 : -1;
         });
       }
+      announce();
       if (user) restart();
       else runProgress();
     }
 
     function tick() {
-      if (!paused) go(index + 1, false);
+      if (!paused && !document.hidden) go(index + 1, false);
+    }
+
+    function stopTimer() {
+      clearInterval(timer);
+      timer = null;
+      stopProgress();
     }
 
     function restart() {
-      clearInterval(timer);
-      timer = null;
+      stopTimer();
       if (reduceMotion) {
         setProgress(0);
         return;
       }
+      if (paused || document.hidden) return;
       runProgress();
       timer = setInterval(tick, intervalMs);
     }
@@ -108,13 +122,22 @@
     prevBtn && prevBtn.addEventListener('click', () => go(index - 1, true));
     nextBtn && nextBtn.addEventListener('click', () => go(index + 1, true));
 
-    hero.addEventListener('mouseenter', () => { paused = true; stopProgress(); });
-    hero.addEventListener('mouseleave', () => { paused = false; runProgress(); });
-    hero.addEventListener('focusin', () => { paused = true; stopProgress(); });
+    hero.addEventListener('mouseenter', () => {
+      paused = true;
+      stopProgress();
+    });
+    hero.addEventListener('mouseleave', () => {
+      paused = false;
+      restart();
+    });
+    hero.addEventListener('focusin', () => {
+      paused = true;
+      stopProgress();
+    });
     hero.addEventListener('focusout', (e) => {
       if (!hero.contains(e.relatedTarget)) {
         paused = false;
-        runProgress();
+        restart();
       }
     });
 
@@ -126,20 +149,27 @@
     });
 
     document.addEventListener('visibilitychange', () => {
-      paused = document.hidden;
-      if (paused) stopProgress();
-      else runProgress();
+      if (document.hidden) stopTimer();
+      else if (!paused) restart();
     });
 
     let touchX = null;
+    let touchY = null;
     hero.addEventListener('touchstart', (e) => {
-      touchX = e.changedTouches[0]?.clientX ?? null;
+      const t = e.changedTouches[0];
+      touchX = t?.clientX ?? null;
+      touchY = t?.clientY ?? null;
     }, { passive: true });
     hero.addEventListener('touchend', (e) => {
       if (touchX == null) return;
-      const dx = (e.changedTouches[0]?.clientX ?? touchX) - touchX;
-      if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1), true);
+      const t = e.changedTouches[0];
+      const dx = (t?.clientX ?? touchX) - touchX;
+      const dy = (t?.clientY ?? touchY ?? 0) - (touchY ?? 0);
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        go(index + (dx < 0 ? 1 : -1), true);
+      }
       touchX = null;
+      touchY = null;
     }, { passive: true });
 
     restart();
@@ -165,7 +195,6 @@
       if (e.key === 'ArrowRight') { e.preventDefault(); rail.scrollBy({ left: step(), behavior: 'smooth' }); }
     });
 
-    // Countdown placeholders (days remaining)
     (root || document).querySelectorAll('[data-countdown]').forEach((el) => {
       const end = Date.parse(el.getAttribute('data-countdown') || '');
       if (!end) return;
@@ -191,7 +220,6 @@
     let timer = null;
     let paused = false;
 
-    // Show 1 on mobile, clamp visible pages
     function pages() {
       return slides.length;
     }

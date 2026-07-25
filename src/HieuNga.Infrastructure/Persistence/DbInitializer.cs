@@ -59,6 +59,10 @@ public static class DbInitializer
             await SeedDemoContentAsync(context, logger);
 
         await ServiceFinanceSeed.SeedAsync(context, logger);
+        await HieuNgaServiceExperienceSeed.EnsureAsync(context, logger);
+        await HieuNgaInventorySeed.EnsureAsync(context, logger);
+        if (shouldDemoSeed)
+            await HieuNgaHeroBannerSeed.EnsureAsync(context, logger);
 
         // Content enricher overwrites motorcycle CMS fields — only in Development or when explicitly enabled.
         var runEnricher = environment.IsDevelopment() || seedOptions.RunContentEnricher;
@@ -133,10 +137,16 @@ public static class DbInitializer
             new Banner
             {
                 Title = "Khám phá Honda tại Đà Nẵng",
-                Subtitle = "Trả góp 0% — Lái thử miễn phí",
-                ImageUrl = MotorcycleImageCatalog.Default,
-                CtaText = "Xem xe ngay",
+                Subtitle = "Showroom HEAD — xe chính hãng, tư vấn trả góp và lái thử.",
+                ImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1920&q=80",
+                MobileImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=900&q=80",
+                CtaText = "Xem xe đang bán",
                 CtaUrl = "/xe",
+                SecondaryCtaText = "Tính trả góp",
+                SecondaryCtaUrl = "/tra-gop",
+                Badge = "Xe Máy Hiếu Nga · HEAD Đà Nẵng",
+                OverlayStrength = 68,
+                TextAlignment = BannerTextAlignment.Left,
                 Position = BannerPosition.Hero,
                 SortOrder = 0,
                 IsActive = true

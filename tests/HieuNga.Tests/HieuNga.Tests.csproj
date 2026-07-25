@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\HieuNga.Application\HieuNga.Application.csproj" />
+    <ProjectReference Include="..\..\src\HieuNga.Domain\HieuNga.Domain.csproj" />
   </ItemGroup>
 
 </Project>

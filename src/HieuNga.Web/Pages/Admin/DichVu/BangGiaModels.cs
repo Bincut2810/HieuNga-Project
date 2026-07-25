@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using HieuNga.Application.DTOs;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Interfaces;
 using HieuNga.Infrastructure.Persistence;
@@ -37,6 +38,14 @@ public class ServiceItemInputModel : IAdminSeoInput
     public string? EstimatedDurationText { get; set; }
     public string? PriceNote { get; set; }
     public string? IconKey { get; set; }
+    [StringLength(500)]
+    public string? ThumbnailUrl { get; set; }
+    [StringLength(500)]
+    public string? HeroImageUrl { get; set; }
+    public string? GalleryLines { get; set; }
+    public string? WhenToUseLines { get; set; }
+    public string? ProcessLines { get; set; }
+    public string? FaqLines { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsFeatured { get; set; }
     public bool IsActive { get; set; } = true;
@@ -204,6 +213,8 @@ public class BangGiaThemModel(IRepository<ServiceItem> repo, IUnitOfWork uow, Hi
         input.DetailDescription = string.IsNullOrWhiteSpace(input.DetailDescription) ? null : input.DetailDescription.Trim();
         input.PriceNote = string.IsNullOrWhiteSpace(input.PriceNote) ? null : input.PriceNote.Trim();
         input.IconKey = string.IsNullOrWhiteSpace(input.IconKey) ? null : input.IconKey.Trim();
+        input.ThumbnailUrl = string.IsNullOrWhiteSpace(input.ThumbnailUrl) ? null : input.ThumbnailUrl.Trim();
+        input.HeroImageUrl = string.IsNullOrWhiteSpace(input.HeroImageUrl) ? null : input.HeroImageUrl.Trim();
     }
 
     private void NormalizeInput() => NormalizeInput(Input);
@@ -227,15 +238,37 @@ public class BangGiaThemModel(IRepository<ServiceItem> repo, IUnitOfWork uow, Hi
         entity.EstimatedDurationText = input.EstimatedDurationText;
         entity.PriceNote = input.PriceNote;
         entity.IconKey = input.IconKey;
+        entity.ThumbnailUrl = input.ThumbnailUrl;
+        entity.HeroImageUrl = input.HeroImageUrl;
+        entity.GalleryJson = ServiceItemJson.SerializeIncludes(
+            (input.GalleryLines ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        entity.WhenToUseJson = ServiceItemJson.SerializeIncludes(
+            (input.WhenToUseLines ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        entity.ProcessJson = ServiceItemJson.SerializeIncludes(
+            (input.ProcessLines ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        entity.FaqJson = SerializeFaqLines(input.FaqLines);
         entity.DisplayOrder = input.DisplayOrder;
         entity.IsFeatured = input.IsFeatured;
         entity.IsActive = input.IsActive;
         entity.MetaTitle = input.MetaTitle;
         entity.MetaDescription = input.MetaDescription;
         entity.MetaKeywords = input.MetaKeywords;
-        entity.OgImageUrl = input.OgImageUrl;
+        entity.OgImageUrl = input.OgImageUrl ?? input.HeroImageUrl ?? input.ThumbnailUrl;
         entity.CanonicalUrl = input.CanonicalUrl;
         return entity;
+    }
+
+    internal static string? SerializeFaqLines(string? lines)
+    {
+        if (string.IsNullOrWhiteSpace(lines)) return null;
+        var faqs = new List<ServiceFaqDto>();
+        foreach (var line in lines.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = line.Split('|', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 0 || string.IsNullOrWhiteSpace(parts[0])) continue;
+            faqs.Add(new ServiceFaqDto(parts[0], parts.Length > 1 ? parts[1] : ""));
+        }
+        return faqs.Count == 0 ? null : ServiceItemJson.SerializeFaqs(faqs);
     }
 }
 
@@ -317,6 +350,12 @@ public class BangGiaSuaModel(IRepository<ServiceItem> repo, IUnitOfWork uow, Hie
         EstimatedDurationText = s.EstimatedDurationText,
         PriceNote = s.PriceNote,
         IconKey = s.IconKey,
+        ThumbnailUrl = s.ThumbnailUrl,
+        HeroImageUrl = s.HeroImageUrl,
+        GalleryLines = string.Join(Environment.NewLine, ServiceItemJson.ParseIncludes(s.GalleryJson)),
+        WhenToUseLines = string.Join(Environment.NewLine, ServiceItemJson.ParseIncludes(s.WhenToUseJson)),
+        ProcessLines = string.Join(Environment.NewLine, ServiceItemJson.ParseIncludes(s.ProcessJson)),
+        FaqLines = string.Join(Environment.NewLine, ServiceItemJson.ParseFaqs(s.FaqJson).Select(f => $"{f.Question}|{f.Answer}")),
         DisplayOrder = s.DisplayOrder,
         IsFeatured = s.IsFeatured,
         IsActive = s.IsActive,

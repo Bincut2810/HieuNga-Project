@@ -248,20 +248,17 @@
 
   /* ─── Bảo dưỡng booking preselect from ?service=slug (client fallback) ─── */
   const SERVICE_SLUG_MAP = {
-    'bao-duong-dinh-ky': 'Bảo dưỡng định kỳ',
-    'thay-nhot-may': 'Thay nhớt máy',
-    'thay-nhot-hop-so-xe-ga': 'Thay nhớt hộp số xe ga',
-    'kiem-tra-loc-gio': 'Kiểm tra / thay lọc gió',
-    'kiem-tra-bugi': 'Kiểm tra / thay bugi',
-    'kiem-tra-phanh': 'Kiểm tra phanh / thay má phanh',
-    'kiem-tra-lop': 'Kiểm tra lốp / vá lốp / thay lốp',
-    'kiem-tra-dien-binh-ac-quy': 'Kiểm tra điện / bình ắc quy',
-    'kiem-tra-dong-co': 'Kiểm tra động cơ',
-    've-sinh-kim-phun-buong-dot': 'Vệ sinh kim phun / buồng đốt',
-    'kiem-tra-day-curoa-noi-xe-ga': 'Kiểm tra dây curoa / nồi xe ga',
-    'sua-chua-tong-quat': 'Sửa chữa tổng quát',
-    'thay-phu-tung-chinh-hang': 'Thay phụ tùng chính hãng',
-    'kiem-tra-xe-truoc-chuyen-di': 'Kiểm tra xe trước chuyến đi',
+    'sua-chua-thay-the-phu-tung': 'Sửa chữa & thay thế phụ tùng',
+    'bao-hanh-bao-duong': 'Bảo hành & bảo dưỡng',
+    'dau-nhot-chinh-hang': 'Dầu nhớt chính hãng',
+    'sua-chua-luu-dong': 'Sửa chữa lưu động',
+    'bao-hiem-xe-may': 'Bảo hiểm xe máy',
+    'tan-trang-cham-soc-xe': 'Tân trang & chăm sóc xe',
+    'bao-duong-dinh-ky': 'Bảo hành & bảo dưỡng',
+    'thay-nhot-may': 'Dầu nhớt chính hãng',
+    'thay-nhot-hop-so-xe-ga': 'Dầu nhớt chính hãng',
+    'sua-chua-tong-quat': 'Sửa chữa & thay thế phụ tùng',
+    'thay-phu-tung-chinh-hang': 'Sửa chữa & thay thế phụ tùng',
   };
 
   function initBookingFromQuery() {

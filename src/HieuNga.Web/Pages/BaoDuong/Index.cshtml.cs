@@ -20,7 +20,7 @@ public class IndexModel(
     [BindProperty] public string? Email { get; set; }
     [BindProperty] public string? MotorcycleModel { get; set; }
     [BindProperty] public string? LicensePlate { get; set; }
-    [BindProperty] public string ServiceType { get; set; } = "Bảo dưỡng định kỳ";
+    [BindProperty] public string ServiceType { get; set; } = "Bảo hành & bảo dưỡng";
     [BindProperty] public DateTime PreferredDate { get; set; } = DateTime.Today.AddDays(1);
     [BindProperty] public string? Notes { get; set; }
     public bool Success { get; private set; }
@@ -60,7 +60,7 @@ public class IndexModel(
 
     private async Task LoadCatalogAsync(CancellationToken ct)
     {
-        Services = await serviceCatalog.GetActiveItemsAsync(ct);
+        Services = await serviceCatalog.GetExperienceServicesAsync(12, ct);
         BookingServiceOptions = await serviceCatalog.GetBookingServiceNamesAsync(ct);
         PricingDisclaimer = serviceCatalog.PricingDisclaimer;
         if (BookingServiceOptions.Count > 0 && !BookingServiceOptions.Contains(ServiceType))

@@ -1,3 +1,4 @@
+using HieuNga.Application.Catalog;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Application.Mappings;
@@ -26,16 +27,20 @@ public class HomepageService(
         var reviews = await reviewRepo.GetFeaturedAsync(8, ct);
         var posts = await blogService.GetPublishedAsync(1, 4, null, ct);
         var banks = await financeConfig.GetActiveBanksAsync(ct);
-        var services = await serviceCatalog.GetActiveItemsAsync(ct);
+        var services = await serviceCatalog.GetExperienceServicesAsync(6, ct);
         var categoryCounts = await motorcycleRepo.GetPublishedCategoryCountsAsync(ct);
         var categoryThumbs = await motorcycleRepo.GetPublishedCategoryThumbnailsAsync(ct);
 
         var categories = MotorcycleCategoryLabels.All
-            .Select(c => new MotorcycleCategoryCountDto(
-                c.Value,
-                c.Label,
-                categoryCounts.GetValueOrDefault(c.Value),
-                categoryThumbs.GetValueOrDefault(c.Value)))
+            .Select(c =>
+            {
+                var count = categoryCounts.GetValueOrDefault(c.Value);
+                var rawThumb = categoryThumbs.GetValueOrDefault(c.Value);
+                var image = MotorcycleImageCatalog.IsValidImageUrl(rawThumb)
+                    ? rawThumb
+                    : HieuNgaInventoryTargets.CategoryThumb(c.Value);
+                return new MotorcycleCategoryCountDto(c.Value, c.Label, count, image);
+            })
             .ToList();
 
         return new HomepageDto(

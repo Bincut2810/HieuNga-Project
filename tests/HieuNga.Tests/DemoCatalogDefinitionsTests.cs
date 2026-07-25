@@ -1,3 +1,4 @@
+using HieuNga.Application.Catalog;
 using HieuNga.Application.DemoImport;
 using HieuNga.Domain.Enums;
 
@@ -6,18 +7,18 @@ namespace HieuNga.Tests;
 public class DemoCatalogDefinitionsTests
 {
     [Fact]
-    public void Catalog_has_five_bikes_per_category()
+    public void Catalog_matches_inventory_targets()
     {
         var groups = DemoCatalogDefinitions.All
             .GroupBy(m => DemoPackageCatalog.ParseCategory(m.Category))
             .ToDictionary(g => g.Key, g => g.Count());
 
-        Assert.Equal(5, groups[MotorcycleCategory.Scooter]);
-        Assert.Equal(5, groups[MotorcycleCategory.XeSo]);
-        Assert.Equal(5, groups[MotorcycleCategory.ConTay]);
-        Assert.Equal(5, groups[MotorcycleCategory.PhanKhoiLon]);
-        Assert.Equal(5, groups[MotorcycleCategory.Electric]);
-        Assert.Equal(25, DemoCatalogDefinitions.All.Count);
+        Assert.Equal(HieuNgaInventoryTargets.Targets[MotorcycleCategory.Scooter], groups[MotorcycleCategory.Scooter]);
+        Assert.Equal(HieuNgaInventoryTargets.Targets[MotorcycleCategory.XeSo], groups[MotorcycleCategory.XeSo]);
+        Assert.Equal(HieuNgaInventoryTargets.Targets[MotorcycleCategory.ConTay], groups[MotorcycleCategory.ConTay]);
+        Assert.Equal(HieuNgaInventoryTargets.Targets[MotorcycleCategory.PhanKhoiLon], groups[MotorcycleCategory.PhanKhoiLon]);
+        Assert.Equal(HieuNgaInventoryTargets.Targets[MotorcycleCategory.Electric], groups[MotorcycleCategory.Electric]);
+        Assert.Equal(HieuNgaInventoryTargets.Targets.Values.Sum(), DemoCatalogDefinitions.All.Count);
     }
 
     [Fact]

@@ -8,7 +8,12 @@ public record ServiceItemListDto(
     string Category,
     string IconKey,
     string EstimatedPrice,
-    string? EstimatedDuration);
+    string? EstimatedDuration,
+    string? ThumbnailUrl = null,
+    string? ShortDescription = null,
+    bool IsFeatured = false);
+
+public record ServiceFaqDto(string Question, string Answer);
 
 public record ServiceItemDetailDto(
     Guid Id,
@@ -19,6 +24,12 @@ public record ServiceItemDetailDto(
     string ShortDescription,
     string? DetailDescription,
     IReadOnlyList<string> Includes,
+    IReadOnlyList<string> WhenToUse,
+    IReadOnlyList<string> ProcessSteps,
+    IReadOnlyList<string> Gallery,
+    IReadOnlyList<ServiceFaqDto> Faqs,
+    string? ThumbnailUrl,
+    string? HeroImageUrl,
     string EstimatedPrice,
     string? EstimatedDuration,
     string? PriceNote,

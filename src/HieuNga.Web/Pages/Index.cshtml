@@ -25,97 +25,21 @@
     ViewData["BranchBookLabel"] = "Đặt lịch hẹn";
 }
 
+@section Head {
+    @if (d.HeroBanners.Count > 0)
+    {
+        var first = d.HeroBanners[0];
+        <link rel="preload" as="image" href="@first.ImageUrl" fetchpriority="high" />
+        if (!string.IsNullOrWhiteSpace(first.MobileImageUrl))
+        {
+            <link rel="preload" as="image" href="@first.MobileImageUrl" media="(max-width: 767px)" fetchpriority="high" />
+        }
+    }
+}
+
 <div class="homepage bg-white overflow-x-hidden">
-    @* ─── PHASE 1: Flagship Hero Carousel ─── *@
-    <section class="home-hero"
-             aria-roledescription="carousel"
-             aria-label="Banner trang chủ"
-             data-home-hero
-             data-interval="6000"
-             tabindex="0">
-        @if (d.HeroBanners.Any())
-        {
-            <div class="home-hero-track" data-hero-track>
-                @{ var bi = 0; }
-                @foreach (var banner in d.HeroBanners)
-                {
-                    var isFirst = bi == 0;
-                    <article class="home-hero-slide @(isFirst ? "is-active" : null)"
-                             data-hero-slide
-                             id="home-hero-slide-@bi"
-                             role="group"
-                             aria-roledescription="slide"
-                             aria-label="Banner @(bi + 1) / @d.HeroBanners.Count"
-                             style="@(isFirst ? null : "visibility:hidden")"
-                             aria-hidden="@(isFirst ? "false" : "true")">
-                        <div class="home-hero-media" data-parallax="0.08">
-                            <picture>
-                                @if (!string.IsNullOrWhiteSpace(banner.MobileImageUrl))
-                                {
-                                    <source media="(max-width: 767px)" srcset="@banner.MobileImageUrl" />
-                                }
-                                <img src="@banner.ImageUrl"
-                                     alt="@banner.Title"
-                                     class="home-hero-img img-media"
-                                     width="1920" height="900"
-                                     fetchpriority="@(isFirst ? "high" : "auto")"
-                                     loading="@(isFirst ? "eager" : "lazy")"
-                                     decoding="async" />
-                            </picture>
-                            <div class="home-hero-shade" aria-hidden="true"></div>
-                        </div>
-                        <div class="home-hero-content">
-                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                                <p class="section-eyebrow text-white/80">Xe Máy Hiếu Nga · HEAD Đà Nẵng</p>
-                                <h1 class="home-hero-title">@banner.Title</h1>
-                                @if (!string.IsNullOrWhiteSpace(banner.Subtitle))
-                                {
-                                    <p class="home-hero-sub">@banner.Subtitle</p>
-                                }
-                                <div class="home-hero-actions">
-                                    @if (!string.IsNullOrWhiteSpace(banner.CtaUrl))
-                                    {
-                                        <a href="@banner.CtaUrl" class="btn-primary">@(banner.CtaText ?? "Khám phá")</a>
-                                    }
-                                    else
-                                    {
-                                        <a href="/xe" class="btn-primary">Xem xe đang bán</a>
-                                    }
-                                    <a href="/tra-gop" class="btn-secondary home-hero-btn-ghost">Tính trả góp</a>
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-                    bi++;
-                }
-            </div>
-            @if (d.HeroBanners.Count > 1)
-            {
-                <div class="home-hero-controls">
-                    <button type="button" class="home-hero-nav" data-hero-prev aria-label="Slide trước">‹</button>
-                    <div class="home-hero-dots" data-hero-dots role="tablist" aria-label="Chọn banner"></div>
-                    <button type="button" class="home-hero-nav" data-hero-next aria-label="Slide sau">›</button>
-                </div>
-                <div class="home-hero-progress" aria-hidden="true">
-                    <div class="home-hero-progress-bar" data-hero-progress></div>
-                </div>
-            }
-        }
-        else
-        {
-            <div class="home-hero-fallback">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-                    <p class="section-eyebrow">Honda HEAD · Đà Nẵng</p>
-                    <h1 class="home-hero-title text-honda-dark">Xe Máy Hiếu Nga</h1>
-                    <p class="home-hero-sub text-gray-600 max-w-2xl">Showroom Honda hiện đại — mua xe chính hãng, trả góp linh hoạt và dịch vụ HEAD.</p>
-                    <div class="home-hero-actions">
-                        <a href="/xe" class="btn-primary">Xem xe đang bán</a>
-                        <a href="/bao-duong#booking" class="btn-secondary">Đặt lịch dịch vụ</a>
-                    </div>
-                </div>
-            </div>
-        }
-    </section>
+    @* ─── Sprint 3.7: Flagship Hero Carousel ─── *@
+    <partial name="_HomeHero" model="d.HeroBanners" />
 
     @* Quick actions *@
     <section class="home-quick reveal" aria-label="Lối tắt">
@@ -133,7 +57,7 @@
                     </span>
                     <span class="home-quick-label">Trả góp</span>
                 </a>
-                <a href="/bao-duong" class="home-quick-card touch-press">
+                <a href="/dich-vu" class="home-quick-card touch-press">
                     <span class="home-quick-icon" aria-hidden="true">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </span>
@@ -156,15 +80,15 @@
                 <div>
                     <p class="section-eyebrow">Danh mục</p>
                     <h2 id="home-cat-heading" class="section-title">Khám phá theo dòng xe</h2>
-                    <p class="section-subtitle">Scooter · Xe số · Xe côn tay · PKL · Xe điện</p>
+                    <p class="section-subtitle">Xe tay ga · Xe số · Xe côn tay · Xe phân khối lớn · Xe điện</p>
                 </div>
-                <a href="/xe" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Xem tất cả xe →</a>
             </div>
             <div class="home-cat-grid">
                 @{ var ci = 0; }
                 @foreach (var cat in d.CategoryCounts)
                 {
                     var delay = "reveal-delay-" + ((ci % 3) + 1);
+                    var countLabel = cat.Count > 0 ? $"{cat.Count} mẫu" : "Đang cập nhật";
                     <a href="/xe?category=@((int)cat.Category)"
                        class="home-cat-card touch-press group reveal reveal-scale @delay">
                         <div class="home-cat-media img-wrap">
@@ -185,9 +109,9 @@
                             <div class="home-cat-overlay" aria-hidden="true"></div>
                         </div>
                         <div class="home-cat-body">
-                            <span class="home-cat-count">@(cat.Count > 0 ? $"{cat.Count} mẫu" : "Sắp cập nhật")</span>
+                            <span class="home-cat-count">@countLabel</span>
                             <h3 class="home-cat-title">@cat.Label</h3>
-                            <span class="home-cat-cta">@(cat.Count > 0 ? "Khám phá" : "Xem danh mục") →</span>
+                            <span class="home-cat-cta">Khám phá</span>
                         </div>
                     </a>
                     ci++;
@@ -332,66 +256,35 @@
         </div>
     </section>
 
-    @* ─── PHASE 6: Services ─── *@
+    @* ─── Services (experience cards) ─── *@
     <section class="page-section bg-gray-50 border-y border-gray-100 reveal" aria-labelledby="home-svc-heading">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
                 <div>
                     <p class="section-eyebrow">Xưởng HEAD</p>
-                    <h2 id="home-svc-heading" class="section-title">Dịch vụ bảo dưỡng</h2>
-                    <p class="section-subtitle">Quy trình chuẩn Honda — đặt lịch nhanh</p>
+                    <h2 id="home-svc-heading" class="section-title">Dịch vụ Honda</h2>
+                    <p class="section-subtitle">Sáu trải nghiệm dịch vụ — quy trình chuẩn HEAD</p>
                 </div>
-                <a href="/bao-duong#booking" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Đặt lịch dịch vụ →</a>
+                <div class="flex flex-wrap gap-3">
+                    <a href="/bao-duong#booking" class="btn-primary touch-press text-sm">Đặt lịch dịch vụ</a>
+                    <a href="/dich-vu" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded self-center">Xem tất cả →</a>
+                </div>
             </div>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6" data-stagger>
+            <div class="svc-card-grid" data-stagger>
                 @if (d.Services.Any())
                 {
-                    @foreach (var svc in d.Services)
+                    @foreach (var svc in d.Services.Take(6))
                     {
-                        <article class="home-service-card group reveal">
-                            <div class="home-service-visual" aria-hidden="true" data-icon="@svc.IconKey">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            </div>
-                            <div class="home-service-body">
-                                <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">@svc.Category</p>
-                                <h3 class="mt-1 font-bold text-honda-dark group-hover:text-honda-red transition-colors">@svc.Name</h3>
-                                @if (!string.IsNullOrWhiteSpace(svc.EstimatedDuration))
-                                {
-                                    <p class="mt-2 text-sm text-gray-500">Thời gian ước tính: @svc.EstimatedDuration</p>
-                                }
-                                else
-                                {
-                                    <p class="mt-2 text-sm text-gray-500">Đặt lịch tại xưởng HEAD Hiếu Nga</p>
-                                }
-                                <a href="/bao-duong/@svc.Slug" class="home-service-book touch-press">Đặt lịch</a>
-                            </div>
-                        </article>
+                        <partial name="_ServiceExperienceCard" model="svc" />
                     }
                 }
                 else
                 {
-                    var fallbackServices = new[]
-                    {
-                        ("Bảo dưỡng định kỳ", "Kiểm tra tổng thể theo km"),
-                        ("Thay nhớt chính hãng", "Nhớt Honda đúng định mức"),
-                        ("Kiểm tra động cơ", "Chẩn đoán & hiệu suất"),
-                        ("Điện / ắc quy", "Hệ thống điện an toàn"),
-                        ("Phanh / lốp", "An toàn vận hành"),
-                        ("Phụ tùng chính hãng", "Báo giá minh bạch")
-                    };
-                    foreach (var (title, desc) in fallbackServices)
-                    {
-                        <article class="home-service-card group reveal">
-                            <div class="home-service-visual" aria-hidden="true">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            </div>
-                            <div class="home-service-body">
-                                <h3 class="font-bold text-honda-dark group-hover:text-honda-red transition-colors">@title</h3>
-                                <p class="mt-2 text-sm text-gray-500">@desc</p>
-                                <a href="/bao-duong#booking" class="home-service-book touch-press">Đặt lịch</a>
-                            </div>
-                        </article>
-                    }
+                    <div class="empty-state sm:col-span-2 lg:col-span-3">
+                        <h3>Dịch vụ đang cập nhật</h3>
+                        <p>Liên hệ showroom để được tư vấn bảo dưỡng.</p>
+                        <a href="/bao-duong#booking" class="btn-primary mt-6 inline-flex">Đặt lịch dịch vụ</a>
+                    </div>
                 }
             </div>
         </div>

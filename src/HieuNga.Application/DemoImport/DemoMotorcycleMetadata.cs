@@ -150,7 +150,7 @@ public static class DemoPackageCatalog
 
         return key switch
         {
-            "scooter" => MotorcycleCategory.Scooter,
+            "scooter" or "xetayga" or "tayga" => MotorcycleCategory.Scooter,
             "xeso" or "so" => MotorcycleCategory.XeSo,
             "contay" or "xecontay" or "con" => MotorcycleCategory.ConTay,
             "phankhoilon" or "xephankhoilon" or "bigbike" or "pkl" => MotorcycleCategory.PhanKhoiLon,

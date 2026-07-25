@@ -8,232 +8,99 @@
     ViewData["BranchBookLabel"] = "Đặt lịch dịch vụ";
 }
 
-
-<partial name="_PageHero" model='("Bảo dưỡng chính hãng", "Kỹ thuật HEAD — Phụ tùng Honda, quy trình chuẩn", "Service")' />
-
 <section class="page-section bg-white border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
+            <a href="/" class="hover:text-honda-red transition focus-ring rounded">Trang chủ</a>
+            <span class="mx-2" aria-hidden="true">/</span>
+            <a href="/dich-vu" class="hover:text-honda-red transition focus-ring rounded">Dịch vụ</a>
+            <span class="mx-2" aria-hidden="true">/</span>
+            <span class="text-honda-dark font-medium">Đặt lịch</span>
+        </nav>
         <p class="section-eyebrow">Xưởng HEAD</p>
-        <h2 class="section-title">Chi nhánh bảo dưỡng</h2>
-        <p class="section-subtitle">Đặt lịch tại HEAD Hiếu Nga 1 hoặc HEAD Hiếu Nga 2</p>
+        <h1 class="section-title">Đặt lịch bảo dưỡng / sửa chữa</h1>
+        <p class="section-subtitle">Chọn dịch vụ trên trang <a href="/dich-vu" class="text-honda-red font-semibold hover:underline">Dịch vụ</a> hoặc điền form bên dưới.</p>
+        <div class="mt-6 flex flex-wrap gap-3">
+            <a href="/dich-vu" class="btn-secondary touch-press">Xem tất cả dịch vụ</a>
+            <a href="@telHref" hx-boost="false" class="btn-ghost touch-press">Gọi @site.Hotline</a>
+        </div>
+    </div>
+</section>
+
+<section class="page-section bg-gray-50 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p class="section-eyebrow">Chi nhánh</p>
+        <h2 class="section-title">Xưởng Hiếu Nga</h2>
         <div class="mt-8">
             <partial name="_BranchCards" model="Model.Branches" />
         </div>
     </div>
 </section>
 
-<section class="bg-gray-50 border-b border-gray-100">
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-
-        <div class="max-w-2xl">
-
-            <h2 class="text-2xl md:text-3xl font-bold text-honda-dark">Danh mục dịch vụ sửa chữa / bảo dưỡng</h2>
-
-            <p class="mt-2 text-sm text-gray-600">
-
-                Xe Máy Hiếu Nga sẽ kiểm tra và tư vấn trước khi thực hiện — liên hệ để được hỗ trợ.
-
-            </p>
-
-        </div>
-
-
-
-        <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 reveal">
-
-            @foreach (var service in Model.Services)
-
-            {
-
-                <article class="service-card-compact bg-white border border-gray-200 rounded-xl flex flex-col h-full hover:border-honda-red/25 transition-colors">
-
-                    <a href="/bao-duong/@service.Slug" class="flex flex-col flex-1 p-4 group">
-
-                        <div class="flex items-start justify-between gap-3">
-
-                            <partial name="BaoDuong/Shared/_ServiceIcon" model="service.IconKey" />
-
-                            <span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-gray-100 text-gray-500 shrink-0">
-
-                                @service.Category
-
-                            </span>
-
-                        </div>
-
-                        <h3 class="mt-3 font-bold text-honda-dark leading-snug group-hover:text-honda-red transition-colors">
-
-                            @service.Name
-
-                        </h3>
-
-                        <p class="mt-2 text-sm font-medium text-gray-600 leading-snug">Liên hệ để được tư vấn</p>
-
-                        @if (!string.IsNullOrWhiteSpace(service.EstimatedDuration))
-
-                        {
-
-                            <p class="mt-1 text-xs text-gray-500">@service.EstimatedDuration</p>
-
-                        }
-
-                        <span class="mt-3 text-xs font-semibold text-honda-red group-hover:underline">Xem chi tiết →</span>
-
-                    </a>
-
-                    <div class="px-4 pb-3 pt-2 border-t border-gray-100">
-
-                        <a href="/bao-duong?service=@service.Slug#booking"
-
-                           class="text-xs font-medium text-gray-500 hover:text-honda-red transition-colors">
-
-                            Đặt lịch
-
-                        </a>
-
-                    </div>
-
-                </article>
-
-            }
-
-        </div>
-
-    </div>
-
-</section>
-
-
-
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-10">
-
     <div class="grid lg:grid-cols-2 gap-10 items-start">
-
         <div class="bg-white border border-gray-200 rounded-2xl p-8 reveal">
-
             <h2 class="text-2xl font-bold text-honda-dark">Tại sao chọn HEAD?</h2>
-
             <ul class="mt-6 space-y-4 text-gray-600 text-sm">
-
                 <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Kỹ thuật viên đào tạo bài bản Honda Việt Nam</li>
-
-                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Phụ tùng, nhớt chính hãng 100%</li>
-
+                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Phụ tùng, nhớt chính hãng</li>
                 <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Minh bạch báo giá trước khi sửa</li>
-
-                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Không gian chờ cao cấp, wifi miễn phí</li>
-
+                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Hai xưởng tại Hải Châu, Đà Nẵng</li>
             </ul>
-
+            @if (!string.IsNullOrWhiteSpace(Model.PricingDisclaimer))
+            {
+                <p class="mt-6 text-xs text-gray-400">@Model.PricingDisclaimer</p>
+            }
             <a href="@telHref" hx-boost="false" class="btn-primary mt-8 inline-flex">Gọi xưởng dịch vụ</a>
-
         </div>
-
-
 
         <div class="reveal">
-
             @if (Model.Success)
-
             {
-
-                <div class="bg-green-50 border border-green-200 rounded-2xl p-8">
-
-                    <p class="font-bold text-green-800 text-lg">Đặt lịch bảo dưỡng thành công!</p>
-
-                    <p class="text-green-600 text-sm mt-2">Xưởng dịch vụ sẽ xác nhận lịch hẹn qua điện thoại.</p>
-
-                </div>
-
+                <partial name="_LeadSuccess" model='("Đặt lịch bảo dưỡng thành công!", "Xưởng dịch vụ sẽ xác nhận lịch hẹn qua điện thoại.", "Giữ máy trong giờ hành chính.")' />
             }
-
             else
-
             {
-
                 <form id="booking" method="post" class="bg-white border border-gray-200 rounded-2xl p-8 space-y-5 shadow-sm scroll-mt-24">
-
                     <h2 class="text-xl font-bold text-honda-dark">Đặt lịch hẹn</h2>
-
                     <p class="text-sm text-gray-500">Báo giá sau khi kiểm tra — Xe Máy Hiếu Nga sẽ xác nhận trước khi thực hiện.</p>
-
                     <div asp-validation-summary="All" class="text-red-600 text-sm"></div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Họ tên *</label>
-
-                        <input asp-for="CustomerName" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none" />
-
+                        <input asp-for="CustomerName" class="lead-input" autocomplete="name" />
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Số điện thoại *</label>
-
-                        <input asp-for="Phone" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none" />
-
+                        <input asp-for="Phone" class="lead-input" autocomplete="tel" inputmode="tel" />
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Dòng xe</label>
-
-                        <input asp-for="MotorcycleModel" placeholder="VD: Vision 2025" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none" />
-
+                        <input asp-for="MotorcycleModel" placeholder="VD: Vision 2025" class="lead-input" />
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Biển số</label>
-
-                        <input asp-for="LicensePlate" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none" />
-
+                        <input asp-for="LicensePlate" class="lead-input" />
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Loại dịch vụ</label>
-
-                        <select asp-for="ServiceType" class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none">
-
+                        <select asp-for="ServiceType" class="lead-input">
                             @foreach (var option in Model.BookingServiceOptions)
-
                             {
-
-                                <option value="@option" selected="@(option == Model.ServiceType)">@option</option>
-
+                                <option value="@option">@option</option>
                             }
-
                         </select>
-
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Ngày hẹn *</label>
-
-                        <input asp-for="PreferredDate" type="date" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none" />
-
+                        <input asp-for="PreferredDate" type="date" class="lead-input" />
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-medium mb-1">Ghi chú</label>
-
-                        <textarea asp-for="Notes" rows="2" placeholder="Mô tả thêm tình trạng xe hoặc dịch vụ cụ thể" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none"></textarea>
-
+                        <textarea asp-for="Notes" rows="2" placeholder="Mô tả thêm tình trạng xe hoặc dịch vụ cụ thể" class="lead-input"></textarea>
                     </div>
-
-                    <button type="submit" class="btn-primary w-full">Đặt lịch</button>
-
+                    <button type="submit" class="btn-primary w-full touch-press">Đặt lịch</button>
                 </form>
-
             }
-
         </div>
-
     </div>
-
 </section>

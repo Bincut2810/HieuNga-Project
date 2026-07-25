@@ -1,0 +1,120 @@
+@using HieuNga.Application.DTOs
+@using HieuNga.Domain.Enums
+@model IReadOnlyList<BannerDto>
+@{
+    var banners = Model ?? Array.Empty<BannerDto>();
+    var hasSlides = banners.Count > 0;
+    var multi = banners.Count > 1;
+}
+
+<section class="home-hero"
+         aria-roledescription="carousel"
+         aria-label="Banner trang chủ"
+         data-home-hero
+         data-interval="6000"
+         tabindex="0">
+    @if (hasSlides)
+    {
+        <div class="home-hero-track" data-hero-track>
+            @{ var bi = 0; }
+            @foreach (var banner in banners)
+            {
+                var isFirst = bi == 0;
+                var overlay = Math.Clamp(banner.OverlayStrength, 0, 100) / 100.0;
+                var alignClass = banner.TextAlignment switch
+                {
+                    BannerTextAlignment.Center => "is-align-center",
+                    BannerTextAlignment.Right => "is-align-right",
+                    _ => "is-align-left"
+                };
+                var badge = string.IsNullOrWhiteSpace(banner.Badge)
+                    ? "Xe Máy Hiếu Nga · HEAD Đà Nẵng"
+                    : banner.Badge;
+                var primaryHref = string.IsNullOrWhiteSpace(banner.CtaUrl) ? "/xe" : banner.CtaUrl;
+                var primaryLabel = string.IsNullOrWhiteSpace(banner.CtaText)
+                    ? (string.IsNullOrWhiteSpace(banner.CtaUrl) ? "Xem xe đang bán" : "Khám phá")
+                    : banner.CtaText;
+                var hasSecondary = !string.IsNullOrWhiteSpace(banner.SecondaryCtaUrl);
+
+                <article class="home-hero-slide @(isFirst ? "is-active" : null)"
+                         data-hero-slide
+                         id="home-hero-slide-@bi"
+                         role="group"
+                         aria-roledescription="slide"
+                         aria-label="Banner @(bi + 1) / @banners.Count"
+                         aria-hidden="@(isFirst ? "false" : "true")">
+                    <div class="home-hero-media">
+                        <picture>
+                            @if (!string.IsNullOrWhiteSpace(banner.MobileImageUrl))
+                            {
+                                <source media="(max-width: 767px)" srcset="@banner.MobileImageUrl" />
+                            }
+                            <img src="@banner.ImageUrl"
+                                 alt="@banner.Title"
+                                 class="home-hero-img img-media"
+                                 width="1920"
+                                 height="720"
+                                 fetchpriority="@(isFirst ? "high" : "low")"
+                                 loading="@(isFirst ? "eager" : "lazy")"
+                                 decoding="async" />
+                        </picture>
+                        <div class="home-hero-shade"
+                             style="--hero-overlay: @overlay.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                             aria-hidden="true"></div>
+                    </div>
+                    <div class="home-hero-content @alignClass">
+                        <div class="home-hero-inner">
+                            <p class="home-hero-badge">@badge</p>
+                            <h1 class="home-hero-title">@banner.Title</h1>
+                            @if (!string.IsNullOrWhiteSpace(banner.Subtitle))
+                            {
+                                <p class="home-hero-sub">@banner.Subtitle</p>
+                            }
+                            <div class="home-hero-actions">
+                                <a href="@primaryHref" class="btn-primary">@primaryLabel</a>
+                                @if (hasSecondary)
+                                {
+                                    <a href="@banner.SecondaryCtaUrl" class="btn-secondary home-hero-btn-ghost">
+                                        @(string.IsNullOrWhiteSpace(banner.SecondaryCtaText) ? "Tìm hiểu thêm" : banner.SecondaryCtaText)
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                bi++;
+            }
+        </div>
+
+        @if (multi)
+        {
+            <div class="home-hero-controls">
+                <button type="button" class="home-hero-nav" data-hero-prev aria-controls="home-hero-slide-0" aria-label="Slide trước">
+                    <span aria-hidden="true">‹</span>
+                </button>
+                <div class="home-hero-dots" data-hero-dots role="tablist" aria-label="Chọn banner"></div>
+                <button type="button" class="home-hero-nav" data-hero-next aria-controls="home-hero-slide-0" aria-label="Slide sau">
+                    <span aria-hidden="true">›</span>
+                </button>
+            </div>
+            <div class="home-hero-progress" aria-hidden="true">
+                <div class="home-hero-progress-bar" data-hero-progress></div>
+            </div>
+            <div class="sr-only" aria-live="polite" data-hero-live>Banner 1 / @banners.Count</div>
+        }
+    }
+    else
+    {
+        <div class="home-hero-fallback">
+            <div class="home-hero-inner home-hero-fallback-inner">
+                <p class="section-eyebrow">Honda HEAD · Đà Nẵng</p>
+                <h1 class="home-hero-title text-honda-dark">Xe Máy Hiếu Nga</h1>
+                <p class="home-hero-sub text-gray-600 max-w-2xl">Showroom Honda hiện đại — mua xe chính hãng, trả góp linh hoạt và dịch vụ HEAD.</p>
+                <div class="home-hero-actions">
+                    <a href="/xe" class="btn-primary">Xem xe đang bán</a>
+                    <a href="/bao-duong#booking" class="btn-secondary">Đặt lịch dịch vụ</a>
+                </div>
+            </div>
+        </div>
+    }
+</section>

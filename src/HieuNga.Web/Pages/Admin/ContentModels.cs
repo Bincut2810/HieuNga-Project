@@ -37,6 +37,11 @@ public class BannerInputModel
     public string? MobileImageUrl { get; set; }
     public string? CtaText { get; set; }
     public string? CtaUrl { get; set; }
+    public string? SecondaryCtaText { get; set; }
+    public string? SecondaryCtaUrl { get; set; }
+    public string? Badge { get; set; }
+    [Range(0, 100)] public int OverlayStrength { get; set; } = 65;
+    public BannerTextAlignment TextAlignment { get; set; } = BannerTextAlignment.Left;
     public BannerPosition Position { get; set; }
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
@@ -169,9 +174,22 @@ public class BannerThemModel(IRepository<Domain.Entities.Banner> repo, IUnitOfWo
     }
     internal static Domain.Entities.Banner Map(Domain.Entities.Banner e, BannerInputModel i)
     {
-        e.Title = i.Title; e.Subtitle = i.Subtitle; e.ImageUrl = i.ImageUrl; e.MobileImageUrl = i.MobileImageUrl;
-        e.CtaText = i.CtaText; e.CtaUrl = i.CtaUrl; e.Position = i.Position; e.SortOrder = i.SortOrder;
-        e.IsActive = i.IsActive; e.StartDate = i.StartDate; e.EndDate = i.EndDate;
+        e.Title = i.Title;
+        e.Subtitle = i.Subtitle;
+        e.ImageUrl = i.ImageUrl;
+        e.MobileImageUrl = i.MobileImageUrl;
+        e.CtaText = i.CtaText;
+        e.CtaUrl = i.CtaUrl;
+        e.SecondaryCtaText = i.SecondaryCtaText;
+        e.SecondaryCtaUrl = i.SecondaryCtaUrl;
+        e.Badge = i.Badge;
+        e.OverlayStrength = Math.Clamp(i.OverlayStrength, 0, 100);
+        e.TextAlignment = i.TextAlignment;
+        e.Position = i.Position;
+        e.SortOrder = i.SortOrder;
+        e.IsActive = i.IsActive;
+        e.StartDate = i.StartDate;
+        e.EndDate = i.EndDate;
         return e;
     }
 }
@@ -186,9 +204,22 @@ public class BannerSuaModel(IRepository<Domain.Entities.Banner> repo, IUnitOfWor
         if (e is null || e.IsDeleted) return NotFound();
         Input = new BannerInputModel
         {
-            Title = e.Title, Subtitle = e.Subtitle, ImageUrl = e.ImageUrl, MobileImageUrl = e.MobileImageUrl,
-            CtaText = e.CtaText, CtaUrl = e.CtaUrl, Position = e.Position, SortOrder = e.SortOrder,
-            IsActive = e.IsActive, StartDate = e.StartDate, EndDate = e.EndDate
+            Title = e.Title,
+            Subtitle = e.Subtitle,
+            ImageUrl = e.ImageUrl,
+            MobileImageUrl = e.MobileImageUrl,
+            CtaText = e.CtaText,
+            CtaUrl = e.CtaUrl,
+            SecondaryCtaText = e.SecondaryCtaText,
+            SecondaryCtaUrl = e.SecondaryCtaUrl,
+            Badge = e.Badge,
+            OverlayStrength = e.OverlayStrength,
+            TextAlignment = e.TextAlignment,
+            Position = e.Position,
+            SortOrder = e.SortOrder,
+            IsActive = e.IsActive,
+            StartDate = e.StartDate,
+            EndDate = e.EndDate
         };
         return Page();
     }

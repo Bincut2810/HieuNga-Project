@@ -19,14 +19,36 @@ public class ServiceCatalogService(HieuNgaDbContext db, ISiteSettingsService sit
 
     public string PricingDisclaimer => PricingDisclaimerAsync().GetAwaiter().GetResult();
 
-    public async Task<IReadOnlyList<ServiceItemListDto>> GetActiveItemsAsync(CancellationToken ct = default) =>
-        await QueryActive()
+    public async Task<IReadOnlyList<ServiceItemListDto>> GetActiveItemsAsync(CancellationToken ct = default)
+    {
+        var items = await QueryActive()
             .OrderBy(s => s.DisplayOrder)
             .ThenBy(s => s.Name)
-            .Select(s => new ServiceItemListDto(
-                s.Slug, s.Name, s.Category.Name, s.IconKey ?? "wrench",
-                s.EstimatedPriceText, s.EstimatedDurationText))
             .ToListAsync(ct);
+        return items.Select(MapList).ToList();
+    }
+
+    public async Task<IReadOnlyList<ServiceItemListDto>> GetExperienceServicesAsync(int count = 6, CancellationToken ct = default)
+    {
+        var featured = await QueryActive()
+            .Where(s => s.IsFeatured)
+            .OrderBy(s => s.DisplayOrder)
+            .ThenBy(s => s.Name)
+            .Take(count)
+            .ToListAsync(ct);
+
+        if (featured.Count >= count)
+            return featured.Select(MapList).ToList();
+
+        var rest = await QueryActive()
+            .Where(s => !s.IsFeatured)
+            .OrderBy(s => s.DisplayOrder)
+            .ThenBy(s => s.Name)
+            .Take(count - featured.Count)
+            .ToListAsync(ct);
+
+        return featured.Concat(rest).Select(MapList).ToList();
+    }
 
     public async Task<ServiceItemDetailDto?> GetBySlugAsync(string slug, CancellationToken ct = default)
     {
@@ -40,14 +62,24 @@ public class ServiceCatalogService(HieuNgaDbContext db, ISiteSettingsService sit
             .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive && !s.IsDeleted, ct);
         if (current is null) return [];
 
-        return await QueryActive()
+        var sameCategory = await QueryActive()
             .Where(s => s.Slug != slug && s.ServiceCategoryId == current.ServiceCategoryId)
-            .OrderBy(s => s.DisplayOrder)
+            .OrderByDescending(s => s.IsFeatured)
+            .ThenBy(s => s.DisplayOrder)
             .Take(count)
-            .Select(s => new ServiceItemListDto(
-                s.Slug, s.Name, s.Category.Name, s.IconKey ?? "wrench",
-                s.EstimatedPriceText, s.EstimatedDurationText))
             .ToListAsync(ct);
+
+        if (sameCategory.Count >= count)
+            return sameCategory.Select(MapList).ToList();
+
+        var more = await QueryActive()
+            .Where(s => s.Slug != slug && s.ServiceCategoryId != current.ServiceCategoryId)
+            .OrderByDescending(s => s.IsFeatured)
+            .ThenBy(s => s.DisplayOrder)
+            .Take(count - sameCategory.Count)
+            .ToListAsync(ct);
+
+        return sameCategory.Concat(more).Select(MapList).ToList();
     }
 
     public async Task<IReadOnlyList<string>> GetBookingServiceNamesAsync(CancellationToken ct = default) =>
@@ -58,12 +90,22 @@ public class ServiceCatalogService(HieuNgaDbContext db, ISiteSettingsService sit
             .Include(s => s.Category)
             .Where(s => s.IsActive && !s.IsDeleted && s.Category.IsActive && !s.Category.IsDeleted);
 
+    private static ServiceItemListDto MapList(ServiceItem s) => new(
+        s.Slug, s.Name, s.Category.Name, s.IconKey ?? "wrench",
+        s.EstimatedPriceText, s.EstimatedDurationText,
+        s.ThumbnailUrl, s.ShortDescription, s.IsFeatured);
+
     private static ServiceItemDetailDto MapDetail(ServiceItem s) => new(
         s.Id, s.Slug, s.Name, s.Category.Name, s.IconKey ?? "wrench",
         s.ShortDescription ?? "", s.DetailDescription,
         ServiceItemJson.ParseIncludes(s.IncludesJson),
+        ServiceItemJson.ParseIncludes(s.WhenToUseJson),
+        ServiceItemJson.ParseIncludes(s.ProcessJson),
+        ServiceItemJson.ParseIncludes(s.GalleryJson),
+        ServiceItemJson.ParseFaqs(s.FaqJson),
+        s.ThumbnailUrl, s.HeroImageUrl,
         s.EstimatedPriceText, s.EstimatedDurationText, s.PriceNote,
-        new SeoMetadataDto(s.MetaTitle, s.MetaDescription, s.MetaKeywords, s.OgImageUrl, s.CanonicalUrl));
+        new SeoMetadataDto(s.MetaTitle, s.MetaDescription, s.MetaKeywords, s.OgImageUrl ?? s.HeroImageUrl ?? s.ThumbnailUrl, s.CanonicalUrl));
 }
 
 public class FinanceConfigService(HieuNgaDbContext db) : IFinanceConfigService
@@ -185,6 +227,8 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
 
 public static class ServiceItemJson
 {
+    private static readonly JsonSerializerOptions FaqOptions = new() { PropertyNameCaseInsensitive = true };
+
     public static IReadOnlyList<string> ParseIncludes(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return [];
@@ -194,6 +238,40 @@ public static class ServiceItemJson
 
     public static string SerializeIncludes(IEnumerable<string> items) =>
         JsonSerializer.Serialize(items.Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToList());
+
+    public static IReadOnlyList<ServiceFaqDto> ParseFaqs(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try
+        {
+            var rows = JsonSerializer.Deserialize<List<FaqRow>>(json, FaqOptions) ?? [];
+            return rows
+                .Where(r => !string.IsNullOrWhiteSpace(r.Q) || !string.IsNullOrWhiteSpace(r.Question))
+                .Select(r => new ServiceFaqDto(
+                    (r.Question ?? r.Q ?? "").Trim(),
+                    (r.Answer ?? r.A ?? "").Trim()))
+                .Where(f => f.Question.Length > 0)
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public static string SerializeFaqs(IEnumerable<ServiceFaqDto> faqs) =>
+        JsonSerializer.Serialize(
+            faqs.Where(f => !string.IsNullOrWhiteSpace(f.Question))
+                .Select(f => new { q = f.Question.Trim(), a = (f.Answer ?? "").Trim() })
+                .ToList());
+
+    private sealed class FaqRow
+    {
+        public string? Q { get; set; }
+        public string? A { get; set; }
+        public string? Question { get; set; }
+        public string? Answer { get; set; }
+    }
 }
 
 internal static class FinanceTerms
