@@ -1,20 +1,43 @@
 @page "/xe/{slug}"
 @model HieuNga.Web.Pages.Xe.ChiTietModel
 @using System.Text.Json
+@using HieuNga.Domain
+@using HieuNga.Web.Filters
 @{
     var m = Model.Motorcycle!;
-    var galleryImages = m.GalleryUrls.Where(u => !string.IsNullOrEmpty(u)).Distinct().ToList();
-    if (galleryImages.Count == 0 && !string.IsNullOrEmpty(m.ThumbnailUrl))
-        galleryImages = [m.ThumbnailUrl];
-    var mainGalleryImage = m.ThumbnailUrl ?? galleryImages.FirstOrDefault() ?? string.Empty;
+    var site = SiteSettingsViewData.Get(ViewData);
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? "https://zalo.me/" : site.ZaloUrl;
     var activePrice = m.Variants.FirstOrDefault()?.Price ?? m.BasePrice;
-    var defaultDown = Math.Round(activePrice * 0.2m / 500_000) * 500_000;
-    var monthlyEstimate = Model.InitialFinance?.MonthlyPayment ?? (activePrice - defaultDown) / 12;
-    var keySpecs = m.Specifications.Take(6).ToList();
-    var topHighlights = m.Highlights.Take(3).ToList();
-    var relatedBikes = Model.Related.Take(2).ToList();
+    var defaultDown = Model.DefaultDownPayment > 0
+        ? Model.DefaultDownPayment
+        : Math.Round(activePrice * 0.2m / 500_000) * 500_000;
+    var monthlyEstimate = Model.InitialFinance?.MonthlyPayment ?? (activePrice - defaultDown) / Math.Max(1, Model.DefaultTermMonths);
+    var relatedBikes = Model.Related.Take(4).ToList();
     var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
-    var testRideUrl = $"/lien-he?intent=lai-thu&xe={Uri.EscapeDataString(m.Slug)}";
+    var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}";
+    var categoryLabel = m.Category.ToDisplayName();
+    var heroImage = m.Colors.FirstOrDefault(c => !string.IsNullOrEmpty(c.ImageUrl))?.ImageUrl
+        ?? m.ThumbnailUrl
+        ?? m.GalleryUrls.FirstOrDefault()
+        ?? "/images/motorcycles/default.svg";
+    var gallery = m.GalleryUrls.Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().ToList();
+    if (gallery.Count == 0 && !string.IsNullOrWhiteSpace(heroImage))
+        gallery = [heroImage];
+    var colorBoot = m.Colors.Select(c => new
+    {
+        id = c.Id.ToString(),
+        name = c.Name,
+        hex = c.HexCode,
+        imageUrl = string.IsNullOrWhiteSpace(c.ImageUrl) ? heroImage : c.ImageUrl
+    }).ToList();
+    var featureBoot = m.Features.Select(f => new
+    {
+        id = f.Id.ToString(),
+        title = f.Title,
+        description = f.Description ?? "",
+        imageUrl = f.ImageUrl
+    }).ToList();
     var financeBoot = new
     {
         bikeName = m.Name,
@@ -35,213 +58,368 @@
         })
     };
     var financeBootJson = JsonSerializer.Serialize(financeBoot);
+    var colorBootJson = JsonSerializer.Serialize(new
+    {
+        storageKey = $"hn-color-{m.Id}",
+        colors = colorBoot,
+        gallery,
+        selectedId = colorBoot.FirstOrDefault()?.id,
+        heroSrc = heroImage,
+        name = m.Name
+    });
+    var featureBootJson = JsonSerializer.Serialize(featureBoot);
+    var spinJson = JsonSerializer.Serialize(m.SpinFrameUrls);
+    var engineLabel = m.EngineCc.HasValue ? $"{m.EngineCc} cc" : null;
+    var schemaAvailability = Model.IsAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
 }
 
-<div class="detail-page bg-white" x-data>
+<div class="detail-page bg-white" x-data="detailColorHero(@Html.Raw(colorBootJson))">
     <script type="application/json" id="motorcycle-finance-config">@Html.Raw(financeBootJson)</script>
-    <script>
-        (function () {
-            var el = document.getElementById('motorcycle-finance-config');
-            if (!el || !window.bootMotorcycleFinance) return;
-            try { window.bootMotorcycleFinance(JSON.parse(el.textContent)); } catch (e) { console.warn('Finance init:', e); }
-        })();
-    </script>
 
-    @* ─── 1. Top purchase section ─── *@
-    <section class="border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8">
-            <nav class="text-sm text-gray-400 mb-5">
+    @* ─── 1. Hero: purchase info + CTAs above the fold ─── *@
+    <section class="detail-hero relative overflow-hidden border-b border-gray-100 bg-gradient-to-b from-gray-50 via-white to-white">
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 pb-8 md:pb-10">
+            <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
                 <a href="/" class="hover:text-honda-red transition">Trang chủ</a>
                 <span class="mx-2">/</span>
                 <a href="/xe" class="hover:text-honda-red transition">Mua xe</a>
                 <span class="mx-2">/</span>
+                <a href="/xe?category=@((int)m.Category)" class="hover:text-honda-red transition">@categoryLabel</a>
+                <span class="mx-2">/</span>
                 <span class="text-honda-dark font-medium">@m.Name</span>
             </nav>
 
-            <div class="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-                <div class="lg:col-span-7">
-                    <partial name="Xe/Shared/_DetailGallery" model="(m.Name, mainGalleryImage, (IReadOnlyList<string>)galleryImages)" />
+            <div class="grid lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+                <div class="lg:col-span-7 order-1">
+                    <div class="detail-hero-media img-wrap relative aspect-[5/4] md:aspect-[16/11] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100">
+                        <div class="absolute inset-0 bg-gray-100 animate-pulse detail-hero-skeleton" x-show="!heroReady" x-cloak></div>
+                        <img :src="heroSrc" src="@heroImage" alt="@m.Name"
+                             class="img-media absolute inset-0 w-full h-full object-contain md:object-cover p-4 md:p-6 transition-opacity duration-300"
+                             width="1200" height="825" fetchpriority="high" decoding="async"
+                             @@load="heroReady = true"
+                             @@error="heroReady = true" />
+                        <div class="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md shadow-sm @(Model.IsAvailable ? "bg-emerald-600 text-white" : "bg-gray-700 text-white")">
+                                @Model.AvailabilityLabel
+                            </span>
+                            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md bg-white/95 text-honda-dark shadow-sm">@categoryLabel</span>
+                        </div>
+                    </div>
+
+                    @if (m.Colors.Any())
+                    {
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Màu sắc</p>
+                                <p class="text-sm font-semibold text-honda-dark" x-text="selected?.name || 'Chọn màu'"></p>
+                            </div>
+                            <div class="flex flex-wrap gap-2.5" role="listbox" aria-label="Chọn màu xe">
+                                <template x-for="c in colors" :key="'hero-' + c.id">
+                                    <button type="button" @@click="applyColor(c.id)"
+                                            class="touch-press relative w-10 h-10 rounded-full border-2 transition shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-honda-red focus-visible:ring-offset-2"
+                                            :class="selectedId === c.id ? 'border-honda-red scale-110 ring-2 ring-honda-red/25' : 'border-white ring-1 ring-black/10'"
+                                            :style="'background:' + c.hex"
+                                            :title="c.name"
+                                            :aria-label="c.name"
+                                            :aria-selected="selectedId === c.id"
+                                            role="option"></button>
+                                </template>
+                            </div>
+                        </div>
+                    }
+
+                    @if (gallery.Count > 1)
+                    {
+                        <div class="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" aria-label="Thư viện ảnh">
+                            <template x-for="(url, i) in gallery" :key="'g-' + i">
+                                <button type="button" @@click="selectGallery(url)"
+                                        class="touch-press shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition bg-gray-50"
+                                        :class="heroSrc === url ? 'border-honda-red' : 'border-transparent opacity-80 hover:opacity-100'">
+                                    <img :src="url" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="128" height="96" />
+                                </button>
+                            </template>
+                        </div>
+                    }
                 </div>
 
-                <div class="lg:col-span-5 space-y-5">
+                <div class="lg:col-span-5 order-2 space-y-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            @m.Category · Còn hàng showroom
-                        </p>
-                        <h1 class="text-2xl sm:text-3xl font-bold text-honda-dark mt-2 leading-tight tracking-tight">@m.Name</h1>
+                        <h1 class="text-2xl sm:text-3xl lg:text-[2rem] font-bold text-honda-dark leading-tight tracking-tight">@m.Name</h1>
                         @if (!string.IsNullOrEmpty(m.ShortDescription))
                         {
-                            <p class="text-gray-600 mt-3 text-sm sm:text-base leading-relaxed">@m.ShortDescription</p>
+                            <p class="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-3">@m.ShortDescription</p>
                         }
                     </div>
 
-                    <div class="rounded-xl border border-gray-100 bg-white p-5">
+                    <div class="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Giá niêm yết</p>
-                        <p class="text-2xl sm:text-3xl font-bold text-honda-red mt-1 tabular-nums"
+                        <p class="text-3xl font-bold text-honda-red mt-1 tabular-nums"
                            x-text="$store.motorcycleDetail ? $store.motorcycleDetail.formatVnd($store.motorcycleDetail.price) : '@activePrice.ToVnd()'"></p>
-                        <p class="text-xs text-gray-500 mt-1" x-show="$store.motorcycleDetail?.variantName" x-text="$store.motorcycleDetail?.variantName"></p>
-                        <p class="text-sm text-gray-600 mt-2">
-                            Trả góp từ ~
-                            <span class="font-semibold text-honda-red tabular-nums"
-                                  x-text="$store.motorcycleDetail ? new Intl.NumberFormat('vi-VN').format($store.motorcycleDetail.monthly) : '@((long)monthlyEstimate)'"></span> ₫/tháng
-                        </p>
+                        @if (Model.ShowInstallmentCalculator)
+                        {
+                            <p class="text-sm text-gray-600 mt-2">
+                                Trả góp từ ~
+                                <span class="font-semibold text-honda-red tabular-nums"
+                                      x-text="$store.motorcycleDetail ? new Intl.NumberFormat('vi-VN').format($store.motorcycleDetail.monthly) : '@((long)monthlyEstimate)'"></span> ₫/tháng
+                            </p>
+                        }
                     </div>
 
-                    @if (keySpecs.Any())
-                    {
-                        <div class="grid grid-cols-2 gap-2 sm:gap-3">
-                            @foreach (var spec in keySpecs)
-                            {
-                                <div class="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5">
-                                    <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 leading-snug">@spec.Label</p>
-                                    <p class="text-sm font-semibold text-honda-dark mt-0.5">@spec.Value</p>
-                                </div>
-                            }
+                    <dl class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Tình trạng</dt>
+                            <dd class="mt-0.5 font-semibold @(Model.IsAvailable ? "text-emerald-700" : "text-gray-600")">@Model.AvailabilityLabel</dd>
                         </div>
-                    }
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Loại xe</dt>
+                            <dd class="mt-0.5 font-semibold text-honda-dark">@categoryLabel</dd>
+                        </div>
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Động cơ</dt>
+                            <dd class="mt-0.5 font-semibold text-honda-dark">@(engineLabel ?? "—")</dd>
+                        </div>
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Hộp số</dt>
+                            <dd class="mt-0.5 font-semibold text-honda-dark">@(string.IsNullOrWhiteSpace(m.Transmission) ? "—" : m.Transmission)</dd>
+                        </div>
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Tiêu hao</dt>
+                            <dd class="mt-0.5 font-semibold text-honda-dark">@(Model.FuelConsumption ?? (string.IsNullOrWhiteSpace(m.FuelType) ? "—" : m.FuelType))</dd>
+                        </div>
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                            <dt class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bảo hành</dt>
+                            <dd class="mt-0.5 font-semibold text-honda-dark">@(Model.Warranty ?? "Liên hệ showroom")</dd>
+                        </div>
+                    </dl>
 
-                    <div class="flex flex-col sm:flex-row flex-wrap gap-2.5 pt-1">
-                        <a href="@consultUrl" class="btn-primary flex-1 min-w-[140px] py-3.5 text-center justify-center text-sm sm:text-base">Tư vấn mua xe</a>
-                        <a href="@testRideUrl" class="btn-secondary flex-1 min-w-[140px] py-3.5 text-center justify-center text-sm sm:text-base">Đặt lịch lái thử</a>
-                        <a href="#financing" class="inline-flex items-center justify-center px-4 py-3 text-sm font-semibold text-honda-dark border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition sm:w-full lg:w-auto">
-                            Tính trả góp
-                        </a>
+                    <div class="space-y-2.5 pt-1">
+                        <a href="@consultUrl" class="btn-primary touch-press w-full py-3.5 text-center justify-center">Tư vấn mua xe</a>
+                        <div class="grid grid-cols-2 gap-2">
+                            @if (Model.ShowInstallmentCalculator)
+                            {
+                                <a href="#financing" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Trả góp</a>
+                            }
+                            else
+                            {
+                                <a href="/tra-gop" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Trả góp</a>
+                            }
+                            <a href="@viewBikeUrl" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Đặt lịch xem xe</a>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="@telHref" hx-boost="false" class="touch-press inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">
+                                Gọi ngay
+                            </a>
+                            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false"
+                               class="touch-press inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">
+                                Chat Zalo
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    @* ─── 2. Installment calculator ─── *@
-    <partial name="Shared/_DetailFinanceCalculator" model="@((Motorcycle: m, MotorcycleId: m.Id, DefaultDown: defaultDown))" />
-
-    @* ─── 3. Vehicle information (merged) ─── *@
-    <section class="py-10 md:py-14 bg-gray-50 border-y border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-            <div>
-                <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Tổng quan</h2>
-                @if (!string.IsNullOrEmpty(m.ShortDescription))
-                {
-                    <p class="mt-3 text-gray-600 leading-relaxed max-w-3xl">@m.ShortDescription</p>
-                }
-                @if (topHighlights.Any())
-                {
-                    <ul class="mt-4 space-y-2 max-w-3xl">
-                        @foreach (var highlight in topHighlights)
-                        {
-                            <li class="flex gap-2 text-sm text-gray-700">
-                                <span class="text-honda-red font-bold shrink-0">✓</span>
-                                <span>@highlight</span>
-                            </li>
-                        }
-                    </ul>
-                }
-                @if (!string.IsNullOrEmpty(m.Description))
-                {
-                    <div class="prose prose-sm md:prose-base prose-gray max-w-3xl mt-6 prose-headings:text-honda-dark prose-a:text-honda-red">
-                        @Html.Raw(m.Description)
+    @* ─── 2. 360 Viewer ─── *@
+    @if (m.SpinFrameUrls.Count >= 2)
+    {
+        <section class="py-8 md:py-12 bg-gray-50 border-b border-gray-100" aria-labelledby="spin-heading">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
+                 x-data="detailSpin360(@Html.Raw(spinJson))">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+                    <div>
+                        <h2 id="spin-heading" class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Xem 360°</h2>
+                        <p class="mt-1 text-sm text-gray-500">Kéo để xoay xe · Vuốt trên điện thoại</p>
                     </div>
-                }
-            </div>
-
-            @if (m.Specifications.Any())
-            {
-                <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Thông số chính</h2>
-                    <div class="mt-4 rounded-xl border border-gray-100 bg-white overflow-hidden">
-                        <dl class="divide-y divide-gray-100">
-                            @foreach (var spec in m.Specifications.Take(8))
-                            {
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-4 px-4 py-3 sm:py-3.5">
-                                    <dt class="text-sm text-gray-500">@spec.Label</dt>
-                                    <dd class="text-sm font-semibold text-honda-dark sm:text-right">@spec.Value</dd>
-                                </div>
-                            }
-                        </dl>
+                    <button type="button" @@click="toggleFullscreen()"
+                            class="touch-press self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 rounded-lg bg-white hover:border-honda-red hover:text-honda-red transition">
+                        Toàn màn hình
+                    </button>
+                </div>
+                <div class="detail-spin-stage relative aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-gray-100 select-none touch-none cursor-grab active:cursor-grabbing"
+                     x-ref="stage"
+                     @@mousedown="onPointerDown($event)"
+                     @@mousemove="onPointerMove($event)"
+                     @@mouseup="onPointerUp()"
+                     @@mouseleave="onPointerUp()"
+                     @@touchstart.passive="onPointerDown($event)"
+                     @@touchmove.passive="onPointerMove($event)"
+                     @@touchend="onPointerUp()">
+                    <div class="absolute inset-0 flex items-center justify-center bg-white/80 z-10" x-show="loading" x-transition.opacity>
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="detail-spin-loader" aria-hidden="true"></span>
+                            <span class="text-xs font-medium text-gray-500">Đang tải 360°…</span>
+                        </div>
+                    </div>
+                    <img :src="src" alt="360 @m.Name"
+                         class="absolute inset-0 w-full h-full object-contain p-4 pointer-events-none transition-opacity duration-150"
+                         :class="loading ? 'opacity-40' : 'opacity-100'"
+                         draggable="false" decoding="async" width="960" height="600" />
+                    <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="showHint && !dragging && !loading" x-transition.opacity>
+                        <span class="px-3 py-1.5 rounded-full bg-black/55 text-white text-[11px] font-medium backdrop-blur-sm">← Kéo để xoay →</span>
                     </div>
                 </div>
-            }
+                <p class="mt-3 text-center text-xs text-gray-400 tabular-nums">
+                    Khung <span x-text="index + 1"></span> / <span x-text="frames.length"></span>
+                </p>
+            </div>
+        </section>
+    }
 
-            @if (m.Variants.Any() || m.Colors.Any())
-            {
-                <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Phiên bản &amp; màu sắc</h2>
-                    <div class="mt-4 space-y-5">
-                        @if (m.Variants.Any())
-                        {
-                            <div class="grid sm:grid-cols-2 gap-3">
-                                @foreach (var v in m.Variants)
+    @* ─── 3. Feature showcase ─── *@
+    @if (m.Features.Any())
+    {
+        <section class="py-8 md:py-12 border-b border-gray-100" aria-labelledby="feature-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+                 x-data="detailFeatureShowcase(@Html.Raw(featureBootJson))">
+                <h2 id="feature-heading" class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight mb-5">Điểm nổi bật</h2>
+                <div class="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+                    <div class="lg:col-span-8 relative">
+                        <div class="relative aspect-[16/10] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100">
+                            <template x-if="current">
+                                <img :src="current.imageUrl" :alt="current.title"
+                                     class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                                     loading="lazy" decoding="async" width="960" height="600" />
+                            </template>
+                        </div>
+                        <div class="absolute inset-x-0 bottom-0 flex justify-between p-3 pointer-events-none">
+                            <button type="button" @@click="prev()" class="touch-press pointer-events-auto w-10 h-10 rounded-full bg-white/90 shadow flex items-center justify-center" aria-label="Trước">‹</button>
+                            <button type="button" @@click="next()" class="touch-press pointer-events-auto w-10 h-10 rounded-full bg-white/90 shadow flex items-center justify-center" aria-label="Sau">›</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4 space-y-4">
+                        <template x-if="current">
+                            <div>
+                                <h3 class="text-lg font-bold text-honda-dark" x-text="current.title"></h3>
+                                <p class="mt-2 text-sm text-gray-600 leading-relaxed" x-text="current.description"></p>
+                            </div>
+                        </template>
+                        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                            <template x-for="(item, i) in items" :key="item.id">
+                                <button type="button" @@click="go(i)"
+                                        class="touch-press shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition"
+                                        :class="active === i ? 'border-honda-red' : 'border-transparent opacity-70 hover:opacity-100'">
+                                    <img :src="item.imageUrl" alt="" class="w-full h-full object-cover" loading="lazy" width="80" height="64" />
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (m.Highlights.Any())
+    {
+        <section class="py-8 md:py-12 border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Điểm nổi bật</h2>
+                <ul class="mt-4 grid sm:grid-cols-2 gap-3 max-w-4xl">
+                    @foreach (var h in m.Highlights)
+                    {
+                        <li class="flex gap-2 text-sm text-gray-700"><span class="text-honda-red font-bold">✓</span><span>@h</span></li>
+                    }
+                </ul>
+            </div>
+        </section>
+    }
+
+    @* ─── 4. Technology ─── *@
+    @if (m.Technologies.Any())
+    {
+        <section class="py-8 md:py-12 bg-gray-50 border-b border-gray-100" aria-labelledby="tech-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 id="tech-heading" class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight mb-6">Công nghệ</h2>
+                <div class="space-y-8 md:space-y-12">
+                    @{ var ti = 0; }
+                    @foreach (var tech in m.Technologies)
+                    {
+                        var reverse = ti % 2 == 1;
+                        <div class="grid md:grid-cols-2 gap-5 md:gap-8 items-center @(reverse ? "md:[direction:rtl]" : "")">
+                            <div class="@(reverse ? "md:[direction:ltr]" : "")">
+                                <div class="relative aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-gray-100">
+                                    <img src="@tech.ImageUrl" alt="@tech.Title" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" width="800" height="500" />
+                                </div>
+                            </div>
+                            <div class="@(reverse ? "md:[direction:ltr]" : "")">
+                                <h3 class="text-lg md:text-xl font-bold text-honda-dark">@tech.Title</h3>
+                                @if (!string.IsNullOrWhiteSpace(tech.Description))
                                 {
-                                    <button type="button"
-                                            @@click="$store.motorcycleDetail && $store.motorcycleDetail.selectVariant('@v.Id.ToString().ToLowerInvariant()')"
-                                            class="flex justify-between items-center gap-3 px-4 py-3 rounded-xl border text-left w-full transition"
-                                            :class="$store.motorcycleDetail && $store.motorcycleDetail.isVariantSelected('@v.Id.ToString().ToLowerInvariant()') ? 'border-honda-red bg-red-50/50' : 'border-gray-100 bg-white hover:border-gray-300'">
-                                        <div>
-                                            <p class="font-semibold text-sm">@v.Name</p>
-                                            <p class="text-xs mt-0.5 @(v.IsAvailable ? "text-green-600" : "text-gray-400")">
-                                                @(v.IsAvailable ? $"Còn {v.StockQuantity} xe" : "Liên hệ")
-                                            </p>
-                                        </div>
-                                        <p class="font-bold text-honda-red text-sm tabular-nums shrink-0">@v.Price.ToVnd()</p>
-                                    </button>
+                                    <p class="mt-3 text-sm md:text-base text-gray-600 leading-relaxed">@tech.Description</p>
                                 }
                             </div>
-                        }
-                        @if (m.Colors.Any())
-                        {
-                            <div x-data="{ selected: '@m.Colors.First().Id' }">
-                                <p class="text-sm font-medium text-gray-600 mb-2">Màu sắc</p>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach (var color in m.Colors)
-                                    {
-                                        <button type="button" @@click="selected = '@color.Id'"
-                                                class="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition"
-                                                :class="selected === '@color.Id' ? 'border-honda-red bg-red-50/40' : 'border-gray-100 bg-white hover:border-gray-300'">
-                                            <span class="w-5 h-5 rounded-full border border-gray-200" style="background:@color.HexCode"></span>
-                                            <span class="font-medium">@color.Name</span>
-                                        </button>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <div>
-                <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Hỗ trợ tại Xe Máy Hiếu Nga</h2>
-                <div class="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    @{
-                        var supportItems = new[]
-                        {
-                            ("Tư vấn rõ ràng", "Báo giá minh bạch, hỗ trợ chọn xe phù hợp."),
-                            ("Hỗ trợ trả góp", "Thủ tục tại showroom, nhiều ngân hàng liên kết."),
-                            ("Bảo hành HEAD", "Xe và dịch vụ theo tiêu chuẩn Honda Việt Nam."),
-                            ("Phụ tùng chính hãng", "Linh kiện Honda 100% khi bảo dưỡng tại xưởng.")
-                        };
+                        </div>
+                        ti++;
                     }
-                    @foreach (var (title, desc) in supportItems)
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ─── 5. Specifications ─── *@
+    @if (m.Specifications.Any() || !string.IsNullOrEmpty(m.Description))
+    {
+        <section class="py-8 md:py-12 border-b border-gray-100" aria-labelledby="spec-heading"
+                 x-data="detailSpecsAccordion()">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <button type="button" class="w-full flex items-center justify-between md:cursor-default touch-press" @@click="open = !open" id="spec-heading">
+                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Thông số kỹ thuật</h2>
+                    <span class="md:hidden text-honda-red text-sm font-semibold" x-text="open ? 'Thu gọn' : 'Xem'"></span>
+                </button>
+                <div class="mt-4" x-show="open" x-transition>
+                    @if (m.Specifications.Any())
                     {
-                        <div class="rounded-xl border border-gray-100 bg-white p-4">
-                            <h3 class="font-bold text-sm text-honda-dark">@title</h3>
-                            <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">@desc</p>
+                        <div class="rounded-xl border border-gray-100 overflow-hidden bg-white">
+                            <dl class="divide-y divide-gray-100">
+                                @foreach (var spec in m.Specifications)
+                                {
+                                    if (string.Equals(spec.Icon, "group", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <div class="px-4 py-3 bg-gray-50">
+                                            <p class="text-sm font-bold text-honda-dark">@spec.Label</p>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-4 px-4 py-3">
+                                            <dt class="text-sm text-gray-500">@spec.Label</dt>
+                                            <dd class="text-sm font-semibold text-honda-dark sm:text-right">@spec.Value</dd>
+                                        </div>
+                                    }
+                                }
+                            </dl>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-sm text-gray-500 py-4">Thông số chi tiết sẽ được cập nhật sớm.</p>
+                    }
+                    @if (!string.IsNullOrEmpty(m.Description))
+                    {
+                        <div class="prose prose-sm md:prose-base prose-gray max-w-3xl mt-6 prose-headings:text-honda-dark">
+                            @Html.Raw(m.Description)
                         </div>
                     }
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    }
 
-    @* ─── 4. Related motorcycles ─── *@
+    @* ─── 6. Finance calculator (logic unchanged) ─── *@
+    @if (Model.ShowInstallmentCalculator)
+    {
+        <partial name="Shared/_DetailFinanceCalculator" model="@((Motorcycle: m, MotorcycleId: m.Id, DefaultDown: defaultDown))" />
+    }
+
+    @* ─── 7. Related ─── *@
     @if (relatedBikes.Any())
     {
-        <section class="py-10 md:py-14 border-b border-gray-100">
+        <section class="py-8 md:py-12 border-b border-gray-100">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
-                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Xe tương tự</h2>
-                    <a href="/xe" class="text-sm font-semibold text-honda-red hover:underline">Xem thêm xe khác →</a>
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+                    <h2 class="text-xl md:text-2xl font-bold text-honda-dark tracking-tight">Xe cùng phân khúc</h2>
+                    <a href="/xe?category=@((int)m.Category)" class="text-sm font-semibold text-honda-red hover:underline">Xem thêm @categoryLabel →</a>
                 </div>
-                <div class="grid sm:grid-cols-2 gap-5 md:gap-6 max-w-4xl">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     @foreach (var bike in relatedBikes)
                     {
                         <partial name="_MotorcycleCard" model="bike" />
@@ -251,41 +429,49 @@
         </section>
     }
 
-    @* ─── 5. Bottom conversion CTA ─── *@
-    <section class="py-10 md:py-14">
+    @* ─── 8. Soft closing CTA ─── *@
+    <section class="py-8 md:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="rounded-2xl border border-gray-100 bg-white p-6 md:p-8 text-center md:text-left">
-                <h2 class="text-lg md:text-xl font-bold text-honda-dark">Cần tư vấn mẫu xe này?</h2>
-                <p class="mt-2 text-sm text-gray-500">Đội ngũ Xe Máy Hiếu Nga sẵn sàng hỗ trợ mua xe và trả góp tại Đà Nẵng.</p>
-                <div class="mt-5 flex flex-col sm:flex-row flex-wrap gap-3 justify-center md:justify-start">
-                    <a href="tel:0905123456" class="inline-flex items-center justify-center px-5 py-3 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">
-                        Gọi ngay
-                    </a>
-                    <a href="@consultUrl" class="btn-primary justify-center text-sm">Tư vấn mua xe</a>
-                    <a href="@testRideUrl" class="btn-secondary justify-center text-sm">Đặt lịch lái thử</a>
+            <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-6 md:p-8">
+                <h2 class="text-lg md:text-xl font-bold text-honda-dark">Cần tư vấn mẫu @m.Name?</h2>
+                <p class="mt-2 text-sm text-gray-500">Showroom Xe Máy Hiếu Nga hỗ trợ mua xe, trả góp và đặt lịch xem xe.</p>
+                <div class="mt-4 flex flex-col sm:flex-row flex-wrap gap-2.5">
+                    <a href="@consultUrl" class="btn-primary touch-press justify-center text-sm">Tư vấn mua xe</a>
+                    <a href="@viewBikeUrl" class="btn-secondary touch-press justify-center text-sm">Đặt lịch xem xe</a>
+                    <a href="@telHref" hx-boost="false" class="touch-press inline-flex items-center justify-center px-5 py-3 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition">Gọi @site.Hotline</a>
                 </div>
             </div>
         </div>
     </section>
 </div>
 
-@* Mobile sticky bar (detail-only; global _MobileCta hidden via PageModel) *@
-<div class="detail-sticky-bar fixed bottom-0 inset-x-0 z-[60] lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200">
-    <div class="grid grid-cols-3 divide-x divide-gray-100 px-1">
-        <a href="tel:0905123456" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-medium text-honda-charcoal hover:bg-gray-50">
-            <svg class="w-5 h-5 mb-0.5 text-honda-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            Gọi
-        </a>
-        <a href="@consultUrl" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-semibold text-honda-charcoal hover:bg-gray-50">
-            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-            Tư vấn
-        </a>
-        <a href="#financing" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-semibold text-honda-charcoal border-l border-gray-100 hover:bg-gray-50">
-            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-            Tính góp
-        </a>
+<div class="detail-sticky-bar fixed bottom-0 inset-x-0 z-[60] lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200"
+     x-data="detailStickyCta()"
+     x-show="visible"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="translate-y-full opacity-0"
+     x-transition:enter-end="translate-y-0 opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="translate-y-0 opacity-100"
+     x-transition:leave-end="translate-y-full opacity-0"
+     x-cloak>
+    <div class="grid grid-cols-4 divide-x divide-gray-100">
+        <a href="@telHref" hx-boost="false" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-medium text-honda-charcoal hover:bg-gray-50">Gọi</a>
+        <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-medium text-honda-charcoal hover:bg-gray-50">Zalo</a>
+        <a href="@consultUrl" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-semibold text-honda-charcoal hover:bg-gray-50">Tư vấn</a>
+        <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="touch-press flex flex-col items-center justify-center py-3 text-[10px] font-semibold text-honda-red hover:bg-red-50">Trả góp</a>
     </div>
 </div>
+
+<script src="~/js/detail-finance.js" asp-append-version="true"></script>
+<script src="~/js/detail-viewer.js" asp-append-version="true"></script>
+<script>
+    (function () {
+        var el = document.getElementById('motorcycle-finance-config');
+        if (!el || !window.bootMotorcycleFinance) return;
+        try { window.bootMotorcycleFinance(JSON.parse(el.textContent)); } catch (e) { console.warn('Finance init:', e); }
+    })();
+</script>
 
 <script type="application/ld+json">
 {
@@ -293,11 +479,12 @@
     "@@type": "Product",
     "name": "@m.Name",
     "brand": { "@@type": "Brand", "name": "Honda" },
+    "category": "@categoryLabel",
     "offers": {
         "@@type": "Offer",
         "price": "@m.BasePrice",
         "priceCurrency": "VND",
-        "availability": "https://schema.org/InStock"
+        "availability": "@schemaAvailability"
     }
 }
 </script>

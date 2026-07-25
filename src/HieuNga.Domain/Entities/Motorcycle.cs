@@ -31,5 +31,8 @@ public class Motorcycle : BaseEntity, ISeoEntity
     public ICollection<MotorcycleVariant> Variants { get; set; } = [];
     public ICollection<MotorcycleColor> Colors { get; set; } = [];
     public ICollection<MediaAsset> MediaAssets { get; set; } = [];
+    public ICollection<MotorcycleFeature> Features { get; set; } = [];
+    public ICollection<MotorcycleTechnology> Technologies { get; set; } = [];
+    public ICollection<MotorcycleSpinFrame> SpinFrames { get; set; } = [];
     public ICollection<Review> Reviews { get; set; } = [];
 }

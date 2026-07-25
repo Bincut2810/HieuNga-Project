@@ -14,5 +14,9 @@ public interface IMotorcycleRepository : IRepository<Motorcycle>
         decimal? maxPrice,
         int page,
         int pageSize,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        bool? featuredOnly = null,
+        string? sort = null);
+
+    Task<IReadOnlyDictionary<MotorcycleCategory, int>> GetPublishedCategoryCountsAsync(CancellationToken ct = default);
 }

@@ -1,0 +1,94 @@
+{
+  "name": "Demo Vision Urban",
+  "slug": "demo-vision-urban",
+  "category": "Scooter",
+  "price": 32990000,
+  "featured": true,
+  "published": true,
+  "sortOrder": 10,
+  "shortDescription": "Xe tay ga demo đô thị — gói mẫu để showcase CMS và website dealership.",
+  "descriptionHtml": "<p><strong>Demo Vision Urban</strong> là gói xe mẫu (không phải hình ảnh thương hiệu Honda). Dùng để kiểm thử gallery, màu sắc, 360°, thông số, SEO và trả góp trên hệ thống Xe Máy Hiếu Nga.</p><p>Thay ảnh placeholder trong <code>DemoAssets/Vision</code> bằng ảnh thật rồi bấm <em>Reimport</em>.</p>",
+  "engineCc": 110,
+  "fuelType": "Xăng",
+  "transmission": "Tự động",
+  "highlights": [
+    "Gói demo đầy đủ media + nội dung",
+    "Idempotent import theo slug",
+    "Upload Cloudinary / Local tự động"
+  ],
+  "specifications": [
+    { "icon": "⚡", "label": "Dung tích xy-lanh", "value": "110 cc" },
+    { "icon": "⚙️", "label": "Hộp số", "value": "Tự động" },
+    { "icon": "⛽", "label": "Nhiên liệu", "value": "Xăng không chì" },
+    { "icon": "📉", "label": "Mức tiêu hao", "value": "≈ 2.0 L/100km (demo)" },
+    { "icon": "🛡️", "label": "Bảo hành", "value": "3 năm hoặc 30.000 km (demo)" },
+    { "icon": "group", "label": "Kích thước", "value": "" },
+    { "icon": "📏", "label": "Dài x Rộng x Cao", "value": "1.872 × 686 × 1.102 mm" },
+    { "icon": "⚖️", "label": "Khối lượng", "value": "96 kg" }
+  ],
+  "variants": [
+    {
+      "name": "Tiêu chuẩn",
+      "price": 32990000,
+      "stockQuantity": 8,
+      "isAvailable": true,
+      "sku": "DEMO-VISION-STD"
+    },
+    {
+      "name": "Đặc biệt",
+      "price": 34990000,
+      "stockQuantity": 3,
+      "isAvailable": true,
+      "sku": "DEMO-VISION-SPE"
+    }
+  ],
+  "colors": [
+    { "name": "Đen nhám", "hex": "#1A1A1A", "image": "black.jpg" },
+    { "name": "Trắng ngọc", "hex": "#F4F4F4", "image": "white.jpg" },
+    { "name": "Đỏ đô", "hex": "#E40521", "image": "red.jpg" }
+  ],
+  "features": [
+    {
+      "title": "Thiết kế gọn đô thị",
+      "description": "Mô tả demo — thay bằng nội dung bán hàng thật khi có ảnh sản phẩm.",
+      "image": "feature-01.jpg"
+    },
+    {
+      "title": "Vận hành êm ái",
+      "description": "Highlight demo cho showcase trang chi tiết.",
+      "image": "feature-02.jpg"
+    }
+  ],
+  "technology": [
+    {
+      "title": "Hệ thống phanh an toàn",
+      "description": "Công nghệ demo — không gắn với thương hiệu cụ thể.",
+      "image": "tech-01.jpg"
+    },
+    {
+      "title": "Khóa thông minh (demo)",
+      "description": "Mô tả công nghệ mẫu cho layout Technology.",
+      "image": "tech-02.jpg"
+    }
+  ],
+  "seo": {
+    "metaTitle": "Demo Vision Urban | Xe Máy Hiếu Nga",
+    "metaDescription": "Gói xe demo Vision Urban — showcase CMS, gallery, 360 và trả góp tại Xe Máy Hiếu Nga Đà Nẵng.",
+    "metaKeywords": "demo vision, xe may hieu nga, scooter demo",
+    "canonicalUrl": "/xe/demo-vision-urban"
+  },
+  "finance": {
+    "calculatorEnabled": true,
+    "defaultBankId": null,
+    "defaultDownPaymentPercent": 20,
+    "defaultTermMonths": 12
+  },
+  "assets": {
+    "thumbnail": "thumbnail.jpg",
+    "galleryFolder": "gallery",
+    "spinFolder": "360",
+    "colorsFolder": "colors",
+    "featuresFolder": "features",
+    "technologyFolder": "technology"
+  }
+}

@@ -35,32 +35,18 @@
                 </div>
             </div>
             <div>
-                <label asp-for="ThumbnailUrl" class="admin-label">Thumbnail URL</label>
-                <input asp-for="ThumbnailUrl" class="admin-input" placeholder="https://... hoặc /uploads/..." />
-                <p class="admin-hint">Nhập URL ảnh công khai hoặc tải file bên dưới.</p>
+                <label asp-for="ThumbnailUrl" class="admin-label">Thumbnail URL (tuỳ chọn)</label>
+                <input asp-for="ThumbnailUrl" class="admin-input" placeholder="Để trống nếu đã tải file" />
+                <p class="admin-hint">Ưu tiên tải file bên dưới. URL chỉ dùng khi cần.</p>
             </div>
-            @if (!string.IsNullOrWhiteSpace(currentThumbnail))
-            {
-                <div>
-                    <p class="admin-label">Ảnh hiện tại</p>
-                    <img src="@currentThumbnail" alt="Thumbnail" style="max-height: 8rem; border-radius: 0.5rem; border: 1px solid var(--admin-border);" />
-                </div>
-            }
-            <div>
-                <label class="admin-label">Tải ảnh thumbnail</label>
-                @if (supportsUpload)
-                {
-                    <input type="file" name="ThumbnailFile" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" class="admin-input" />
-                }
-                else
-                {
-                    <p class="admin-hint text-amber-700">@storageNote</p>
-                }
-                @if (!string.IsNullOrWhiteSpace(storageNote) && supportsUpload)
-                {
-                    <p class="admin-hint">@storageNote</p>
-                }
-            </div>
+            <partial name="Admin/Shared/_AdminUploadField"
+                     model='new HieuNga.Web.Pages.Admin.Extensions.AdminUploadFieldModel(
+                         "ThumbnailFile",
+                         "Tải ảnh thumbnail",
+                         Hint: storageNote,
+                         PreviewUrl: string.IsNullOrWhiteSpace(currentThumbnail) ? null : currentThumbnail,
+                         Enabled: supportsUpload,
+                         DisabledMessage: storageNote)' />
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; align-items: end;">
                 <div>
                     <label asp-for="SortOrder" class="admin-label">Thứ tự hiển thị</label>

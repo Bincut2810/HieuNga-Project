@@ -1,10 +1,11 @@
 @model MotorcycleListItemDto
 @using HieuNga.Application.Mappings
+@using HieuNga.Domain
 @{
     var imageUrl = MotorcycleImageCatalog.ResolveThumbnail(Model.Slug, Model.ThumbnailUrl);
     var fallbackUrl = MotorcycleImageCatalog.GetThumbnail(Model.Slug);
 }
-<a href="/xe/@Model.Slug" class="card-motorcycle group block relative">
+<a href="/xe/@Model.Slug" class="card-motorcycle group block relative @(Model.IsAvailable ? "" : "opacity-90")">
     <div class="img-wrap relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
         <img src="@imageUrl"
              data-fallback="@fallbackUrl"
@@ -21,11 +22,13 @@
             {
                 <span class="px-2.5 py-1 bg-honda-red text-white text-[10px] font-bold uppercase tracking-wide rounded-md shadow-lg">Nổi bật</span>
             }
-            <span class="px-2.5 py-1 bg-white/95 backdrop-blur text-honda-red text-[10px] font-bold rounded-md shadow-sm">Trả góp 0%</span>
+            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md shadow-sm @(Model.IsAvailable ? "bg-emerald-600 text-white" : "bg-gray-700 text-white")">
+                @Model.AvailabilityLabel
+            </span>
         </div>
     </div>
     <div class="p-5 md:p-6">
-        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">@Model.Category</span>
+        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">@Model.Category.ToDisplayName()</span>
         <h3 class="text-lg md:text-xl font-bold mt-1 text-honda-dark group-hover:text-honda-red transition-colors duration-300 line-clamp-1">@Model.Name</h3>
         @if (!string.IsNullOrEmpty(Model.ShortDescription))
         {

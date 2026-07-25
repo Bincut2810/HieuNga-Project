@@ -1,0 +1,90 @@
+@page "/admin/xe/editor/{id:guid?}"
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+@{
+    var tab = Model.Tab;
+    var editorId = Model.Id;
+    var isCreate = Model.IsCreate;
+    var previewUrl = !string.IsNullOrEmpty(Model.PublicSlug) ? $"/xe/{Model.PublicSlug}" : null;
+}
+
+<partial name="Admin/Shared/_AdminBreadcrumb" model='new List<AdminBreadcrumbItem> {
+    new("Admin", "/admin"),
+    new("Motorcycles", "/admin/xe"),
+    new(isCreate ? "Thêm" : "Editor")
+}' />
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">@(isCreate ? "Thêm motorcycle" : Model.MotorcycleName)</h1>
+        <p class="admin-page-subtitle">
+            @(isCreate
+                ? "Tạo xe mới — sau khi lưu bạn có thể thêm media, thông số và giá."
+                : "Motorcycle CMS Editor — chỉnh sửa theo tab.")
+            @if (!string.IsNullOrEmpty(previewUrl))
+            {
+                <span> · </span>
+                <a href="@previewUrl" target="_blank" rel="noopener" style="color: var(--admin-honda-red);">Xem trang công khai</a>
+            }
+        </p>
+    </div>
+</div>
+
+<nav class="admin-editor-tabs is-sticky" aria-label="Motorcycle editor tabs" data-editor-tabs>
+    @{
+        string TabHref(string t) => isCreate && t is not ("general" or "seo" or "publish")
+            ? "#"
+            : (isCreate ? $"/admin/xe/editor?tab={t}" : $"/admin/xe/editor/{editorId}?tab={t}");
+        string TabClass(string t)
+        {
+            var active = tab == t ? " is-active" : "";
+            var disabled = isCreate && t is not ("general" or "seo" or "publish") ? " is-disabled" : "";
+            return "admin-editor-tab" + active + disabled;
+        }
+    }
+    <a class="@TabClass("general")" href="@TabHref("general")" data-tab="general">General</a>
+    <a class="@TabClass("media")" href="@TabHref("media")" data-tab="media" title="@(isCreate ? "Lưu xe trước" : null)">Media</a>
+    <a class="@TabClass("specifications")" href="@TabHref("specifications")" data-tab="specifications">Specifications</a>
+    <a class="@TabClass("features")" href="@TabHref("features")" data-tab="features">Features</a>
+    <a class="@TabClass("finance")" href="@TabHref("finance")" data-tab="finance">Finance</a>
+    <a class="@TabClass("seo")" href="@TabHref("seo")" data-tab="seo">SEO</a>
+    <a class="@TabClass("publish")" href="@TabHref("publish")" data-tab="publish">Publish</a>
+</nav>
+
+<div asp-validation-summary="ModelOnly" class="admin-validation-summary" style="margin-bottom: 1rem;"></div>
+
+@if (tab == "general")
+{
+    <partial name="Admin/Xe/_EditorTabGeneral" />
+}
+else if (tab == "media")
+{
+    <partial name="Admin/Xe/_EditorTabMedia" />
+}
+else if (tab == "specifications")
+{
+    <partial name="Admin/Xe/_EditorTabSpecifications" />
+}
+else if (tab == "features")
+{
+    <partial name="Admin/Xe/_EditorTabFeatures" />
+}
+else if (tab == "finance")
+{
+    <partial name="Admin/Xe/_EditorTabFinance" />
+}
+else if (tab == "seo")
+{
+    <partial name="Admin/Xe/_EditorTabSeo" />
+}
+else if (tab == "publish")
+{
+    <partial name="Admin/Xe/_EditorTabPublish" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/motorcycle-editor.js" asp-append-version="true"></script>
+    <script src="~/js/motorcycle-media.js" asp-append-version="true"></script>
+    <script src="~/js/motorcycle-content.js" asp-append-version="true"></script>
+}

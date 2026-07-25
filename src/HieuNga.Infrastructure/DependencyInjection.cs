@@ -1,3 +1,4 @@
+using HieuNga.Application.DemoImport;
 using HieuNga.Application.Interfaces;
 using HieuNga.Application.Options;
 using HieuNga.Domain.Entities;
@@ -71,6 +72,7 @@ public static class DependencyInjection
         services.AddSingleton<CloudinaryImageStorageService>();
         services.AddSingleton<DisabledImageStorageService>();
         services.AddSingleton<IImageStorageService, ImageStorageRouter>();
+        services.AddScoped<IDemoMotorcycleImporter, DemoMotorcycleImporter>();
 
         return services;
     }

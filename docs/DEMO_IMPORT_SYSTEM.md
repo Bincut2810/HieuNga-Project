@@ -1,0 +1,115 @@
+# Demo Motorcycle Import System
+
+Populate the Motorcycle CMS quickly for dealership demos. Images upload through the **existing** `IImageStorageService` (Cloudinary in Production, Local in Development). No scraping, no remote image downloads.
+
+## Folder structure
+
+Runtime root (published with the web app):
+
+```
+src/HieuNga.Web/DemoAssets/
+  Vision/          ← complete sample package
+  Lead/            ← stubs (add metadata.json to enable)
+  AirBlade/
+  SH/
+  WinnerX/
+  Future/
+  WaveAlpha/
+```
+
+Documentation mirror (same layout):
+
+```
+docs/DemoAssets/
+```
+
+### Per-package layout
+
+```
+Vision/
+  metadata.json          ← required
+  thumbnail.jpg
+  gallery/
+    01.jpg
+    02.jpg
+    …
+  360/
+    001.jpg
+    002.jpg
+    …                    ← need ≥ 2 frames for public 360 viewer
+  colors/
+    black.jpg
+    white.jpg
+    red.jpg
+  features/              ← optional; referenced from metadata
+  technology/            ← optional
+  README.md
+```
+
+Supported extensions: `.jpg` `.jpeg` `.png` `.webp` `.gif` `.svg`
+
+## Image naming
+
+| Role | Convention |
+|------|------------|
+| Thumbnail | `thumbnail.jpg` (or name in `assets.thumbnail`) |
+| Gallery | Sorted alphanumeric files in `gallery/` |
+| 360 | Files in `360/`; frame index parsed from trailing digits (`001`, `frame_12`) |
+| Colors | File name from metadata `colors[].image`, else `{slugified-name}.jpg` |
+| Features / tech | File name from card `image` field under `features/` or `technology/` |
+
+**Do not ship copyrighted Honda product photos.** The Vision package uses 1×1 placeholder JPEGs. Replace files in place, keep names, then **Reimport**.
+
+## metadata.json
+
+Importer reads only this file for text/prices/structure (not hardcoded bike data).
+
+Key fields:
+
+- `name`, `slug`, `category` (`Scooter` \| `XeSo` \| `ConTay` \| `PhanKhoiLon` \| `Electric`)
+- `price`, `featured`, `published`, `sortOrder`
+- `shortDescription`, `descriptionHtml`
+- `engineCc`, `fuelType`, `transmission`
+- `highlights[]`, `specifications[]` (`icon`, `label`, `value`; `icon: "group"` = section header)
+- `variants[]`, `colors[]`, `features[]`, `technology[]`
+- `seo`, `finance`, `assets` (folder/file hints)
+
+Slug is the **idempotency key**. Reimport updates the same motorcycle and replaces child assets.
+
+## Import process
+
+1. Admin → **Inventory** → **Import Demo Data** (`/admin/xe/import-demo`)
+2. Package cards show Ready / Imported / missing metadata
+3. **Import** or **Reimport**
+4. Service reads `metadata.json`, uploads images via `IImageStorageService`, upserts entities in a DB transaction, writes finance prefs to `SiteSetting` (`motorcycle.finance.{id}`)
+5. Success toast → redirect to motorcycle editor
+
+**Delete Demo** soft-deletes the motorcycle (`IsDeleted`, unpublished).
+
+## Cloudinary behavior
+
+| Environment | Behavior |
+|-------------|----------|
+| Development | Local disk `wwwroot/uploads/...` if Cloudinary not configured |
+| Production (Render) | Cloudinary when `ImageStorage__Cloudinary__*` is set |
+| Production without Cloudinary | Import blocked with clear error |
+
+Folders used: `demo/{motorcycleId}/thumb|gallery|colors|360|features|technology`
+
+No duplicate upload helpers — same `IImageStorageService.UploadAsync` as the CMS Media tab.
+
+## How to add a new motorcycle package
+
+1. Create `DemoAssets/YourBike/` with the folder layout above.
+2. Write `metadata.json` (copy Vision’s file and edit).
+3. Drop images (placeholders first is fine).
+4. Register the package in `DemoPackageCatalog.All` (`HieuNga.Application/DemoImport/DemoMotorcycleMetadata.cs`) if it is not already listed.
+5. Deploy / restart → open Import Demo Data → **Import**.
+
+Stub folders (Lead, SH, …) already appear in Admin; they stay disabled until `metadata.json` exists.
+
+## Safety
+
+- Running Import twice does **not** create duplicate slugs.
+- Reimport replaces variants, colors, gallery, 360, features, technologies.
+- Missing image files produce warnings; the motorcycle is still created when possible.

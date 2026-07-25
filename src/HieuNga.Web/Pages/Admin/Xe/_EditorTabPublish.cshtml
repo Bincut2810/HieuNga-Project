@@ -1,0 +1,91 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+
+@{
+    var status = Model.PublishStatus ?? "draft";
+    var badgeClass = status switch
+    {
+        "published" => "admin-badge admin-badge-success",
+        "archived" => "admin-badge admin-badge-muted",
+        _ => "admin-badge admin-badge-category"
+    };
+    var publicUrl = string.IsNullOrEmpty(Model.PublicSlug) ? null : $"/xe/{Model.PublicSlug}";
+}
+
+<form method="post" asp-page-handler="SavePublish" class="admin-form-card" style="max-width:44rem;" data-dirty-form id="moto-publish-form">
+    @Html.AntiForgeryToken()
+    @if (Model.Id.HasValue)
+    {
+        <input type="hidden" name="Id" value="@Model.Id" />
+    }
+    <input type="hidden" name="Tab" value="publish" />
+
+    <div class="mm-section-head">
+        <h2 class="admin-form-section-title">Publish</h2>
+        @if (!Model.IsCreate)
+        {
+            <span class="@badgeClass">@status</span>
+        }
+    </div>
+
+    @if (Model.IsCreate)
+    {
+        <p class="admin-hint">Tạo xe ở Quick Create trước.</p>
+        <a href="/admin/xe/editor?tab=general" class="admin-btn-secondary">Về General</a>
+    }
+    else
+    {
+        <fieldset style="border:none;padding:0;margin:1rem 0 0;display:flex;flex-direction:column;gap:0.75rem;">
+            <legend class="admin-label">Status</legend>
+            <label class="admin-publish-option">
+                <input type="radio" asp-for="PublishStatus" value="draft" />
+                <span><strong>Draft</strong><span class="admin-hint">Ẩn trên website.</span></span>
+            </label>
+            <label class="admin-publish-option">
+                <input type="radio" asp-for="PublishStatus" value="published" />
+                <span><strong>Published</strong><span class="admin-hint">Công khai trên /xe.</span></span>
+            </label>
+            <label class="admin-publish-option" style="opacity:0.75;">
+                <input type="radio" name="PublishStatusScheduled" value="scheduled" disabled />
+                <span><strong>Scheduled</strong><span class="admin-hint">UI only — Sprint sau.</span></span>
+            </label>
+            <label class="admin-publish-option">
+                <input type="radio" asp-for="PublishStatus" value="archived" />
+                <span><strong>Archive</strong><span class="admin-hint">Ẩn + bỏ Featured (placeholder, chưa có cột riêng).</span></span>
+            </label>
+        </fieldset>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem;">
+            <div>
+                <label asp-for="Input.SortOrder" class="admin-label">Sort order</label>
+                <input asp-for="Input.SortOrder" type="number" class="admin-input" />
+            </div>
+            <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;padding-top:1.5rem;">
+                <input asp-for="Input.IsFeatured" type="checkbox" style="accent-color:var(--admin-honda-red);" />
+                Featured
+            </label>
+        </div>
+
+        @if (publicUrl is not null)
+        {
+            <div class="admin-card admin-card-padded" style="margin-top:1.25rem;">
+                <p class="admin-label">Public URL</p>
+                <p style="font-family:ui-monospace,monospace;font-size:0.85rem;margin:0.35rem 0;">@publicUrl</p>
+                <a href="@publicUrl" target="_blank" rel="noopener" class="admin-btn-secondary">Open public page</a>
+            </div>
+        }
+
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu publish")' />
+    }
+</form>
+
+@if (!Model.IsCreate)
+{
+    <form method="post" asp-page-handler="DuplicateMotorcycle" class="admin-form-card" style="max-width:44rem;margin-top:1rem;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <h2 class="admin-form-section-title">Duplicate motorcycle</h2>
+        <p class="admin-hint" style="margin:0.5rem 0 1rem;">Tạo bản sao Draft (kèm variants, colors, gallery, features, tech, 360).</p>
+        <button type="submit" class="admin-btn-secondary" onclick="return confirm('Nhân bản xe này?')">Duplicate → Draft</button>
+    </form>
+}

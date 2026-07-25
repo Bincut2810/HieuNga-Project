@@ -1,4 +1,5 @@
 @page "/admin/xe"
+@using HieuNga.Domain
 @using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.Xe.IndexModel
 
@@ -6,7 +7,7 @@
          model='new AdminPageHeaderModel(
              "Xe máy",
              "Quản lý danh sách xe, giá hiển thị và trạng thái trên website.",
-             "/admin/xe/them",
+             "/admin/xe/editor",
              "+ Thêm xe")' />
 
 <div class="admin-stat-grid">
@@ -73,7 +74,7 @@
             }
             else
             {
-                <a href="/admin/xe/them" class="admin-btn-primary admin-empty-action">+ Thêm xe</a>
+                <a href="/admin/xe/editor" class="admin-btn-primary admin-empty-action">+ Thêm xe</a>
             }
         </div>
     }
@@ -100,7 +101,7 @@
                                 <p class="admin-table-secondary">/@item.Slug</p>
                             </td>
                             <td>
-                                <span class="admin-badge admin-badge-category">@item.Category</span>
+                                <span class="admin-badge admin-badge-category">@item.Category.ToDisplayName()</span>
                             </td>
                             <td style="color: var(--admin-honda-red); font-weight: 600;">@item.BasePrice.ToVnd()</td>
                             <td>
@@ -118,7 +119,7 @@
                             </td>
                             <td class="text-right">
                                 <div class="admin-actions">
-                                    <a href="/admin/xe/sua/@item.Id" class="admin-action admin-action-edit">Sửa</a>
+                                    <a href="/admin/xe/editor/@item.Id" class="admin-action admin-action-edit">Sửa</a>
                                     <a href="/xe/@item.Slug" target="_blank" rel="noopener" class="admin-action admin-action-view">Xem</a>
                                     <form method="post" asp-page-handler="TogglePublish" class="inline">
                                         @Html.AntiForgeryToken()

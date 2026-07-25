@@ -10,7 +10,9 @@ public record MotorcycleListItemDto(
     MotorcycleCategory Category,
     decimal BasePrice,
     string? ThumbnailUrl,
-    bool IsFeatured);
+    bool IsFeatured,
+    bool IsAvailable = true,
+    string AvailabilityLabel = "Còn hàng");
 
 public record MotorcycleSpecItemDto(string Icon, string Label, string Value);
 
@@ -31,10 +33,15 @@ public record MotorcycleDetailDto(
     IReadOnlyList<string> GalleryUrls,
     IReadOnlyList<string> Highlights,
     IReadOnlyList<MotorcycleSpecItemDto> Specifications,
+    IReadOnlyList<MotorcycleFeatureDto> Features,
+    IReadOnlyList<MotorcycleTechnologyDto> Technologies,
+    IReadOnlyList<string> SpinFrameUrls,
     SeoMetadataDto Seo);
 
 public record MotorcycleVariantDto(Guid Id, string Name, decimal Price, int StockQuantity, bool IsAvailable);
 public record MotorcycleColorDto(Guid Id, string Name, string HexCode, string? ImageUrl);
+public record MotorcycleFeatureDto(Guid Id, string Title, string? Description, string ImageUrl, int SortOrder);
+public record MotorcycleTechnologyDto(Guid Id, string Title, string? Description, string ImageUrl, int SortOrder);
 
 public record MotorcycleFilterDto(
     string? Query,
@@ -42,6 +49,10 @@ public record MotorcycleFilterDto(
     decimal? MinPrice,
     decimal? MaxPrice,
     int Page = 1,
-    int PageSize = 12);
+    int PageSize = 12,
+    bool? FeaturedOnly = null,
+    string? Sort = null);
+
+public record MotorcycleCategoryCountDto(MotorcycleCategory Category, string Label, int Count);
 
 public record PagedResultDto<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize);

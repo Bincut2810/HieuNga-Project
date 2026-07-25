@@ -12,6 +12,9 @@ public class HieuNgaDbContext(DbContextOptions<HieuNgaDbContext> options)
     public DbSet<Motorcycle> Motorcycles => Set<Motorcycle>();
     public DbSet<MotorcycleVariant> MotorcycleVariants => Set<MotorcycleVariant>();
     public DbSet<MotorcycleColor> MotorcycleColors => Set<MotorcycleColor>();
+    public DbSet<MotorcycleFeature> MotorcycleFeatures => Set<MotorcycleFeature>();
+    public DbSet<MotorcycleTechnology> MotorcycleTechnologies => Set<MotorcycleTechnology>();
+    public DbSet<MotorcycleSpinFrame> MotorcycleSpinFrames => Set<MotorcycleSpinFrame>();
     public DbSet<Promotion> Promotions => Set<Promotion>();
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Booking> Bookings => Set<Booking>();

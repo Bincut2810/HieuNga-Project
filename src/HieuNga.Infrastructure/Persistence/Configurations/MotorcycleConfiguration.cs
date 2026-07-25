@@ -21,6 +21,9 @@ public class MotorcycleConfiguration : IEntityTypeConfiguration<Motorcycle>
         builder.HasMany(x => x.Variants).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
         builder.HasMany(x => x.Colors).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
         builder.HasMany(x => x.MediaAssets).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
+        builder.HasMany(x => x.Features).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
+        builder.HasMany(x => x.Technologies).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
+        builder.HasMany(x => x.SpinFrames).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
         builder.HasMany(x => x.Reviews).WithOne(x => x.Motorcycle).HasForeignKey(x => x.MotorcycleId);
     }
 }

@@ -1,0 +1,76 @@
+@* Shared Feature / Technology content card builder *@
+@model HieuNga.Web.Pages.Admin.Extensions.ContentCardBuilderModel
+
+<section class="admin-form-card cb-section" data-content-builder="@Model.Kind">
+    <div class="mm-section-head">
+        <div>
+            <h2 class="admin-form-section-title">@Model.Title</h2>
+            <p class="admin-hint">@Model.Subtitle</p>
+        </div>
+        <form method="post" asp-page-handler="@Model.ReorderHandler">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@Model.MotorcycleId" />
+            <input type="hidden" name="orderIds" data-content-order="@Model.Kind" />
+            <button type="submit" class="admin-btn-secondary" data-content-save-order="@Model.Kind" hidden>Lưu thứ tự</button>
+        </form>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="Admin/Shared/_AdminEmptyState"
+                 model='new HieuNga.Web.Pages.Admin.Extensions.AdminEmptyStateModel($"Chưa có {Model.Title.ToLower()}", "Thêm thẻ bên dưới.")' />
+    }
+    else
+    {
+        <div class="cb-card-grid" data-sortable-content="@Model.Kind">
+            @foreach (var item in Model.Items)
+            {
+                <article class="cb-card" draggable="true" data-id="@item.Id">
+                    <span class="mm-card-handle">⋮⋮</span>
+                    <div class="cb-card-image">
+                        <img src="@item.ImageUrl" alt="@item.Title" />
+                    </div>
+                    <div class="cb-card-body">
+                        <form method="post" asp-page-handler="@Model.UpdateHandler" class="cb-inline-form" data-dirty-form>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@Model.MotorcycleId" />
+                            <input type="hidden" name="itemId" value="@item.Id" />
+                            <input type="text" name="title" value="@item.Title" class="admin-input" placeholder="Title" required />
+                            <textarea name="description" rows="2" class="admin-textarea" placeholder="Description">@item.Description</textarea>
+                            <label class="admin-hint" style="display:block;">
+                                Replace image
+                                <input type="file" name="imageFile" accept="image/*" class="admin-input" style="margin-top:0.35rem;" />
+                            </label>
+                            <button type="submit" class="admin-btn-secondary" style="width:100%;">Lưu thẻ</button>
+                        </form>
+                        <div class="mm-card-actions">
+                            <form method="post" asp-page-handler="@Model.DuplicateHandler" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@Model.MotorcycleId" />
+                                <input type="hidden" name="itemId" value="@item.Id" />
+                                <button type="submit" class="admin-action admin-action-edit">Duplicate</button>
+                            </form>
+                            <form method="post" asp-page-handler="@Model.DeleteHandler" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@Model.MotorcycleId" />
+                                <input type="hidden" name="@(Model.Kind == "feature" ? "featureId" : "techId")" value="@item.Id" />
+                                <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+    <form method="post" enctype="multipart/form-data" asp-page-handler="@Model.AddHandler"
+          class="cb-add-form" data-upload-form data-upload-label="Đang thêm…">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.MotorcycleId" />
+        <h3 class="admin-form-section-title" style="font-size:0.95rem;">Thêm @Model.Title.ToLower()</h3>
+        <input name="@(Model.Kind == "feature" ? "NewFeature.Title" : "NewTech.Title")" class="admin-input" placeholder="Title *" required />
+        <textarea name="@(Model.Kind == "feature" ? "NewFeature.Description" : "NewTech.Description")" rows="2" class="admin-textarea" placeholder="Description"></textarea>
+        <input type="file" name="imageFile" accept="image/*" class="admin-input" required />
+        <button type="submit" class="admin-btn-primary" @(Model.SupportsUpload ? null : "disabled")>Thêm</button>
+    </form>
+</section>

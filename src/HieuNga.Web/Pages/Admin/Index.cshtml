@@ -8,37 +8,38 @@
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
              "Dashboard",
-             "Tổng quan showroom Xe Máy Hiếu Nga")' />
+             "Tổng quan Motorcycle CMS — Xe Máy Hiếu Nga")' />
 
 <div class="admin-dash-grid">
     <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Xe máy</p>
+        <p class="admin-dash-card-label">Motorcycles</p>
         <p class="admin-dash-card-value admin-dash-card-value-accent">@Model.MotorcycleCount</p>
-        <a href="/admin/xe" class="admin-dash-card-link">Quản lý xe →</a>
+        <a href="/admin/xe" class="admin-dash-card-link">Inventory →</a>
     </div>
     <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Khuyến mãi</p>
+        <p class="admin-dash-card-label">Promotions</p>
         <p class="admin-dash-card-value">@Model.PromotionCount</p>
-        <a href="/admin/khuyen-mai" class="admin-dash-card-link">Quản lý →</a>
+        <a href="/admin/khuyen-mai" class="admin-dash-card-link">Content →</a>
     </div>
     <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Bài viết</p>
+        <p class="admin-dash-card-label">News</p>
         <p class="admin-dash-card-value">@Model.BlogCount</p>
-        <a href="/admin/tin-tuc" class="admin-dash-card-link">Quản lý →</a>
+        <a href="/admin/tin-tuc" class="admin-dash-card-link">Content →</a>
     </div>
     <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Lịch hẹn / Lead</p>
+        <p class="admin-dash-card-label">Appointments</p>
         <p class="admin-dash-card-value">@Model.BookingCount</p>
-        <a href="/admin/khach-hang/lich-hen" class="admin-dash-card-link">Xem lead →</a>
+        <a href="/admin/khach-hang/lich-hen" class="admin-dash-card-link">Service →</a>
     </div>
 </div>
 
 <div class="admin-card admin-card-padded" style="margin-top: 1.5rem;">
     <h2 class="admin-form-section-title" style="margin-bottom: 0.75rem;">Truy cập nhanh</h2>
     <ul style="font-size: 0.875rem; color: var(--admin-text-muted); line-height: 1.8; list-style: none; padding: 0; margin: 0;">
-        <li><a href="/admin/xe/them" class="admin-action-edit" style="text-decoration: none;">+ Thêm xe mới</a></li>
-        <li><a href="/admin/dich-vu/bang-gia/them" class="admin-action-edit" style="text-decoration: none;">+ Thêm dịch vụ bảo dưỡng</a></li>
-        <li><a href="/admin/khach-hang/lich-hen" style="color: var(--admin-text-secondary); text-decoration: none;">Xem lịch hẹn khách hàng</a></li>
+        <li><a href="/admin/xe/editor" class="admin-action-edit" style="text-decoration: none;">+ Thêm motorcycle</a></li>
+        <li><a href="/admin/dich-vu/bang-gia/them" class="admin-action-edit" style="text-decoration: none;">+ Thêm service</a></li>
+        <li><a href="/admin/khach-hang/lich-hen" style="color: var(--admin-text-secondary); text-decoration: none;">Xem appointments</a></li>
+        <li><a href="/admin/cai-dat" style="color: var(--admin-text-secondary); text-decoration: none;">Site settings</a></li>
     </ul>
     <a href="/" target="_blank" rel="noopener" class="admin-btn-primary" style="margin-top: 1.25rem;">Xem website</a>
 </div>

@@ -1,23 +1,34 @@
 @page "/admin/khuyen-mai"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhuyenMai.IndexModel
+@{
+    ViewData["Title"] = "Khuyến mãi";
+}
 
-<div class="flex flex-wrap items-center justify-between gap-4">
-    <h1 class="text-2xl font-bold">Khuyến mãi</h1>
-    <a href="/admin/khuyen-mai/them" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Thêm khuyến mãi</a>
-</div>
-<div class="mt-8 grid gap-4">
-    @foreach (var p in Model.Items)
-    {
-        <div class="bg-white border rounded-xl p-6 flex flex-wrap justify-between gap-4 items-center">
-            <div>
-                <span class="text-xs font-bold text-honda-red">@p.Type</span>
-                <h3 class="font-bold mt-1">@p.Title</h3>
-                <p class="text-sm text-gray-500">Hết hạn @p.EndDate.ToString("dd/MM/yyyy")</p>
-            </div>
-            <div class="flex gap-4 items-center">
-                <a href="/admin/khuyen-mai/sua/@p.Id" class="text-sm font-semibold text-honda-red">Sửa</a>
-                <a href="/khuyen-mai/@p.Slug" target="_blank" class="text-sm text-gray-400">Xem →</a>
-            </div>
-        </div>
-    }
-</div>
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel(
+             "Promotions",
+             "Chương trình khuyến mãi hiển thị trên website.",
+             "/admin/khuyen-mai/them",
+             "+ Thêm khuyến mãi")' />
+
+@if (Model.Items.Count == 0)
+{
+    <partial name="Admin/Shared/_AdminEmptyState"
+             model='new AdminEmptyStateModel("Chưa có khuyến mãi", "Tạo chương trình đầu tiên để hiển thị trên site.", "/admin/khuyen-mai/them", "+ Thêm khuyến mãi")' />
+}
+else
+{
+    <div class="admin-list">
+        @foreach (var p in Model.Items)
+        {
+            <partial name="Admin/Shared/_AdminListItem"
+                     model='new AdminListItemModel(
+                         p.Title,
+                         p.Type.ToString(),
+                         $"Hết hạn {p.EndDate:dd/MM/yyyy}",
+                         $"/admin/khuyen-mai/sua/{p.Id}",
+                         $"/khuyen-mai/{p.Slug}")' />
+        }
+    </div>
+}

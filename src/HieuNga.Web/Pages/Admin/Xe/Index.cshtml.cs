@@ -1,3 +1,4 @@
+using HieuNga.Domain;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
 using HieuNga.Domain.Interfaces;
@@ -63,8 +64,8 @@ public class IndexModel(IRepository<Motorcycle> repo, IUnitOfWork uow, HieuNgaDb
     }
 
     public SelectList CategoryOptions => new(
-        Enum.GetValues<MotorcycleCategory>().Select(c => new { Value = (int)c, Text = c.ToString() }),
-        "Value", "Text", Category.HasValue ? (int)Category.Value : null);
+        MotorcycleCategoryLabels.All.Select(c => new { Value = (int)c.Value, Text = c.Label }),
+        "Value", "Text", Category.HasValue ? (int)Category.Value : (int?)null);
 
     private async Task LoadStatsAsync(CancellationToken ct)
     {

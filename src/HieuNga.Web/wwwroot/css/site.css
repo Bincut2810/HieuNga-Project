@@ -319,25 +319,63 @@
 
 @media (max-width: 1023px) {
   body { padding-bottom: 72px; }
+  body:has(.detail-page):not(.detail-sticky-visible) {
+    padding-bottom: 0;
+  }
+  body.detail-sticky-visible {
+    padding-bottom: 7.5rem;
+  }
 }
-body:has(.detail-sticky-bar) {
-  padding-bottom: 7.5rem;
+@media (min-width: 1024px) {
+  body.detail-sticky-visible,
+  body:has(.detail-sticky-bar) {
+    padding-bottom: 0;
+  }
 }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ─── Motorcycle detail ─── */
-.detail-page { padding-bottom: 5rem; }
-@media (min-width: 1024px) {
-  .detail-page { padding-bottom: 0; }
+.detail-page { padding-bottom: 1rem; }
+@media (max-width: 1023px) {
+  .detail-page { padding-bottom: 5rem; }
 }
 
-.detail-gallery .gallery-main img {
-  transition: opacity var(--motion-slow) var(--ease-premium), transform var(--motion-slower) var(--ease-premium);
+.detail-hero-media img {
+  transition: opacity 0.35s ease;
 }
-.detail-gallery:hover .gallery-main img.is-active {
-  transform: scale(1.015);
+
+.detail-hero-skeleton {
+  z-index: 1;
+}
+
+.detail-spin-loader {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #E40521;
+  border-radius: 50%;
+  animation: detail-spin 0.7s linear infinite;
+}
+@keyframes detail-spin {
+  to { transform: rotate(360deg); }
+}
+
+.detail-spin-stage:fullscreen,
+.detail-spin-stage:-webkit-full-screen {
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.detail-spin-stage:fullscreen img,
+.detail-spin-stage:-webkit-full-screen img {
+  padding: 1.5rem;
 }
 
 .detail-finance-panel {
@@ -350,19 +388,12 @@ body:has(.detail-sticky-bar) {
   box-shadow: 0 30px 60px -12px rgba(228, 5, 33, 0.12);
 }
 
-.detail-spec-card {
-  transition: transform var(--motion-base) var(--ease-premium), box-shadow var(--motion-base) var(--ease-premium);
-}
-.detail-spec-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-}
-
 .detail-sticky-bar {
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
   padding-bottom: env(safe-area-inset-bottom, 0);
-  transition: transform var(--motion-base) var(--ease-premium);
 }
+
+[x-cloak] { display: none !important; }
 
 input[type="range"].detail-range {
   -webkit-appearance: none;

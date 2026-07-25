@@ -1,0 +1,135 @@
+@page "/admin/xe/import-demo"
+@model HieuNga.Web.Pages.Admin.Xe.ImportDemoModel
+@using HieuNga.Web.Pages.Admin.Extensions
+
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel(
+             "Import Demo Data",
+             "Import gói xe demo từ DemoAssets — upload ảnh qua Cloudinary/Local, tạo đủ nội dung CMS.",
+             "/admin/xe",
+             "← Danh sách xe")' />
+
+<div class="admin-card" style="margin-bottom:1.25rem;">
+    <p class="admin-muted" style="margin:0 0 0.5rem;">Kho ảnh</p>
+    <p style="margin:0;font-size:0.9rem;"><strong>@Model.AssetsRoot</strong></p>
+    <p class="admin-muted" style="margin:0.5rem 0 0;font-size:0.85rem;">@Model.StorageDescription</p>
+    @if (!Model.StorageReady)
+    {
+        <p class="admin-flash admin-flash-error" style="margin-top:0.75rem;">Upload chưa sẵn sàng — cấu hình Cloudinary trên Render hoặc dùng Local ở Development.</p>
+    }
+</div>
+
+<div class="admin-stat-grid" style="margin-bottom:1.25rem;">
+    <div class="admin-stat">
+        <p class="admin-stat-label">Packages</p>
+        <p class="admin-stat-value">@Model.Packages.Count</p>
+    </div>
+    <div class="admin-stat">
+        <p class="admin-stat-label">Sẵn sàng</p>
+        <p class="admin-stat-value admin-stat-value-accent">@Model.Packages.Count(p => p.HasMetadata)</p>
+    </div>
+    <div class="admin-stat">
+        <p class="admin-stat-label">Đã import</p>
+        <p class="admin-stat-value">@Model.Packages.Count(p => p.IsImported)</p>
+    </div>
+</div>
+
+<div class="admin-card-grid">
+@foreach (var pkg in Model.Packages)
+{
+    <article class="admin-card" style="display:flex;flex-direction:column;gap:0.75rem;">
+        <div style="aspect-ratio:16/10;border-radius:0.75rem;overflow:hidden;background:#f3f4f6;border:1px solid #e5e7eb;">
+            @if (!string.IsNullOrWhiteSpace(pkg.ThumbnailPreviewUrl))
+            {
+                <img src="@pkg.ThumbnailPreviewUrl" alt="@pkg.DisplayName" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />
+            }
+            else
+            {
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.85rem;">
+                    @pkg.DisplayName
+                </div>
+            }
+        </div>
+        <div>
+            <h2 style="margin:0;font-size:1.05rem;font-weight:700;">@pkg.DisplayName</h2>
+            <p class="admin-muted" style="margin:0.25rem 0 0;font-size:0.8rem;">Folder: DemoAssets/@pkg.FolderName</p>
+            @if (!string.IsNullOrWhiteSpace(pkg.Slug))
+            {
+                <p class="admin-muted" style="margin:0.15rem 0 0;font-size:0.8rem;">Slug: @pkg.Slug</p>
+            }
+        </div>
+        <span class="admin-badge @(pkg.IsImported ? "admin-badge-success" : pkg.HasMetadata ? "admin-badge-warning" : "admin-badge-muted")">
+            @pkg.StatusLabel
+        </span>
+
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:auto;">
+            @if (pkg.HasMetadata && !pkg.IsImported)
+            {
+                <form method="post" asp-page-handler="Import" style="display:inline;">
+                    <input type="hidden" name="packageId" value="@pkg.PackageId" />
+                    @if (Model.StorageReady)
+                    {
+                        <button type="submit" class="admin-btn admin-btn-primary">Import</button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="admin-btn admin-btn-primary" disabled>Import</button>
+                    }
+                </form>
+            }
+            @if (pkg.HasMetadata && pkg.IsImported)
+            {
+                <form method="post" asp-page-handler="Import" style="display:inline;">
+                    <input type="hidden" name="packageId" value="@pkg.PackageId" />
+                    @if (Model.StorageReady)
+                    {
+                        <button type="submit" class="admin-btn admin-btn-secondary">Reimport</button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="admin-btn admin-btn-secondary" disabled>Reimport</button>
+                    }
+                </form>
+                @if (pkg.MotorcycleId is Guid id)
+                {
+                    <a class="admin-btn admin-btn-secondary" href="/admin/xe/editor/@id">Mở editor</a>
+                }
+                <form method="post" asp-page-handler="Delete" style="display:inline;" onsubmit="return confirm('Xóa xe demo này khỏi CMS?');">
+                    <input type="hidden" name="packageId" value="@pkg.PackageId" />
+                    <button type="submit" class="admin-btn admin-btn-danger">Delete Demo</button>
+                </form>
+            }
+            @if (!pkg.HasMetadata)
+            {
+                <p class="admin-muted" style="margin:0;font-size:0.8rem;">Thêm metadata.json + ảnh vào folder để kích hoạt import.</p>
+            }
+        </div>
+    </article>
+}
+</div>
+
+<style>
+.admin-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+.admin-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.admin-badge-success { background: #ecfdf5; color: #047857; }
+.admin-badge-warn { background: #fff7ed; color: #c2410c; }
+.admin-btn-danger {
+  background: #fff;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+.admin-btn-danger:hover { background: #fef2f2; }
+</style>

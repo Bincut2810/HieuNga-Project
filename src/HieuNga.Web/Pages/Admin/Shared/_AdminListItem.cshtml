@@ -1,0 +1,25 @@
+@model HieuNga.Web.Pages.Admin.Extensions.AdminListItemModel
+
+<div class="admin-list-item">
+    <div class="admin-list-item-body">
+        @if (!string.IsNullOrEmpty(Model.Eyebrow))
+        {
+            <p class="admin-list-item-eyebrow">@Model.Eyebrow</p>
+        }
+        <h3 class="admin-list-item-title">@Model.Title</h3>
+        @if (!string.IsNullOrEmpty(Model.Meta))
+        {
+            <p class="admin-list-item-meta">@Model.Meta</p>
+        }
+    </div>
+    <div class="admin-list-item-actions">
+        @if (!string.IsNullOrEmpty(Model.EditUrl))
+        {
+            <a href="@Model.EditUrl" class="admin-action admin-action-edit">@Model.EditText</a>
+        }
+        @if (!string.IsNullOrEmpty(Model.ViewUrl))
+        {
+            <a href="@Model.ViewUrl" class="admin-action admin-action-view" target="_blank" rel="noopener">@Model.ViewText</a>
+        }
+    </div>
+</div>

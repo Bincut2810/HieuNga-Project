@@ -1,0 +1,15 @@
+@model HieuNga.Web.Pages.Admin.Extensions.EditorSaveBarModel
+
+<div class="admin-editor-savebar" data-editor-savebar>
+    <div class="admin-editor-savebar-inner">
+        <p class="admin-editor-savebar-hint" data-dirty-hint hidden>Có thay đổi chưa lưu</p>
+        <div class="admin-editor-savebar-actions">
+            <a href="/admin/xe" class="admin-btn-secondary" data-cancel-link>Cancel</a>
+            @if (!string.IsNullOrEmpty(Model.PreviewUrl))
+            {
+                <a href="@Model.PreviewUrl" target="_blank" rel="noopener" class="admin-btn-ghost">Preview</a>
+            }
+            <button type="submit" class="admin-btn-primary">@Model.SaveText</button>
+        </div>
+    </div>
+</div>

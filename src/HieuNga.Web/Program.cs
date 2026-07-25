@@ -62,6 +62,17 @@ if (!app.Environment.IsDevelopment())
 app.UseResponseCompression();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+var demoAssetsPath = Path.Combine(app.Environment.ContentRootPath, "DemoAssets");
+if (Directory.Exists(demoAssetsPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(demoAssetsPath),
+        RequestPath = "/demo-assets"
+    });
+}
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,0 +1,316 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+
+@if (Model.IsCreate)
+{
+    <partial name="Admin/Shared/_AdminEmptyState"
+             model='new AdminEmptyStateModel("Lưu xe trước", "Tab Media mở sau Quick Create.", "/admin/xe/editor?tab=general", "Quick Create")' />
+}
+else
+{
+    var galleryCount = Model.Gallery.Count;
+    var colorCount = Model.Colors.Count;
+    var spinCount = Model.SpinFrames.Count;
+    var missing = Model.MissingSpinFrames;
+
+    <div class="mm-root" data-motorcycle-media data-supports-upload="@Model.SupportsImageUpload.ToString().ToLowerInvariant()">
+        <div class="mm-toolbar">
+            <div class="mm-toolbar-stats">
+                <span class="mm-stat">Thumb @(string.IsNullOrEmpty(Model.Input.ThumbnailUrl) ? "—" : "✓")</span>
+                <span class="mm-stat">Gallery <strong>@galleryCount</strong></span>
+                <span class="mm-stat">Colors <strong>@colorCount</strong></span>
+                <span class="mm-stat">360 <strong>@spinCount</strong></span>
+            </div>
+            <div class="mm-toolbar-storage" title="@Model.ImageStorageNote">
+                <span class="mm-storage-dot @(Model.SupportsImageUpload ? "is-ok" : "is-off")"></span>
+                @(Model.SupportsImageUpload ? "Upload sẵn sàng" : "Upload tắt")
+            </div>
+        </div>
+
+        <div class="mm-progress" data-upload-progress hidden>
+            <div class="mm-progress-bar" data-upload-progress-bar></div>
+            <p class="mm-progress-label" data-upload-progress-label>Đang tải…</p>
+        </div>
+
+        @* ── Thumbnail ── *@
+        <section class="admin-form-card mm-section">
+            <div class="mm-section-head">
+                <h2 class="admin-form-section-title">Thumbnail</h2>
+                <p class="admin-hint">Kéo thả · Click · Ctrl+V dán ảnh</p>
+            </div>
+            <div class="mm-thumb-layout">
+                <div class="mm-dropzone mm-dropzone-thumb @(string.IsNullOrEmpty(Model.Input.ThumbnailUrl) ? "" : "has-preview")"
+                     data-dropzone="thumbnail"
+                     tabindex="0">
+                    <img data-thumb-preview src="@(Model.Input.ThumbnailUrl ?? "")" alt="Thumbnail"
+                         class="mm-thumb-preview" @(string.IsNullOrEmpty(Model.Input.ThumbnailUrl) ? "hidden" : null) />
+                    <div class="mm-dropzone-placeholder" data-thumb-placeholder @(string.IsNullOrEmpty(Model.Input.ThumbnailUrl) ? null : "hidden")>
+                        <strong>Thả ảnh vào đây</strong>
+                        <span>hoặc bấm để chọn · dán từ clipboard</span>
+                    </div>
+                </div>
+                <div class="mm-thumb-actions">
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="SaveThumbnail" data-upload-form data-upload-label="Đang lưu thumbnail…">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <input type="file" name="ThumbnailFile" accept="image/*" class="mm-file-input" data-thumb-input />
+                        <input type="hidden" asp-for="Input.ThumbnailUrl" data-thumb-url />
+                        <button type="submit" class="admin-btn-primary" @(Model.SupportsImageUpload ? null : "disabled")>Lưu / Replace</button>
+                    </form>
+                    @if (!string.IsNullOrEmpty(Model.Input.ThumbnailUrl))
+                    {
+                        <form method="post" asp-page-handler="RemoveThumbnail">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@Model.Id" />
+                            <button type="submit" class="admin-btn-ghost" style="color:#B91C1C;" onclick="return confirm('Xóa thumbnail?')">Remove</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ── Gallery ── *@
+        <section class="admin-form-card mm-section">
+            <div class="mm-section-head">
+                <h2 class="admin-form-section-title">Gallery</h2>
+                <div class="mm-section-actions">
+                    <button type="submit" form="mm-gallery-bulk-delete" class="admin-btn-ghost" style="color:#B91C1C;" data-bulk-delete-btn disabled>Bulk delete</button>
+                    <form method="post" asp-page-handler="ReorderGallery" id="mm-gallery-reorder-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <input type="hidden" name="orderIds" data-gallery-order />
+                        <button type="submit" class="admin-btn-secondary" data-gallery-save-order hidden>Lưu thứ tự</button>
+                    </form>
+                </div>
+            </div>
+
+            @if (galleryCount == 0)
+            {
+                <partial name="Admin/Shared/_AdminEmptyState"
+                         model='new AdminEmptyStateModel("Chưa có gallery", "Kéo nhiều ảnh vào vùng upload bên dưới.")' />
+            }
+            else
+            {
+                <form method="post" asp-page-handler="BulkDeleteGallery" id="mm-gallery-bulk-delete">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <div class="mm-card-grid" data-sortable="gallery">
+                        @foreach (var g in Model.Gallery)
+                        {
+                            <article class="mm-card" draggable="true" data-id="@g.Id">
+                                <div class="mm-card-check">
+                                    <input type="checkbox" name="mediaIds" value="@g.Id" data-bulk-check />
+                                </div>
+                                <span class="mm-card-handle" title="Kéo để sắp xếp">⋮⋮</span>
+                                <div class="mm-card-image">
+                                    <img src="@g.Url" alt="@(g.AltText ?? g.FileName)" />
+                                </div>
+                                <div class="mm-card-body">
+                                    <p class="mm-card-order">#@(g.SortOrder + 1)</p>
+                                    <form method="post" asp-page-handler="UpdateGalleryCaption" class="mm-caption-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="Id" value="@Model.Id" />
+                                        <input type="hidden" name="mediaId" value="@g.Id" />
+                                        <input type="text" name="caption" value="@g.AltText" class="admin-input" placeholder="Caption (tuỳ chọn)" />
+                                        <button type="submit" class="admin-btn-ghost" style="font-size:0.75rem;">Lưu</button>
+                                    </form>
+                                    <div class="mm-card-actions">
+                                        <label class="admin-action admin-action-edit mm-replace-label">
+                                            Replace
+                                            <input type="file" accept="image/*" hidden
+                                                   data-replace-submit
+                                                   data-handler="ReplaceGallery"
+                                                   data-field="imageFile"
+                                                   data-extra-name="mediaId"
+                                                   data-extra-value="@g.Id" />
+                                        </label>
+                                        <form method="post" asp-page-handler="DeleteGallery" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="Id" value="@Model.Id" />
+                                            <input type="hidden" name="mediaId" value="@g.Id" />
+                                            <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa ảnh?')">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </form>
+            }
+
+            <form method="post" enctype="multipart/form-data" asp-page-handler="AddGallery"
+                  class="mm-dropzone mm-dropzone-multi" data-dropzone="gallery" data-upload-form data-upload-label="Đang tải gallery…">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+                <input type="file" name="galleryFiles" accept="image/*" multiple class="mm-file-input" data-zone-input />
+                <strong>Thả nhiều ảnh gallery</strong>
+                <span>hoặc bấm để chọn · multi-select</span>
+                <button type="submit" class="admin-btn-primary" style="margin-top:0.75rem;" @(Model.SupportsImageUpload ? null : "disabled")>Upload gallery</button>
+            </form>
+        </section>
+
+        @* ── Colors ── *@
+        <section class="admin-form-card mm-section">
+            <div class="mm-section-head">
+                <h2 class="admin-form-section-title">Colors</h2>
+                <form method="post" asp-page-handler="ReorderColors" id="mm-color-reorder-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="hidden" name="orderIds" data-color-order />
+                    <button type="submit" class="admin-btn-secondary" data-color-save-order hidden>Lưu thứ tự màu</button>
+                </form>
+            </div>
+
+            @if (colorCount == 0)
+            {
+                <partial name="Admin/Shared/_AdminEmptyState"
+                         model='new AdminEmptyStateModel("Chưa có màu", "Thêm màu với swatch + ảnh đại diện.")' />
+            }
+            else
+            {
+                <div class="mm-color-preview" data-color-preview>
+                    <img src="@(Model.Colors.FirstOrDefault()?.ImageUrl ?? Model.Input.ThumbnailUrl)" alt="Color preview" data-color-preview-img />
+                    <p data-color-preview-name>@(Model.Colors.FirstOrDefault()?.Name)</p>
+                </div>
+                <div class="mm-card-grid mm-color-grid" data-sortable="colors">
+                    @foreach (var c in Model.Colors)
+                    {
+                        <article class="mm-card mm-color-card" draggable="true" data-id="@c.Id"
+                                 data-color-name="@c.Name" data-color-image="@c.ImageUrl" data-color-hex="@c.HexCode">
+                            <span class="mm-card-handle">⋮⋮</span>
+                            <button type="button" class="mm-color-hit" data-color-select>
+                                <div class="mm-card-image">
+                                    @if (!string.IsNullOrEmpty(c.ImageUrl))
+                                    {
+                                        <img src="@c.ImageUrl" alt="@c.Name" />
+                                    }
+                                    else
+                                    {
+                                        <div class="mm-swatch-only" style="background:@c.HexCode"></div>
+                                    }
+                                </div>
+                                <div class="mm-card-body">
+                                    <span class="mm-swatch" style="background:@c.HexCode"></span>
+                                    <p class="admin-list-item-title">@c.Name</p>
+                                    <p class="admin-list-item-meta">@c.HexCode · #@(c.SortOrder + 1)</p>
+                                </div>
+                            </button>
+                            <div class="mm-card-actions" style="padding: 0 0.75rem 0.75rem;">
+                                <label class="admin-action admin-action-edit mm-replace-label">
+                                    Replace
+                                    <input type="file" accept="image/*" hidden
+                                           data-replace-submit
+                                           data-handler="ReplaceColorImage"
+                                           data-field="imageFile"
+                                           data-extra-name="colorId"
+                                           data-extra-value="@c.Id" />
+                                </label>
+                                <form method="post" asp-page-handler="DeleteColor" class="inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="Id" value="@Model.Id" />
+                                    <input type="hidden" name="colorId" value="@c.Id" />
+                                    <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa màu?')">Delete</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+
+            <form method="post" enctype="multipart/form-data" asp-page-handler="AddColor" class="mm-add-color" data-upload-form data-upload-label="Đang thêm màu…">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+                <input asp-for="NewColor.Name" class="admin-input" placeholder="Tên màu *" required />
+                <input asp-for="NewColor.HexCode" class="admin-input" placeholder="#000000" />
+                <input type="color" class="admin-input" style="height: 2.5rem; padding: 0.25rem;"
+                       value="#E40521" oninput="this.form.querySelector('[name=\'NewColor.HexCode\']').value=this.value" title="Swatch picker" />
+                <input type="file" name="imageFile" accept="image/*" class="admin-input" required />
+                <button type="submit" class="admin-btn-primary" @(Model.SupportsImageUpload ? null : "disabled")>Thêm màu</button>
+            </form>
+        </section>
+
+        @* ── 360 ── *@
+        <section class="admin-form-card mm-section">
+            <div class="mm-section-head">
+                <h2 class="admin-form-section-title">360° · @spinCount frames</h2>
+                <div class="mm-section-actions">
+                    <form method="post" asp-page-handler="ReorderSpin">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <input type="hidden" name="orderIds" data-spin-order />
+                        <button type="submit" class="admin-btn-secondary" data-spin-save-order hidden>Lưu thứ tự</button>
+                    </form>
+                    <form method="post" asp-page-handler="ClearSpin">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <button type="submit" class="admin-btn-ghost" style="color:#B91C1C;" onclick="return confirm('Xóa toàn bộ 360?')">Clear all</button>
+                    </form>
+                </div>
+            </div>
+
+            @if (missing.Count > 0)
+            {
+                <div class="admin-flash admin-flash-error" role="alert">
+                    Thiếu frame: @string.Join(", ", missing.Select(i => $"#{i + 1:D3}"))
+                </div>
+            }
+
+            @if (spinCount >= 2)
+            {
+                <div class="mm-spin-preview" data-spin-preview>
+                    <img src="@Model.SpinFrames[0].ImageUrl" alt="360 preview" data-spin-preview-img />
+                    <div class="mm-spin-preview-controls">
+                        <button type="button" class="admin-btn-secondary" data-spin-play>▶ Preview</button>
+                        <span class="admin-hint" data-spin-frame-label>Frame 001 / @spinCount.ToString("D3")</span>
+                    </div>
+                </div>
+            }
+
+            @if (spinCount == 0)
+            {
+                <partial name="Admin/Shared/_AdminEmptyState"
+                         model='new AdminEmptyStateModel("Chưa có khung 360", "Upload frame001.webp … frame036.webp — hệ thống đọc số trong tên file.")' />
+            }
+            else
+            {
+                <div class="mm-spin-timeline" data-sortable="spin">
+                    @foreach (var f in Model.SpinFrames)
+                    {
+                        <article class="mm-spin-frame" draggable="true" data-id="@f.Id" data-src="@f.ImageUrl" data-index="@f.FrameIndex">
+                            <span class="mm-card-handle">⋮⋮</span>
+                            <img src="@f.ImageUrl" alt="Frame @(f.FrameIndex + 1)" />
+                            <p class="mm-spin-label">Frame @((f.FrameIndex + 1).ToString("D3"))</p>
+                            <div class="mm-card-actions">
+                                <label class="admin-action admin-action-edit mm-replace-label">
+                                    Replace
+                                    <input type="file" accept="image/*" hidden
+                                           data-replace-submit
+                                           data-handler="ReplaceSpinFrame"
+                                           data-field="imageFile"
+                                           data-extra-name="frameId"
+                                           data-extra-value="@f.Id" />
+                                </label>
+                                <form method="post" asp-page-handler="DeleteSpinFrame">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="Id" value="@Model.Id" />
+                                    <input type="hidden" name="frameId" value="@f.Id" />
+                                    <button type="submit" class="admin-action admin-action-danger">✕</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+
+            <form method="post" enctype="multipart/form-data" asp-page-handler="UploadSpin"
+                  class="mm-dropzone mm-dropzone-multi" data-dropzone="spin" data-upload-form data-upload-label="Đang tải khung 360…">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+                <input type="file" name="spinFiles" accept="image/*" multiple class="mm-file-input" data-zone-input />
+                <strong>Bulk upload 360 frames</strong>
+                <span>Tên file có số (frame001…) sẽ được nhận diện tự động</span>
+                <button type="submit" class="admin-btn-primary" style="margin-top:0.75rem;" @(Model.SupportsImageUpload ? null : "disabled")>Upload 360</button>
+            </form>
+        </section>
+    </div>
+}

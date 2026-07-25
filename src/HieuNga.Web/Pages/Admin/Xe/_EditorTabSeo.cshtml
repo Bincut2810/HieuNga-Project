@@ -1,0 +1,60 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+
+<form method="post" asp-page-handler="SaveSeo" class="admin-form-card" style="max-width:52rem;" data-dirty-form id="moto-seo-form" data-seo-builder>
+    @Html.AntiForgeryToken()
+    @if (Model.Id.HasValue)
+    {
+        <input type="hidden" name="Id" value="@Model.Id" />
+    }
+    <input type="hidden" name="Tab" value="seo" />
+
+    @if (Model.IsCreate)
+    {
+        <p class="admin-hint">Tạo xe ở Quick Create trước.</p>
+        <a href="/admin/xe/editor?tab=general" class="admin-btn-secondary">Về General</a>
+    }
+    else
+    {
+        <h2 class="admin-form-section-title">SEO</h2>
+        <div class="seo-warnings" data-seo-warnings style="margin:0.75rem 0;"></div>
+
+        <div style="display:grid;gap:1rem;">
+            <div>
+                <label asp-for="Input.MetaTitle" class="admin-label">Title <span data-seo-count="title" class="seo-count">0/60</span></label>
+                <input asp-for="Input.MetaTitle" class="admin-input" data-seo-title placeholder="@(Model.MotorcycleName)" maxlength="70" />
+            </div>
+            <div>
+                <label asp-for="Input.MetaDescription" class="admin-label">Description <span data-seo-count="desc" class="seo-count">0/160</span></label>
+                <textarea asp-for="Input.MetaDescription" rows="3" class="admin-textarea" data-seo-desc maxlength="200"></textarea>
+            </div>
+            <div>
+                <label asp-for="Input.MetaKeywords" class="admin-label">Keywords</label>
+                <input asp-for="Input.MetaKeywords" class="admin-input" />
+            </div>
+            <div>
+                <label asp-for="Input.CanonicalUrl" class="admin-label">Canonical URL</label>
+                <input asp-for="Input.CanonicalUrl" class="admin-input" placeholder="/xe/@Model.PublicSlug" />
+            </div>
+            <div>
+                <label asp-for="Input.OgImageUrl" class="admin-label">OG Image URL</label>
+                <input asp-for="Input.OgImageUrl" class="admin-input" data-seo-og />
+                <div class="seo-og-preview" style="margin-top:0.5rem;">
+                    <img data-seo-og-img src="@(Model.Input.OgImageUrl ?? Model.Input.ThumbnailUrl)" alt="OG preview"
+                         style="max-height:8rem;border-radius:0.5rem;border:1px solid var(--admin-border);@(string.IsNullOrEmpty(Model.Input.OgImageUrl ?? Model.Input.ThumbnailUrl) ? "display:none" : null)" />
+                </div>
+            </div>
+        </div>
+
+        <aside class="seo-serp" style="margin-top:1.25rem;">
+            <p class="admin-label">SERP preview</p>
+            <div class="seo-serp-card">
+                <p class="seo-serp-url" data-seo-serp-url>xemayhieunga.vn › xe › @(Model.PublicSlug)</p>
+                <p class="seo-serp-title" data-seo-serp-title>@(Model.Input.MetaTitle ?? Model.MotorcycleName)</p>
+                <p class="seo-serp-desc" data-seo-serp-desc>@(Model.Input.MetaDescription ?? Model.Input.ShortDescription)</p>
+            </div>
+        </aside>
+
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu SEO")' />
+    }
+</form>

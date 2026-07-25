@@ -783,6 +783,121 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.ToTable("motorcycle_colors", (string)null);
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleFeature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MotorcycleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MotorcycleId");
+
+                    b.ToTable("motorcycle_features", (string)null);
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleSpinFrame", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FrameIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MotorcycleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MotorcycleId", "FrameIndex");
+
+                    b.ToTable("motorcycle_spin_frames", (string)null);
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleTechnology", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MotorcycleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MotorcycleId");
+
+                    b.ToTable("motorcycle_technologies", (string)null);
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleVariant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1402,6 +1517,39 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Navigation("Motorcycle");
                 });
 
+            modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleFeature", b =>
+                {
+                    b.HasOne("HieuNga.Domain.Entities.Motorcycle", "Motorcycle")
+                        .WithMany("Features")
+                        .HasForeignKey("MotorcycleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Motorcycle");
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleSpinFrame", b =>
+                {
+                    b.HasOne("HieuNga.Domain.Entities.Motorcycle", "Motorcycle")
+                        .WithMany("SpinFrames")
+                        .HasForeignKey("MotorcycleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Motorcycle");
+                });
+
+            modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleTechnology", b =>
+                {
+                    b.HasOne("HieuNga.Domain.Entities.Motorcycle", "Motorcycle")
+                        .WithMany("Technologies")
+                        .HasForeignKey("MotorcycleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Motorcycle");
+                });
+
             modelBuilder.Entity("HieuNga.Domain.Entities.MotorcycleVariant", b =>
                 {
                     b.HasOne("HieuNga.Domain.Entities.Motorcycle", "Motorcycle")
@@ -1519,9 +1667,15 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("Colors");
 
+                    b.Navigation("Features");
+
                     b.Navigation("MediaAssets");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("SpinFrames");
+
+                    b.Navigation("Technologies");
 
                     b.Navigation("Variants");
                 });

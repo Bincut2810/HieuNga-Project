@@ -1,0 +1,10 @@
+@* Wrapper shell for Admin forms. Pass ViewData["FormCardTitle"] optionally; body is sibling content after partial. *@
+@{
+    var title = ViewData["FormCardTitle"] as string;
+    var maxWidth = ViewData["FormCardMaxWidth"] as string ?? "48rem";
+}
+<div class="admin-form-card" style="max-width: @maxWidth;">
+    @if (!string.IsNullOrEmpty(title))
+    {
+        <h2 class="admin-form-section-title" style="margin-bottom: 1.25rem;">@title</h2>
+    }

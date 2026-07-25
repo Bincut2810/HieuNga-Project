@@ -1,0 +1,117 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+@{
+    var categoryOptions = ViewData["CategoryOptions"] as SelectList;
+}
+
+@if (Model.IsCreate)
+{
+    <form method="post" enctype="multipart/form-data" asp-page-handler="SaveGeneral" id="moto-quick-create" class="admin-editor-panel" data-dirty-form data-upload-form data-upload-label="Đang tạo Draft…">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Tab" value="general" />
+        <input type="hidden" name="PublishStatus" value="draft" />
+
+        <div class="admin-form-card" style="max-width: 36rem;">
+            <h2 class="admin-form-section-title">Quick Create</h2>
+            <p class="admin-hint" style="margin: 0.5rem 0 1.25rem;">Chỉ cần Name · Category · Price · Thumbnail — lưu Draft và mở Media ngay.</p>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label asp-for="Input.Name" class="admin-label">Name <span class="admin-label-required">*</span></label>
+                    <input asp-for="Input.Name" id="moto-name" class="admin-input" required />
+                    <span asp-validation-for="Input.Name" class="admin-validation"></span>
+                </div>
+                <div>
+                    <label asp-for="Input.Slug" class="admin-label">Slug</label>
+                    <input asp-for="Input.Slug" id="moto-slug" class="admin-input" placeholder="auto-from-name" />
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label asp-for="Input.Category" class="admin-label">Category <span class="admin-label-required">*</span></label>
+                        <select asp-for="Input.Category" asp-items="categoryOptions" class="admin-select" required>
+                            <option value="">-- Chọn --</option>
+                        </select>
+                        <span asp-validation-for="Input.Category" class="admin-validation"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Input.BasePrice" class="admin-label">Price (VNĐ) <span class="admin-label-required">*</span></label>
+                        <input asp-for="Input.BasePrice" type="number" step="1000" min="0" class="admin-input" required />
+                    </div>
+                </div>
+                <div>
+                    <label class="admin-label">Thumbnail <span class="admin-label-required">*</span></label>
+                    <div class="mm-dropzone mm-dropzone-thumb" data-dropzone="thumbnail" tabindex="0">
+                        <img data-thumb-preview src="" alt="" class="mm-thumb-preview" hidden />
+                        <div class="mm-dropzone-placeholder" data-thumb-placeholder>
+                            <strong>Thả / chọn / Ctrl+V</strong>
+                            <span>Ảnh đại diện bắt buộc</span>
+                        </div>
+                        <input type="file" name="ThumbnailFile" accept="image/*" class="mm-file-input" data-thumb-input required />
+                    </div>
+                    <span asp-validation-for="ThumbnailFile" class="admin-validation"></span>
+                </div>
+            </div>
+        </div>
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(null, "Tạo Draft → Media")' />
+    </form>
+}
+else
+{
+    <form method="post" enctype="multipart/form-data" asp-page-handler="SaveGeneral" id="moto-editor-form" class="admin-editor-panel" data-dirty-form>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="Tab" value="general" />
+
+        <div class="admin-form-card" style="max-width: 48rem;">
+            <section class="admin-form-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                <h2 class="admin-form-section-title">General</h2>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <label asp-for="Input.Name" class="admin-label">Name <span class="admin-label-required">*</span></label>
+                        <input asp-for="Input.Name" id="moto-name" class="admin-input" />
+                        <span asp-validation-for="Input.Name" class="admin-validation"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Input.Slug" class="admin-label">Slug</label>
+                        <input asp-for="Input.Slug" id="moto-slug" class="admin-input" placeholder="auto-from-name" />
+                        <p class="admin-hint">Để trống để tự tạo từ tên.</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div>
+                            <label asp-for="Input.Category" class="admin-label">Category <span class="admin-label-required">*</span></label>
+                            <select asp-for="Input.Category" asp-items="categoryOptions" class="admin-select">
+                                <option value="">-- Chọn loại --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label asp-for="Input.BasePrice" class="admin-label">Price (VNĐ)</label>
+                            <input asp-for="Input.BasePrice" type="number" step="1000" class="admin-input" />
+                        </div>
+                    </div>
+                    <div>
+                        <label asp-for="Input.ShortDescription" class="admin-label">Short description</label>
+                        <textarea asp-for="Input.ShortDescription" rows="2" class="admin-textarea"></textarea>
+                    </div>
+                    <div>
+                        <label asp-for="Input.Description" class="admin-label">Description</label>
+                        <textarea asp-for="Input.Description" rows="5" class="admin-textarea"></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                        <div>
+                            <label asp-for="Input.SortOrder" class="admin-label">Sort order</label>
+                            <input asp-for="Input.SortOrder" type="number" class="admin-input" />
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding-top: 1.5rem;">
+                            <input asp-for="Input.IsFeatured" type="checkbox" style="accent-color: var(--admin-honda-red);" />
+                            Featured
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding-top: 1.5rem;">
+                            <input asp-for="Input.IsPublished" type="checkbox" style="accent-color: var(--admin-honda-red);" />
+                            Published
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu")' />
+    </form>
+}

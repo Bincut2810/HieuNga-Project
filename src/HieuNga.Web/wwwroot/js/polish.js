@@ -160,6 +160,14 @@
     initMotorcycleFinance(scope);
     initBookingFromQuery();
 
+    if (!scope.querySelector || !scope.querySelector('.detail-page')) {
+      document.body.classList.remove('detail-sticky-visible');
+    }
+
+    if (window.registerMotorcycleDetailUi) {
+      window.registerMotorcycleDetailUi();
+    }
+
     if (window.Alpine && scope !== document) {
       Alpine.initTree(scope);
     }
@@ -170,33 +178,6 @@
   }
 
   window.HieuNgaApp = { initPage, scrollToHash, updateNavActive };
-
-  /** Motorcycle detail gallery — must be global for Alpine after HTMX swap */
-  window.detailGallery = function detailGallery(images) {
-    return {
-      images,
-      active: 0,
-      touchStartX: 0,
-      go(i) {
-        this.active = i;
-      },
-      next() {
-        this.active = (this.active + 1) % this.images.length;
-      },
-      prev() {
-        this.active = (this.active - 1 + this.images.length) % this.images.length;
-      },
-      onTouchStart(e) {
-        this.touchStartX = e.changedTouches[0].screenX;
-      },
-      onTouchEnd(e) {
-        const diff = e.changedTouches[0].screenX - this.touchStartX;
-        if (Math.abs(diff) < 40) return;
-        if (diff < 0) this.next();
-        else this.prev();
-      },
-    };
-  };
 
   /* ─── HTMX lifecycle ─── */
   document.body.addEventListener('htmx:beforeSwap', (e) => {

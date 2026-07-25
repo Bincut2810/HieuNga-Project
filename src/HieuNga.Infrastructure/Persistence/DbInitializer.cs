@@ -137,8 +137,8 @@ public static class DbInitializer
         {
             CreateMotorcycle("Honda Vision 2025", "honda-vision-2025", MotorcycleCategory.Scooter, 35_900_000, 110, true, 0),
             CreateMotorcycle("Honda SH 160i", "honda-sh-160i", MotorcycleCategory.Scooter, 78_500_000, 160, true, 1),
-            CreateMotorcycle("Honda Winner X", "honda-winner-x", MotorcycleCategory.Sport, 46_500_000, 150, true, 2),
-            CreateMotorcycle("Honda CB150R", "honda-cb150r", MotorcycleCategory.Naked, 52_000_000, 150, false, 3),
+            CreateMotorcycle("Honda Winner X", "honda-winner-x", MotorcycleCategory.ConTay, 46_500_000, 150, true, 2),
+            CreateMotorcycle("Honda CB150R", "honda-cb150r", MotorcycleCategory.ConTay, 52_000_000, 150, false, 3),
         };
         context.Motorcycles.AddRange(motorcycles);
 

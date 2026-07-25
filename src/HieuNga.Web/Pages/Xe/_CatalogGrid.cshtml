@@ -1,19 +1,48 @@
 @model PagedResultDto<MotorcycleListItemDto>
+@{
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.Total / (double)Model.PageSize)
+        : 1;
+    if (totalPages < 1) totalPages = 1;
+}
 
 @if (!Model.Items.Any())
 {
-    <p class="text-center text-gray-500 py-16">Không tìm thấy xe phù hợp.</p>
+    <div class="text-center py-16 px-4">
+        <p class="text-gray-600 font-medium">Không tìm thấy xe phù hợp.</p>
+        <p class="text-sm text-gray-400 mt-2">Thử đổi bộ lọc hoặc xem toàn bộ danh mục.</p>
+        <a href="/xe" class="inline-flex mt-6 text-sm font-semibold text-honda-red hover:underline">Xóa bộ lọc</a>
+    </div>
 }
 else
 {
+    <div class="flex items-center justify-between gap-3 mb-6">
+        <p class="text-sm text-gray-500">Hiển thị <span class="font-semibold text-honda-dark">@Model.Items.Count</span> / @Model.Total xe</p>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 htmx-settling">
         @foreach (var bike in Model.Items)
         {
             <partial name="_MotorcycleCard" model="bike" />
         }
     </div>
-    @if (Model.Total > Model.PageSize)
+    @if (totalPages > 1)
     {
-        <p class="text-center text-sm text-gray-400 mt-8">Hiển thị @Model.Items.Count / @Model.Total xe</p>
+        <nav class="flex flex-wrap items-center justify-center gap-2 mt-10" aria-label="Phân trang danh mục xe">
+            @for (var p = 1; p <= totalPages; p++)
+            {
+                var active = p == Model.Page;
+                <a href="/xe?PageNumber=@p"
+                   hx-get="/xe"
+                   hx-include="#catalog-filter"
+                   hx-vals='{"PageNumber":@p}'
+                   hx-target="#catalog-grid"
+                   hx-swap="innerHTML transition:true"
+                   hx-indicator="#catalog-skeleton"
+                   hx-push-url="true"
+                   class="min-w-[2.5rem] h-10 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold border transition @(active ? "border-honda-red bg-honda-red text-white" : "border-gray-200 bg-white text-honda-dark hover:border-honda-red hover:text-honda-red")">
+                    @p
+                </a>
+            }
+        </nav>
     }
 }

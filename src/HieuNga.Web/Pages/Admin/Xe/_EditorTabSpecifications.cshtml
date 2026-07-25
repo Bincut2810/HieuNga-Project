@@ -1,0 +1,37 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+
+@if (Model.IsCreate)
+{
+    <partial name="Admin/Shared/_AdminEmptyState"
+             model='new AdminEmptyStateModel("Lưu xe trước", "Specification Builder mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Quick Create")' />
+}
+else
+{
+    <form method="post" asp-page-handler="SaveSpecs" class="admin-form-card" style="max-width: 52rem;" data-dirty-form id="moto-specs-form" data-spec-builder>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="Tab" value="specifications" />
+        <textarea asp-for="SpecsLines" id="specs-lines-sync" class="hidden" hidden></textarea>
+
+        <div class="mm-section-head">
+            <div>
+                <h2 class="admin-form-section-title">Specification Builder</h2>
+                <p class="admin-hint">Thêm / sửa / sắp xếp thông số — public page render tự động.</p>
+            </div>
+            <div class="mm-section-actions">
+                <button type="button" class="admin-btn-secondary" data-spec-add-group>＋ Group</button>
+                <button type="button" class="admin-btn-primary" data-spec-add-row>＋ Row</button>
+            </div>
+        </div>
+
+        <div class="spec-builder" data-spec-rows></div>
+
+        <aside class="spec-preview admin-card admin-card-padded" style="margin-top:1rem;">
+            <h3 class="admin-form-section-title" style="font-size:0.9rem;">Preview</h3>
+            <dl class="spec-preview-list" data-spec-preview></dl>
+        </aside>
+
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu specifications")' />
+    </form>
+}

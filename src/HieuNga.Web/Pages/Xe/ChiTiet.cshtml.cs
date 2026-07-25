@@ -1,6 +1,8 @@
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
+using HieuNga.Infrastructure.Persistence;
 using HieuNga.Web.Extensions;
+using HieuNga.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -9,32 +11,51 @@ namespace HieuNga.Web.Pages.Xe;
 public class ChiTietModel(
     IMotorcycleService motorcycleService,
     IInstallmentService installmentService,
-    IFinanceConfigService financeConfig) : PageModel
+    IFinanceConfigService financeConfig,
+    HieuNgaDbContext db) : PageModel
 {
     public MotorcycleDetailDto? Motorcycle { get; private set; }
     public IReadOnlyList<MotorcycleListItemDto> Related { get; private set; } = [];
     public InstallmentCalculationDto? InitialFinance { get; private set; }
     public IReadOnlyList<FinanceBankDto> FinanceBanks { get; private set; } = [];
     public bool HasFinanceBanks => FinanceBanks.Count > 0;
+    public bool ShowInstallmentCalculator { get; private set; } = true;
+    public decimal DefaultDownPayment { get; private set; }
+    public int DefaultTermMonths { get; private set; } = 12;
+    public bool IsAvailable { get; private set; } = true;
+    public string AvailabilityLabel { get; private set; } = "Còn hàng";
+    public string? FuelConsumption { get; private set; }
+    public string? Warranty { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(string slug, CancellationToken ct)
     {
         Motorcycle = await motorcycleService.GetBySlugAsync(slug, ct);
         if (Motorcycle is null) return NotFound();
 
-        FinanceBanks = await financeConfig.GetActiveBanksAsync(ct);
+        ResolveAvailability(Motorcycle);
+        FuelConsumption = FindSpecValue(Motorcycle.Specifications, "tiêu hao", "mức tiêu thụ", "l/100", "km/lít", "km/l");
+        Warranty = FindSpecValue(Motorcycle.Specifications, "bảo hành", "warranty");
 
-        var related = await motorcycleService.SearchAsync(
-            new MotorcycleFilterDto(null, Motorcycle.Category, null, null, 1, 6), ct);
-        Related = related.Items.Where(x => x.Id != Motorcycle.Id).Take(3).ToList();
+        FinanceBanks = await financeConfig.GetActiveBanksAsync(ct);
+        var prefs = await MotorcycleFinancePrefs.LoadAsync(db, Motorcycle.Id, ct);
+        ShowInstallmentCalculator = prefs.CalculatorEnabled && FinanceBanks.Count > 0;
+
+        Related = await motorcycleService.GetRelatedAsync(Motorcycle.Id, ct);
 
         var price = Motorcycle.Variants.FirstOrDefault()?.Price ?? Motorcycle.BasePrice;
-        var downPayment = Math.Round(price * 0.2m / 500_000m) * 500_000m;
-        var defaultBank = await financeConfig.GetDefaultBankAsync(ct);
-        if (defaultBank is not null)
+        var downPct = prefs.DefaultDownPaymentPercent > 0 ? prefs.DefaultDownPaymentPercent : 20m;
+        DefaultTermMonths = prefs.DefaultTermMonths > 0 ? prefs.DefaultTermMonths : 12;
+        DefaultDownPayment = Math.Round(price * (downPct / 100m) / 500_000m) * 500_000m;
+
+        FinanceBankDto? defaultBank = null;
+        if (!string.IsNullOrEmpty(prefs.DefaultBankId))
+            defaultBank = FinanceBanks.FirstOrDefault(b => b.Id == prefs.DefaultBankId);
+        defaultBank ??= await financeConfig.GetDefaultBankAsync(ct);
+
+        if (defaultBank is not null && ShowInstallmentCalculator)
         {
             InitialFinance = installmentService.Calculate(
-                price, downPayment, 12, defaultBank.MonthlyRate, bankName: defaultBank.Name);
+                price, DefaultDownPayment, DefaultTermMonths, defaultBank.MonthlyRate, bankName: defaultBank.Name);
         }
 
         ViewData["HideDefaultMobileCta"] = true;
@@ -47,5 +68,31 @@ public class ChiTietModel(
     {
         var result = installmentService.Calculate(vehiclePrice, downPayment, termMonths, monthlyRate, bankName: bankName);
         return Partial("Shared/_DetailFinancingResult", result);
+    }
+
+    private void ResolveAvailability(MotorcycleDetailDto m)
+    {
+        if (m.Variants.Count == 0)
+        {
+            IsAvailable = true;
+            AvailabilityLabel = "Còn hàng";
+            return;
+        }
+
+        IsAvailable = m.Variants.Any(v => v.IsAvailable);
+        AvailabilityLabel = IsAvailable ? "Còn hàng" : "Hết hàng";
+    }
+
+    private static string? FindSpecValue(IReadOnlyList<MotorcycleSpecItemDto> specs, params string[] needles)
+    {
+        foreach (var spec in specs)
+        {
+            if (string.Equals(spec.Icon, "group", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var label = spec.Label ?? "";
+            if (needles.Any(n => label.Contains(n, StringComparison.OrdinalIgnoreCase)))
+                return string.IsNullOrWhiteSpace(spec.Value) ? null : spec.Value;
+        }
+        return null;
     }
 }

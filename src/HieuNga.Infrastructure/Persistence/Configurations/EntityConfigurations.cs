@@ -23,6 +23,39 @@ public class MotorcycleColorConfiguration : IEntityTypeConfiguration<MotorcycleC
     }
 }
 
+public class MotorcycleFeatureConfiguration : IEntityTypeConfiguration<MotorcycleFeature>
+{
+    public void Configure(EntityTypeBuilder<MotorcycleFeature> builder)
+    {
+        builder.ToTable("motorcycle_features");
+        builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
+        builder.HasQueryFilter(x => !x.IsDeleted);
+    }
+}
+
+public class MotorcycleTechnologyConfiguration : IEntityTypeConfiguration<MotorcycleTechnology>
+{
+    public void Configure(EntityTypeBuilder<MotorcycleTechnology> builder)
+    {
+        builder.ToTable("motorcycle_technologies");
+        builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
+        builder.HasQueryFilter(x => !x.IsDeleted);
+    }
+}
+
+public class MotorcycleSpinFrameConfiguration : IEntityTypeConfiguration<MotorcycleSpinFrame>
+{
+    public void Configure(EntityTypeBuilder<MotorcycleSpinFrame> builder)
+    {
+        builder.ToTable("motorcycle_spin_frames");
+        builder.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
+        builder.HasIndex(x => new { x.MotorcycleId, x.FrameIndex });
+        builder.HasQueryFilter(x => !x.IsDeleted);
+    }
+}
+
 public class PromotionConfiguration : IEntityTypeConfiguration<Promotion>
 {
     public void Configure(EntityTypeBuilder<Promotion> builder)

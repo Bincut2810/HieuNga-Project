@@ -28,7 +28,28 @@ public static class EntityMappers
 
         var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.Slug, m.ThumbnailUrl, mediaUrl);
 
-        return new(m.Id, m.Name, m.Slug, m.ShortDescription, m.Category, m.BasePrice, thumb, m.IsFeatured);
+        var (available, label) = ResolveAvailability(m);
+        return new(m.Id, m.Name, m.Slug, m.ShortDescription, m.Category, m.BasePrice, thumb, m.IsFeatured, available, label);
+
+    }
+
+
+
+    private static (bool IsAvailable, string Label) ResolveAvailability(Motorcycle m)
+
+    {
+
+        var variants = m.Variants?.Where(v => !v.IsDeleted).ToList() ?? [];
+
+        if (variants.Count == 0)
+
+            return (true, "Còn hàng");
+
+        if (variants.Any(v => v.IsAvailable))
+
+            return (true, "Còn hàng");
+
+        return (false, "Hết hàng");
 
     }
 
@@ -71,6 +92,14 @@ public static class EntityMappers
             highlights,
 
             specifications,
+
+            (m.Features ?? []).Where(f => !f.IsDeleted).OrderBy(f => f.SortOrder)
+                .Select(f => new MotorcycleFeatureDto(f.Id, f.Title, f.Description, f.ImageUrl, f.SortOrder)).ToList(),
+
+            (m.Technologies ?? []).Where(t => !t.IsDeleted).OrderBy(t => t.SortOrder)
+                .Select(t => new MotorcycleTechnologyDto(t.Id, t.Title, t.Description, t.ImageUrl, t.SortOrder)).ToList(),
+
+            (m.SpinFrames ?? []).Where(s => !s.IsDeleted).OrderBy(s => s.FrameIndex).Select(s => s.ImageUrl).ToList(),
 
             m.ToSeo());
 

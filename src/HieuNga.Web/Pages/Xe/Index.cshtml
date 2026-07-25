@@ -1,26 +1,126 @@
 @page "/xe"
 @model HieuNga.Web.Pages.Xe.IndexModel
+@using HieuNga.Domain
 
 <section class="bg-honda-dark text-white py-16 md:py-24">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-4xl md:text-5xl font-bold">Danh mục xe máy</h1>
-        <p class="text-gray-400 mt-4 max-w-xl">Khám phá toàn bộ dòng xe Honda chính hãng tại showroom HEAD Đà Nẵng</p>
+        <p class="text-gray-400 mt-4 max-w-xl">Khám phá toàn bộ dòng xe tại Xe Máy Hiếu Nga Đà Nẵng</p>
+        @if (Model.Result.Total > 0)
+        {
+            <p class="text-sm text-gray-500 mt-3">@Model.Result.Total mẫu xe đang bán</p>
+        }
     </div>
 </section>
 
 <section class="page-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal is-visible">
-    <form hx-get="/xe?handler=Filter" hx-target="#catalog-grid" hx-swap="innerHTML transition:true" hx-indicator="#catalog-skeleton"
-          hx-trigger="change delay:200ms, submit" class="flex flex-wrap gap-4 mb-10">
-        <input type="search" name="q" value="@Model.Q" placeholder="Tìm xe..." class="flex-1 min-w-[200px] px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none transition-shadow" />
-        <select name="category" class="px-4 py-3 border border-gray-200 rounded-xl bg-white transition-shadow focus:ring-2 focus:ring-honda-red">
-            <option value="">Tất cả loại xe</option>
-            @foreach (MotorcycleCategory cat in Enum.GetValues<MotorcycleCategory>())
+    @if (Model.CategoryCounts.Any())
+    {
+        <nav class="flex flex-wrap gap-2 mb-8" aria-label="Lọc theo loại xe">
+            <a href="/xe"
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition @(Model.Category is null ? "border-honda-red bg-honda-red text-white" : "border-gray-200 bg-white text-honda-dark hover:border-honda-red hover:text-honda-red")">
+                Tất cả
+            </a>
+            @foreach (var cat in Model.CategoryCounts)
             {
-                if (cat == MotorcycleCategory.Other) continue;
-                <option value="@((int)cat)" selected="@(Model.Category == cat)">@cat</option>
+                var active = Model.Category == cat.Category;
+                <a href="/xe?category=@((int)cat.Category)"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition @(active ? "border-honda-red bg-honda-red text-white" : "border-gray-200 bg-white text-honda-dark hover:border-honda-red hover:text-honda-red")">
+                    @cat.Label
+                    <span class="opacity-70 font-medium">(@cat.Count)</span>
+                </a>
+            }
+        </nav>
+    }
+
+    <form id="catalog-filter"
+          hx-get="/xe"
+          hx-target="#catalog-grid"
+          hx-swap="innerHTML transition:true"
+          hx-indicator="#catalog-skeleton"
+          hx-push-url="true"
+          hx-trigger="change delay:200ms, submit"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-10">
+        <input type="search" name="Q" value="@Model.Q" placeholder="Tìm xe..."
+               class="sm:col-span-2 lg:col-span-2 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-honda-red focus:border-transparent outline-none transition-shadow" />
+
+        <select name="Category" class="px-4 py-3 border border-gray-200 rounded-xl bg-white transition-shadow focus:ring-2 focus:ring-honda-red">
+            <option value="">Tất cả loại xe</option>
+            @foreach (var (value, label) in MotorcycleCategoryLabels.All)
+            {
+                if (Model.Category == value)
+                {
+                    <option value="@((int)value)" selected>@label</option>
+                }
+                else
+                {
+                    <option value="@((int)value)">@label</option>
+                }
             }
         </select>
-        <button type="submit" class="btn-primary touch-press">Lọc</button>
+
+        <input type="number" name="MinPrice" value="@(Model.MinPrice?.ToString("0") ?? "")" min="0" step="1000000" placeholder="Giá từ"
+               class="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-honda-red outline-none" />
+        <input type="number" name="MaxPrice" value="@(Model.MaxPrice?.ToString("0") ?? "")" min="0" step="1000000" placeholder="Giá đến"
+               class="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-honda-red outline-none" />
+
+        <select name="Sort" class="px-4 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-honda-red">
+            @if (string.IsNullOrEmpty(Model.Sort) || Model.Sort == "default")
+            {
+                <option value="default" selected>Nổi bật trước</option>
+            }
+            else
+            {
+                <option value="default">Nổi bật trước</option>
+            }
+            @if (Model.Sort == "price_asc")
+            {
+                <option value="price_asc" selected>Giá thấp → cao</option>
+            }
+            else
+            {
+                <option value="price_asc">Giá thấp → cao</option>
+            }
+            @if (Model.Sort == "price_desc")
+            {
+                <option value="price_desc" selected>Giá cao → thấp</option>
+            }
+            else
+            {
+                <option value="price_desc">Giá cao → thấp</option>
+            }
+            @if (Model.Sort == "newest")
+            {
+                <option value="newest" selected>Mới nhất</option>
+            }
+            else
+            {
+                <option value="newest">Mới nhất</option>
+            }
+            @if (Model.Sort == "name")
+            {
+                <option value="name" selected>Tên A–Z</option>
+            }
+            else
+            {
+                <option value="name">Tên A–Z</option>
+            }
+        </select>
+
+        <label class="inline-flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl bg-white cursor-pointer sm:col-span-2 lg:col-span-2">
+            @if (Model.FeaturedOnly)
+            {
+                <input type="checkbox" name="FeaturedOnly" value="true" checked class="rounded border-gray-300 text-honda-red focus:ring-honda-red" />
+            }
+            else
+            {
+                <input type="checkbox" name="FeaturedOnly" value="true" class="rounded border-gray-300 text-honda-red focus:ring-honda-red" />
+            }
+            <span class="text-sm font-medium text-honda-dark">Chỉ xe nổi bật</span>
+        </label>
+
+        <input type="hidden" name="PageNumber" value="1" />
+        <button type="submit" class="btn-primary touch-press sm:col-span-2 lg:col-span-2">Lọc kết quả</button>
     </form>
 
     <div class="relative min-h-[280px]">

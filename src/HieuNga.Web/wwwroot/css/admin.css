@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   Honda Hiếu Nga — Admin UI Foundation
+   Xe Máy Hiếu Nga — Admin UI Foundation
    Scoped to admin layout only (linked from _AdminLayout)
    ═══════════════════════════════════════════════════════════ */
 
@@ -954,6 +954,594 @@ button.admin-btn-danger:hover {
 
 .admin-dash-card-link:hover {
   color: var(--admin-honda-red);
+}
+
+/* ─── Phase 1: list items, upload, nav polish ─── */
+.admin-nav-group.is-active-group > .admin-nav-group-label {
+  color: var(--admin-honda-red);
+}
+
+.admin-topbar-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+@media (min-width: 1024px) {
+  .admin-topbar-title {
+    display: none;
+  }
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-list-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-list-item-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-honda-red);
+  margin: 0 0 0.25rem;
+}
+
+.admin-list-item-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.admin-list-item-meta {
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+  margin: 0.35rem 0 0;
+}
+
+.admin-list-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.admin-media-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-media-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.admin-media-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  overflow: hidden;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-media-card-image {
+  aspect-ratio: 16 / 9;
+  background: #F3F4F6;
+  overflow: hidden;
+}
+
+.admin-media-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-media-card-body {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.admin-media-card-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--admin-text);
+}
+
+.admin-media-card-meta {
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+  margin: 0.35rem 0 0;
+}
+
+.admin-upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-upload-preview {
+  max-width: 12rem;
+}
+
+.admin-upload-preview img {
+  display: block;
+  max-height: 8rem;
+  width: auto;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-upload-dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem;
+  border: 1.5px dashed var(--admin-border-strong);
+  border-radius: var(--admin-radius);
+  background: #FAFAFA;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.admin-upload-dropzone:hover {
+  border-color: var(--admin-honda-red);
+  background: var(--admin-honda-red-light);
+}
+
+.admin-upload-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.admin-upload-dropzone-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  pointer-events: none;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.5rem;
+}
+
+.admin-upload-dropzone-hint {
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+  pointer-events: none;
+}
+
+/* ─── Motorcycle CMS Editor (Sprint 2.1) ─── */
+.admin-editor-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--admin-border);
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-editor-tab {
+  flex: 0 0 auto;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-editor-tab:hover {
+  color: var(--admin-text);
+}
+
+.admin-editor-tab.is-active {
+  color: var(--admin-honda-red);
+  border-bottom-color: var(--admin-honda-red);
+}
+
+.admin-editor-tab.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-editor-panel {
+  padding-bottom: 5rem;
+}
+
+.admin-editor-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  background: linear-gradient(to top, var(--admin-bg) 70%, transparent);
+}
+
+.admin-editor-savebar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-editor-savebar-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #B45309;
+  margin: 0;
+}
+
+.admin-editor-savebar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.admin-publish-option {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  cursor: pointer;
+  background: #FAFAFA;
+}
+
+.admin-publish-option:has(input:checked) {
+  border-color: var(--admin-honda-red);
+  background: var(--admin-honda-red-light);
+}
+
+.admin-publish-option strong {
+  display: block;
+  font-size: 0.875rem;
+}
+
+.admin-publish-option .admin-hint {
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.admin-publish-option input {
+  margin-top: 0.2rem;
+  accent-color: var(--admin-honda-red);
+}
+
+/* ─── Motorcycle Media Manager (Sprint 2.2) ─── */
+.mm-root { display: flex; flex-direction: column; gap: 1.25rem; max-width: 64rem; padding-bottom: 4rem; }
+
+.mm-toolbar {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 12;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.mm-toolbar-stats { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; }
+.mm-stat { font-size: 0.75rem; color: var(--admin-text-muted); }
+.mm-stat strong { color: var(--admin-text); }
+
+.mm-toolbar-storage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+}
+
+.mm-storage-dot {
+  width: 0.5rem; height: 0.5rem; border-radius: 999px; background: #9CA3AF;
+}
+.mm-storage-dot.is-ok { background: #059669; }
+.mm-storage-dot.is-off { background: #D97706; }
+
+.mm-progress {
+  padding: 0.5rem 0;
+}
+.mm-progress-bar {
+  height: 4px;
+  width: 0;
+  border-radius: 999px;
+  background: var(--admin-honda-red);
+  transition: width 0.35s ease;
+}
+.mm-progress-label {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+}
+
+.mm-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.mm-section-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+.mm-thumb-layout {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 720px) {
+  .mm-thumb-layout { grid-template-columns: minmax(0, 1fr) 12rem; align-items: start; }
+}
+
+.mm-dropzone {
+  position: relative;
+  border: 1.5px dashed var(--admin-border-strong);
+  border-radius: var(--admin-radius);
+  background: #FAFAFA;
+  min-height: 10rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.mm-dropzone:hover, .mm-dropzone.is-dragover, .mm-dropzone:focus {
+  border-color: var(--admin-honda-red);
+  background: var(--admin-honda-red-light);
+  outline: none;
+}
+.mm-dropzone strong { font-size: 0.875rem; color: var(--admin-text); }
+.mm-dropzone span { font-size: 0.75rem; color: var(--admin-text-muted); }
+.mm-dropzone-multi { margin-top: 1rem; }
+.mm-file-input {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.mm-thumb-preview {
+  max-height: 14rem; max-width: 100%; object-fit: contain; border-radius: var(--admin-radius-sm);
+}
+.mm-thumb-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.mm-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+.mm-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  overflow: hidden;
+  box-shadow: var(--admin-shadow-sm);
+}
+.mm-card.is-dragging { opacity: 0.5; }
+.mm-card.is-selected { border-color: var(--admin-honda-red); box-shadow: 0 0 0 2px rgba(228,5,33,0.2); }
+.mm-card-handle {
+  position: absolute; top: 0.35rem; right: 0.35rem; z-index: 2;
+  font-size: 0.7rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.4); cursor: grab;
+}
+.mm-card-check { position: absolute; top: 0.35rem; left: 0.35rem; z-index: 2; }
+.mm-card-image { aspect-ratio: 4/3; background: #F3F4F6; }
+.mm-card-image img, .mm-swatch-only { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mm-card-body { padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.mm-card-order { margin: 0; font-size: 0.7rem; font-weight: 700; color: var(--admin-text-muted); }
+.mm-card-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.mm-caption-form { display: flex; gap: 0.35rem; }
+.mm-caption-form .admin-input { font-size: 0.75rem; padding: 0.35rem 0.5rem; }
+.mm-replace-label { cursor: pointer; margin: 0; }
+
+.mm-color-preview {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1rem; padding: 0.75rem;
+  border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: #FAFAFA;
+}
+.mm-color-preview img { height: 5rem; width: 8rem; object-fit: cover; border-radius: var(--admin-radius-sm); }
+.mm-color-hit { display: block; width: 100%; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; }
+.mm-swatch {
+  display: inline-block; width: 1rem; height: 1rem; border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.12); vertical-align: middle; margin-right: 0.35rem;
+}
+.mm-add-color {
+  display: grid; gap: 0.75rem; margin-top: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.mm-spin-preview {
+  margin-bottom: 1rem; text-align: center;
+  padding: 1rem; border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: #111;
+}
+.mm-spin-preview img { max-height: 16rem; width: auto; max-width: 100%; object-fit: contain; }
+.mm-spin-preview-controls {
+  display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 0.75rem;
+}
+.mm-spin-preview-controls .admin-hint { color: #D1D5DB; }
+
+.mm-spin-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.mm-spin-frame {
+  position: relative;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  overflow: hidden;
+  background: #fff;
+}
+.mm-spin-frame img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.mm-spin-label {
+  margin: 0; padding: 0.25rem 0.4rem; font-size: 0.65rem; font-weight: 700;
+  text-align: center; color: var(--admin-text-secondary);
+}
+.mm-spin-frame .mm-card-actions {
+  justify-content: center; padding: 0 0.25rem 0.35rem;
+}
+
+.admin-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 80;
+  min-width: 16rem;
+  max-width: 24rem;
+  box-shadow: var(--admin-shadow);
+  animation: admin-toast-in 0.25s ease;
+}
+.admin-toast.is-leaving { opacity: 0; transform: translateY(8px); transition: 0.3s; }
+@keyframes admin-toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ─── Content builder (Sprint 2.3) ─── */
+.admin-editor-tabs.is-sticky {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 14;
+  background: var(--admin-bg);
+  padding-top: 0.35rem;
+}
+
+.cb-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+.cb-card {
+  position: relative;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--admin-shadow-sm);
+}
+.cb-card.is-dragging { opacity: 0.55; }
+.cb-card-image { aspect-ratio: 16/10; background: #F3F4F6; }
+.cb-card-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cb-card-body { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.cb-inline-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.cb-add-form {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--admin-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.spec-builder { display: flex; flex-direction: column; gap: 0.5rem; }
+.spec-row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: #fff;
+}
+.spec-row.is-group {
+  background: var(--admin-honda-red-light);
+  grid-template-columns: 1.5rem 1fr auto;
+}
+.spec-row.is-dragging { opacity: 0.5; }
+.spec-row-actions { display: flex; gap: 0.25rem; }
+.spec-preview-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 1rem; margin: 0.75rem 0 0; }
+.spec-preview-list dt { font-size: 0.8rem; color: var(--admin-text-muted); }
+.spec-preview-list dd { font-size: 0.8rem; font-weight: 600; margin: 0; text-align: right; }
+.spec-preview-group {
+  grid-column: 1 / -1;
+  font-weight: 700;
+  color: var(--admin-honda-red);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.seo-count { float: right; font-size: 0.7rem; color: var(--admin-text-muted); font-weight: 600; }
+.seo-count.is-warn { color: #B45309; }
+.seo-serp-card {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  padding: 1rem;
+  background: #fff;
+}
+.seo-serp-url { color: #202124; font-size: 0.75rem; margin: 0; }
+.seo-serp-title { color: #1a0dab; font-size: 1.1rem; margin: 0.25rem 0; line-height: 1.3; }
+.seo-serp-desc { color: #4d5156; font-size: 0.85rem; margin: 0; line-height: 1.4; }
+
+.finance-live-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--admin-honda-red);
+  margin: 0.25rem 0;
+}
+.admin-collapse {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  padding: 0.75rem 1rem;
+  background: #FAFAFA;
+}
+.admin-collapse summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+@media (min-width: 900px) {
+  .admin-finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
 }
 
 /* Utility (admin-scoped) */

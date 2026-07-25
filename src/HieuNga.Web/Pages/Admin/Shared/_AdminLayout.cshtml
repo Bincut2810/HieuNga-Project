@@ -14,6 +14,11 @@
 
     string NavClass(string href, string? excludePrefix = null) =>
         IsNavActive(href, excludePrefix) ? "admin-nav-link admin-nav-link-active" : "admin-nav-link";
+
+    // Group highlight when any child route matches
+    bool GroupActive(params string[] prefixes) =>
+        prefixes.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -31,7 +36,7 @@
         <aside id="admin-sidebar" class="admin-sidebar" aria-label="Admin navigation">
             <div class="admin-sidebar-brand">
                 <p class="admin-sidebar-brand-title">Xe Máy Hiếu Nga</p>
-                <p class="admin-sidebar-brand-sub">CMS Admin</p>
+                <p class="admin-sidebar-brand-sub">Motorcycle CMS</p>
             </div>
 
             <nav class="admin-sidebar-nav">
@@ -40,38 +45,38 @@
                     <a href="/admin" class="@NavClass("/admin")">Dashboard</a>
                 </div>
 
-                <div class="admin-nav-group">
-                    <p class="admin-nav-group-label">Kinh doanh xe</p>
-                    <a href="/admin/xe" class="@NavClass("/admin/xe", "/admin/xe/them")">Danh sách xe</a>
-                    <a href="/admin/xe/them" class="@NavClass("/admin/xe/them")">Thêm xe mới</a>
+                <div class="admin-nav-group @(GroupActive("/admin/xe") ? "is-active-group" : null)">
+                    <p class="admin-nav-group-label">Inventory</p>
+                    <a href="/admin/xe" class="@NavClass("/admin/xe", "/admin/xe/import-demo")">Motorcycles</a>
+                    <a href="/admin/xe/import-demo" class="@NavClass("/admin/xe/import-demo")">Import Demo Data</a>
                 </div>
 
-                <div class="admin-nav-group">
-                    <p class="admin-nav-group-label">Dịch vụ</p>
-                    <a href="/admin/dich-vu/danh-muc" class="@NavClass("/admin/dich-vu/danh-muc")">Danh mục dịch vụ</a>
-                    <a href="/admin/dich-vu/bang-gia" class="@NavClass("/admin/dich-vu/bang-gia", "/admin/dich-vu/bang-gia/them")">Bảng giá dịch vụ</a>
+                <div class="admin-nav-group @(GroupActive("/admin/dich-vu", "/admin/khach-hang/lich-hen", "/admin/khach-hang/bao-duong") ? "is-active-group" : null)">
+                    <p class="admin-nav-group-label">Service</p>
+                    <a href="/admin/dich-vu/bang-gia" class="@NavClass("/admin/dich-vu/bang-gia")">Services</a>
+                    <a href="/admin/dich-vu/danh-muc" class="@NavClass("/admin/dich-vu/danh-muc")">Categories</a>
+                    <a href="/admin/khach-hang/lich-hen" class="@NavClass("/admin/khach-hang/lich-hen")">Appointments</a>
+                    <a href="/admin/khach-hang/bao-duong" class="@NavClass("/admin/khach-hang/bao-duong")">Maintenance</a>
                 </div>
 
-                <div class="admin-nav-group">
-                    <p class="admin-nav-group-label">Trả góp</p>
-                    <a href="/admin/tra-gop/ngan-hang" class="@NavClass("/admin/tra-gop/ngan-hang")">Ngân hàng</a>
-                    <a href="/admin/tra-gop/lai-suat" class="@NavClass("/admin/tra-gop/lai-suat")">Lãi suất</a>
+                <div class="admin-nav-group @(GroupActive("/admin/tra-gop", "/admin/khach-hang/tra-gop") ? "is-active-group" : null)">
+                    <p class="admin-nav-group-label">Finance</p>
+                    <a href="/admin/tra-gop/ngan-hang" class="@NavClass("/admin/tra-gop/ngan-hang")">Banks</a>
+                    <a href="/admin/tra-gop/lai-suat" class="@NavClass("/admin/tra-gop/lai-suat")">Interest Rates</a>
+                    <a href="/admin/khach-hang/tra-gop" class="@NavClass("/admin/khach-hang/tra-gop")">Installment leads</a>
                 </div>
 
-                <div class="admin-nav-group">
-                    <p class="admin-nav-group-label">Nội dung</p>
+                <div class="admin-nav-group @(GroupActive("/admin/banner", "/admin/khuyen-mai", "/admin/tin-tuc") ? "is-active-group" : null)">
+                    <p class="admin-nav-group-label">Content</p>
+                    <a href="/admin/khuyen-mai" class="@NavClass("/admin/khuyen-mai")">Promotions</a>
+                    <a href="/admin/tin-tuc" class="@NavClass("/admin/tin-tuc")">News</a>
                     <a href="/admin/banner" class="@NavClass("/admin/banner")">Banner</a>
-                    <a href="/admin/khuyen-mai" class="@NavClass("/admin/khuyen-mai")">Khuyến mãi</a>
-                    <a href="/admin/tin-tuc" class="@NavClass("/admin/tin-tuc")">Tin tức</a>
-                    <a href="/admin/chi-nhanh" class="@NavClass("/admin/chi-nhanh")">Chi nhánh</a>
-                    <a href="/admin/cai-dat" class="@NavClass("/admin/cai-dat")">Cài đặt site</a>
                 </div>
 
-                <div class="admin-nav-group">
-                    <p class="admin-nav-group-label">Khách hàng</p>
-                    <a href="/admin/khach-hang/lich-hen" class="@NavClass("/admin/khach-hang/lich-hen")">Lịch hẹn</a>
-                    <a href="/admin/khach-hang/bao-duong" class="@NavClass("/admin/khach-hang/bao-duong")">Bảo dưỡng</a>
-                    <a href="/admin/khach-hang/tra-gop" class="@NavClass("/admin/khach-hang/tra-gop")">Yêu cầu trả góp</a>
+                <div class="admin-nav-group @(GroupActive("/admin/chi-nhanh", "/admin/cai-dat") ? "is-active-group" : null)">
+                    <p class="admin-nav-group-label">Site</p>
+                    <a href="/admin/chi-nhanh" class="@NavClass("/admin/chi-nhanh")">Branches</a>
+                    <a href="/admin/cai-dat" class="@NavClass("/admin/cai-dat")">Settings</a>
                 </div>
             </nav>
 
@@ -90,7 +95,7 @@
                     <button type="button" id="admin-menu-toggle" class="admin-topbar-menu-btn" aria-label="Mở menu" aria-expanded="false" aria-controls="admin-sidebar">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                     </button>
-                    <span class="text-sm font-semibold text-gray-800 lg:hidden">@title</span>
+                    <span class="admin-topbar-title">@title</span>
                 </div>
                 <div class="admin-topbar-actions">
                     <a href="/" target="_blank" rel="noopener" class="admin-topbar-site-link">Xem website</a>
@@ -104,31 +109,7 @@
         </div>
     </div>
 
-    <script>
-        (function () {
-            var toggle = document.getElementById('admin-menu-toggle');
-            var sidebar = document.getElementById('admin-sidebar');
-            var overlay = document.getElementById('admin-sidebar-overlay');
-            if (!toggle || !sidebar || !overlay) return;
-
-            function setOpen(open) {
-                sidebar.classList.toggle('is-open', open);
-                overlay.classList.toggle('is-open', open);
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                toggle.setAttribute('aria-label', open ? 'Đóng menu' : 'Mở menu');
-            }
-
-            toggle.addEventListener('click', function () {
-                setOpen(!sidebar.classList.contains('is-open'));
-            });
-            overlay.addEventListener('click', function () { setOpen(false); });
-            sidebar.querySelectorAll('a').forEach(function (link) {
-                link.addEventListener('click', function () {
-                    if (window.innerWidth < 1024) setOpen(false);
-                });
-            });
-        })();
-    </script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

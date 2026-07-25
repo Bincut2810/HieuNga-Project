@@ -1,0 +1,13 @@
+@model HieuNga.Web.Pages.Admin.Extensions.AdminEmptyStateModel
+
+<div class="admin-empty">
+    <p class="admin-empty-title">@Model.Title</p>
+    @if (!string.IsNullOrEmpty(Model.Text))
+    {
+        <p class="admin-empty-text">@Model.Text</p>
+    }
+    @if (!string.IsNullOrEmpty(Model.ActionUrl) && !string.IsNullOrEmpty(Model.ActionText))
+    {
+        <a href="@Model.ActionUrl" class="admin-btn-primary admin-empty-action">@Model.ActionText</a>
+    }
+</div>

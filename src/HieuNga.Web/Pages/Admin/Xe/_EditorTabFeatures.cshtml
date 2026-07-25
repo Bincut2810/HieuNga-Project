@@ -1,0 +1,38 @@
+@using HieuNga.Web.Pages.Admin.Extensions
+@model HieuNga.Web.Pages.Admin.Xe.EditorModel
+
+@if (Model.IsCreate)
+{
+    <partial name="Admin/Shared/_AdminEmptyState"
+             model='new AdminEmptyStateModel("Lưu xe trước", "Feature & Technology builders mở sau Quick Create.", "/admin/xe/editor?tab=general", "Quick Create")' />
+}
+else
+{
+    <div class="admin-editor-panel" style="display:flex;flex-direction:column;gap:1.25rem;max-width:64rem;">
+        <partial name="Admin/Xe/_ContentCardBuilder" model='new ContentCardBuilderModel(
+            Model.Id!.Value,
+            "feature",
+            "Features",
+            "Điểm nổi bật trên trang chi tiết — kéo để sắp xếp.",
+            "AddFeature",
+            "UpdateFeature",
+            "DeleteFeature",
+            "DuplicateFeature",
+            "ReorderFeatures",
+            Model.SupportsImageUpload,
+            Model.Features.Select(f => new ContentCardItemModel(f.Id, f.Title, f.Description, f.ImageUrl, f.SortOrder)).ToList())' />
+
+        <partial name="Admin/Xe/_ContentCardBuilder" model='new ContentCardBuilderModel(
+            Model.Id!.Value,
+            "tech",
+            "Technology",
+            "Khối công nghệ xen kẽ ảnh/text trên public detail.",
+            "AddTech",
+            "UpdateTech",
+            "DeleteTech",
+            "DuplicateTech",
+            "ReorderTech",
+            Model.SupportsImageUpload,
+            Model.Technologies.Select(t => new ContentCardItemModel(t.Id, t.Title, t.Description, t.ImageUrl, t.SortOrder)).ToList())' />
+    </div>
+}
