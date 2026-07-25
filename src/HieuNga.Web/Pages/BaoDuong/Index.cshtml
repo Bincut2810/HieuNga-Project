@@ -4,12 +4,23 @@
 @{
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
+    ViewData["BranchBookUrl"] = "/bao-duong#booking";
+    ViewData["BranchBookLabel"] = "Đặt lịch dịch vụ";
 }
 
 
 <partial name="_PageHero" model='("Bảo dưỡng chính hãng", "Kỹ thuật HEAD — Phụ tùng Honda, quy trình chuẩn", "Service")' />
 
-
+<section class="page-section bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p class="section-eyebrow">Xưởng HEAD</p>
+        <h2 class="section-title">Chi nhánh bảo dưỡng</h2>
+        <p class="section-subtitle">Đặt lịch tại HEAD Hiếu Nga 1 hoặc HEAD Hiếu Nga 2</p>
+        <div class="mt-8">
+            <partial name="_BranchCards" model="Model.Branches" />
+        </div>
+    </div>
+</section>
 
 <section class="bg-gray-50 border-b border-gray-100">
 

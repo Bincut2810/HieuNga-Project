@@ -137,7 +137,7 @@ public static class EntityMappers
 
 
 
-    public static BranchDto ToDto(this Branch b) => new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice);
+    public static BranchDto ToDto(this Branch b) => new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice, b.Slug);
 
 
 

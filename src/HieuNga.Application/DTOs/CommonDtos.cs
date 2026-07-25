@@ -36,7 +36,8 @@ public record BranchDto(
     string? Email,
     string? MapEmbedUrl,
     string? OpeningHours,
-    bool IsHeadOffice);
+    bool IsHeadOffice,
+    string Slug = "");
 
 public record ReviewDto(
     Guid Id,

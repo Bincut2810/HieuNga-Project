@@ -31,7 +31,7 @@ public class BranchRepository(HieuNgaDbContext context) : Repository<Branch>(con
 {
     public async Task<IReadOnlyList<Branch>> GetActiveAsync(CancellationToken ct = default) =>
         await context.Branches.AsNoTracking()
-            .Where(b => b.IsActive).OrderBy(b => b.SortOrder).ToListAsync(ct);
+            .Where(b => b.IsActive && !b.IsDeleted).OrderBy(b => b.SortOrder).ToListAsync(ct);
 }
 
 public class BannerRepository(HieuNgaDbContext context) : Repository<Banner>(context), IBannerRepository

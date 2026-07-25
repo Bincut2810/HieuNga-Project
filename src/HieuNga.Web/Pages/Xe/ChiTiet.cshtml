@@ -580,6 +580,15 @@
                 <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="btn-secondary touch-press">Tính trả góp</a>
                 <a href="@viewBikeUrl" class="detail-ghost-btn touch-press">Đặt lịch xem xe</a>
             </div>
+
+            <div class="mt-10">
+                <h3 class="text-lg font-bold text-honda-dark mb-4">Showroom Hiếu Nga</h3>
+                @{
+                    ViewData["BranchBookUrl"] = viewBikeUrl;
+                    ViewData["BranchBookLabel"] = "Đặt lịch hẹn";
+                }
+                <partial name="_BranchCards" model="SiteSettingsViewData.GetBranches(ViewData)" />
+            </div>
         </div>
     </section>
 

@@ -2,11 +2,6 @@
 @model HieuNga.Web.Pages.LienHe.IndexModel
 @using HieuNga.Web.Filters
 @{
-    var site = SiteSettingsViewData.Get(ViewData);
-    var telHref = SiteSettingsViewData.TelHref(site);
-    var zaloUrl = SiteSettingsViewData.ZaloHref(site);
-    var mapsUrl = SiteSettingsViewData.MapsSearchUrl(site);
-    var headBranch = Model.Branches.FirstOrDefault(b => b.IsHeadOffice) ?? Model.Branches.FirstOrDefault();
     ViewData["CtaIntent"] = Model.Intent;
     ViewData["CtaXe"] = Model.SelectedMotorcycle?.Slug;
     ViewData["CtaXeId"] = Model.SelectedMotorcycle?.Id.ToString();
@@ -19,6 +14,12 @@
     ViewData["VehicleFinanceUrl"] = Model.SelectedMotorcycle is null
         ? "/tra-gop?source=contact"
         : $"/tra-gop?xe={Uri.EscapeDataString(Model.SelectedMotorcycle.Slug)}&source=contact";
+    ViewData["BranchBookUrl"] = Model.Intent == "bao-duong"
+        ? "/bao-duong#booking"
+        : (Model.SelectedMotorcycle is null
+            ? "/dat-lich-lai-thu?source=contact"
+            : $"/dat-lich-lai-thu?xeId={Model.SelectedMotorcycle.Id}&source=contact");
+    ViewData["BranchBookLabel"] = Model.Intent == "bao-duong" ? "Đặt lịch dịch vụ" : "Đặt lịch hẹn";
 }
 
 <section class="lead-page">
@@ -53,59 +54,7 @@
 
                     <partial name="_LeadTrust" />
 
-                    <div class="lead-branch-card">
-                        @if (headBranch is not null)
-                        {
-                            @if (headBranch.IsHeadOffice)
-                            {
-                                <span class="section-eyebrow">HEAD Office</span>
-                            }
-                            <h2 class="text-lg font-bold text-honda-dark mt-1">@headBranch.Name</h2>
-                            <p class="mt-2 text-sm text-gray-600">@headBranch.Address</p>
-                            @if (!string.IsNullOrEmpty(headBranch.OpeningHours))
-                            {
-                                <p class="mt-2 text-sm text-gray-500">@headBranch.OpeningHours</p>
-                            }
-                            else
-                            {
-                                <p class="mt-2 text-sm text-gray-500">@site.OpeningHours</p>
-                            }
-                            <p class="mt-3">
-                                <a href="@telHref" hx-boost="false" class="text-honda-red font-bold hover:underline focus-ring rounded">@(headBranch.Hotline ?? site.Hotline)</a>
-                            </p>
-                        }
-                        else
-                        {
-                            <h2 class="text-lg font-bold text-honda-dark">@site.SiteName</h2>
-                            <p class="mt-2 text-sm text-gray-600">@site.Address</p>
-                            <p class="mt-2 text-sm text-gray-500">@site.OpeningHours</p>
-                            <p class="mt-3">
-                                <a href="@telHref" hx-boost="false" class="text-honda-red font-bold hover:underline focus-ring rounded">@site.Hotline</a>
-                            </p>
-                        }
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <a href="@mapsUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press text-sm">Google Maps</a>
-                            <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press text-sm">Zalo</a>
-                            @if (Model.Intent != "lai-thu")
-                            {
-                                <a href="@(Model.SelectedMotorcycle is null ? "/dat-lich-lai-thu?source=contact" : $"/dat-lich-lai-thu?xeId={Model.SelectedMotorcycle.Id}&source=contact")"
-                                   class="detail-ghost-btn touch-press text-sm">Đặt lịch xem xe</a>
-                            }
-                        </div>
-                    </div>
-
-                    @if (Model.Branches.Count > 1)
-                    {
-                        <div class="space-y-3">
-                            @foreach (var b in Model.Branches.Where(x => headBranch is null || x.Id != headBranch.Id).Take(3))
-                            {
-                                <div class="lead-branch-mini">
-                                    <p class="font-semibold text-honda-dark text-sm">@b.Name</p>
-                                    <p class="text-xs text-gray-500 mt-1">@b.Address</p>
-                                </div>
-                            }
-                        </div>
-                    }
+                    <partial name="_BranchCards" model="Model.Branches" />
                 </div>
 
                 <div class="lg:col-span-7">

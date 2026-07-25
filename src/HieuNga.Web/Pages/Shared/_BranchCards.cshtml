@@ -1,0 +1,55 @@
+@using HieuNga.Application.DTOs
+@using HieuNga.Web.Filters
+@model IReadOnlyList<BranchDto>
+@{
+    var branches = Model ?? [];
+    var bookUrl = ViewData["BranchBookUrl"] as string ?? "/dat-lich-lai-thu";
+    var bookLabel = ViewData["BranchBookLabel"] as string ?? "Đặt lịch hẹn";
+    var compact = string.Equals(ViewData["BranchCardsCompact"] as string, "true", StringComparison.OrdinalIgnoreCase);
+}
+@if (branches.Count == 0)
+{
+    var site = SiteSettingsViewData.Get(ViewData);
+    <div class="branch-cards @(compact ? "branch-cards-compact" : null)" data-stagger>
+        <article class="branch-card reveal">
+            <span class="branch-card-badge">HEAD</span>
+            <h3 class="branch-card-name">@site.SiteName</h3>
+            <p class="branch-card-address">@site.Address</p>
+            <p class="branch-card-meta">
+                <a href="@SiteSettingsViewData.TelHref(site)" hx-boost="false" class="branch-card-phone focus-ring rounded">@site.Hotline</a>
+            </p>
+            <p class="branch-card-hours">@site.OpeningHours</p>
+            <div class="branch-card-actions">
+                <a href="@SiteSettingsViewData.MapsSearchUrl(site)" target="_blank" rel="noopener noreferrer" hx-boost="false" class="btn-secondary touch-press text-sm">Google Maps</a>
+                <a href="@SiteSettingsViewData.TelHref(site)" hx-boost="false" class="btn-ghost touch-press text-sm">Gọi</a>
+                <a href="@bookUrl" class="btn-primary touch-press text-sm">@bookLabel</a>
+            </div>
+        </article>
+    </div>
+}
+else
+{
+    <div class="branch-cards @(compact ? "branch-cards-compact" : null)" data-stagger>
+        @foreach (var b in branches)
+        {
+            var phone = SiteSettingsViewData.DisplayPhone(b);
+            var tel = SiteSettingsViewData.TelHref(b);
+            var maps = SiteSettingsViewData.MapsUrl(b);
+            var hours = string.IsNullOrWhiteSpace(b.OpeningHours) ? "07:30–19:00" : b.OpeningHours;
+            <article class="branch-card reveal">
+                <span class="branch-card-badge">HEAD</span>
+                <h3 class="branch-card-name">@b.Name</h3>
+                <p class="branch-card-address">@b.Address</p>
+                <p class="branch-card-meta">
+                    <a href="@tel" hx-boost="false" class="branch-card-phone focus-ring rounded">@phone</a>
+                </p>
+                <p class="branch-card-hours">@hours</p>
+                <div class="branch-card-actions">
+                    <a href="@maps" target="_blank" rel="noopener noreferrer" hx-boost="false" class="btn-secondary touch-press text-sm">Google Maps</a>
+                    <a href="@tel" hx-boost="false" class="btn-ghost touch-press text-sm">Gọi</a>
+                    <a href="@bookUrl" class="btn-primary touch-press text-sm">@bookLabel</a>
+                </div>
+            </article>
+        }
+    </div>
+}

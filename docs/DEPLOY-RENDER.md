@@ -129,8 +129,8 @@ Thêm **từng dòng** sau:
 | `ASPNETCORE_URLS` | `http://0.0.0.0:8080` |
 | `Site__BaseUrl` | `https://hieunga-web.onrender.com` (đổi theo URL thật) |
 | `Site__Name` | `Xe Máy Hiếu Nga` |
-| `Site__Hotline` | `0905 123 456` |
-| `Site__ZaloUrl` | `https://zalo.me/0905123456` |
+| `Site__Hotline` | `0236 384 9556` |
+| `Site__ZaloUrl` | `https://zalo.me/02363849556` |
 | `Site__DefaultSeoTitle` | `Xe Máy Hiếu Nga \| Mua xe và dịch vụ xe máy` |
 | `Site__DefaultSeoDescription` | `Mua xe máy, tư vấn trả góp và đặt lịch sửa chữa, bảo dưỡng tại Đà Nẵng.` |
 | `SeedOptions__EnableDemoSeed` | `true` (demo lần đầu; đặt `false` sau khi ổn định) |

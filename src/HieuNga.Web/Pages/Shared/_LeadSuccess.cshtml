@@ -1,15 +1,19 @@
+@using HieuNga.Application.DTOs
 @using HieuNga.Web.Filters
 @model (string Title, string Message, string? NextHint)
 @{
     var site = SiteSettingsViewData.Get(ViewData);
+    var branches = SiteSettingsViewData.GetBranches(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
     var zaloUrl = SiteSettingsViewData.ZaloHref(site);
-    var mapsUrl = SiteSettingsViewData.MapsSearchUrl(site);
     var title = string.IsNullOrWhiteSpace(Model.Title) ? "Đã nhận yêu cầu!" : Model.Title;
     var message = string.IsNullOrWhiteSpace(Model.Message)
         ? "Cảm ơn bạn. Đội ngũ Xe Máy Hiếu Nga sẽ liên hệ sớm."
         : Model.Message;
     var next = Model.NextHint ?? "Giữ máy — tư vấn viên gọi lại trong giờ hành chính.";
+    ViewData["BranchBookUrl"] = "/dat-lich-lai-thu";
+    ViewData["BranchBookLabel"] = "Đặt lịch hẹn";
+    ViewData["BranchCardsCompact"] = "true";
 }
 <div class="lead-success reveal" role="status" aria-live="polite">
     <div class="lead-success-mark" aria-hidden="true">✓</div>
@@ -25,16 +29,13 @@
         </ol>
     </div>
 
-    <div class="lead-success-dealer">
-        <p class="font-semibold text-honda-dark">@site.SiteName</p>
-        <p class="text-sm text-gray-500 mt-1">@site.Address</p>
-        <p class="text-sm text-gray-500 mt-1">@site.OpeningHours</p>
+    <div class="mt-6">
+        <partial name="_BranchCards" model="branches" />
     </div>
 
-    <div class="lead-success-actions">
+    <div class="lead-success-actions mt-6">
         <a href="@telHref" hx-boost="false" class="btn-primary touch-press">Gọi @site.Hotline</a>
         <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="btn-secondary touch-press">Chat Zalo</a>
-        <a href="@mapsUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press">Google Maps</a>
     </div>
 
     <p class="lead-success-privacy">

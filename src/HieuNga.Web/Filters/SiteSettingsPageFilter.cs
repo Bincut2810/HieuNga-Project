@@ -1,3 +1,4 @@
+using HieuNga.Application.Catalog;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Infrastructure.Persistence;
@@ -8,9 +9,10 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace HieuNga.Web.Filters;
 
-public class SiteSettingsPageFilter(ISiteSettingsService siteSettings) : IAsyncPageFilter
+public class SiteSettingsPageFilter(ISiteSettingsService siteSettings, IBranchService branchService) : IAsyncPageFilter
 {
     public const string ViewDataKey = "SiteSettings";
+    public const string BranchesViewDataKey = "ActiveBranches";
 
     public Task OnPageHandlerSelectionAsync(PageHandlerSelectedContext context) => Task.CompletedTask;
 
@@ -18,9 +20,13 @@ public class SiteSettingsPageFilter(ISiteSettingsService siteSettings) : IAsyncP
     {
         if (context.HandlerInstance is PageModel page)
         {
-            var settings = await siteSettings.GetAsync(context.HttpContext.RequestAborted);
+            var ct = context.HttpContext.RequestAborted;
+            var settings = await siteSettings.GetAsync(ct);
+            var branches = await branchService.GetActiveAsync(ct);
             page.ViewData[ViewDataKey] = settings;
+            page.ViewData[BranchesViewDataKey] = branches;
             context.HttpContext.Items[ViewDataKey] = settings;
+            context.HttpContext.Items[BranchesViewDataKey] = branches;
         }
 
         await next();
@@ -33,16 +39,39 @@ public static class SiteSettingsViewData
     {
         if (viewData[SiteSettingsPageFilter.ViewDataKey] is SiteSettingsDto s) return s;
         return new SiteSettingsDto(
-            "Xe Máy Hiếu Nga", "0905 123 456", "0905 123 456",
-            "https://zalo.me/0905123456", "contact@hondahieunga.vn",
-            "123 Nguyễn Văn Linh, Đà Nẵng", "T2–T7: 8:00–18:00 · CN: 8:00–17:00",
-            BrandDefaults.SeoTitle, BrandDefaults.SeoDescription,
+            BrandDefaults.SiteName,
+            HieuNgaShowrooms.PrimaryPhone,
+            HieuNgaShowrooms.PrimaryPhone,
+            "https://zalo.me/02363849556",
+            "contact@hondahieunga.vn",
+            HieuNgaShowrooms.PrimaryAddress,
+            HieuNgaShowrooms.OpeningHours,
+            BrandDefaults.SeoTitle,
+            BrandDefaults.SeoDescription,
             null, null,
             BrandDefaults.ServicePricingDisclaimer);
     }
 
+    public static IReadOnlyList<BranchDto> GetBranches(ViewDataDictionary viewData)
+    {
+        if (viewData[SiteSettingsPageFilter.BranchesViewDataKey] is IReadOnlyList<BranchDto> branches)
+            return branches;
+        return [];
+    }
+
     public static string TelHref(SiteSettingsDto s) =>
-        "tel:" + new string(s.Hotline.Where(char.IsDigit).ToArray());
+        HieuNgaShowrooms.TelHref(s.Hotline);
+
+    public static string TelHref(BranchDto b) =>
+        HieuNgaShowrooms.TelHref(DisplayPhone(b));
+
+    public static string DisplayPhone(BranchDto b) =>
+        !string.IsNullOrWhiteSpace(b.Hotline) ? b.Hotline!
+        : !string.IsNullOrWhiteSpace(b.Phone) ? b.Phone!
+        : HieuNgaShowrooms.PrimaryPhone;
+
+    public static string MapsUrl(BranchDto b) =>
+        HieuNgaShowrooms.ResolveMapsUrl(b.Slug, b.Address);
 
     public static string ZaloHref(SiteSettingsDto s)
     {
@@ -52,6 +81,5 @@ public static class SiteSettingsViewData
     }
 
     public static string MapsSearchUrl(SiteSettingsDto s) =>
-        "https://www.google.com/maps/search/?api=1&query=" +
-        Uri.EscapeDataString(string.IsNullOrWhiteSpace(s.Address) ? s.SiteName : s.Address);
+        HieuNgaShowrooms.ResolveMapsUrl(null, s.Address);
 }

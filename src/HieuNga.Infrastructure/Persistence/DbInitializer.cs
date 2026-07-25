@@ -1,3 +1,4 @@
+using HieuNga.Application.Catalog;
 using HieuNga.Application.Mappings;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
@@ -51,6 +52,8 @@ public static class DbInitializer
         }
 
         await SeedAdminUserAsync(scope.ServiceProvider, environment, seedOptions, logger);
+
+        await HieuNgaBranchSeed.EnsureAsync(context, logger);
 
         if (shouldDemoSeed)
             await SeedDemoContentAsync(context, logger);
@@ -106,19 +109,25 @@ public static class DbInitializer
         ILogger logger)
     {
 
-        var branch = new Branch
+        foreach (var def in HieuNgaShowrooms.All)
         {
-            Name = BrandDefaults.SiteNameWithCity,
-            Slug = "honda-hieu-nga-da-nang",
-            Address = "123 Nguyễn Văn Linh, Quận 7, Đà Nẵng",
-            Phone = "0236 123 4567",
-            Hotline = "0905 123 456",
-            Email = "contact@hondahieunga.vn",
-            IsHeadOffice = true,
-            IsActive = true,
-            OpeningHours = "T2-T7: 8:00 - 18:00 | CN: 8:00 - 17:00"
-        };
-        context.Branches.Add(branch);
+            context.Branches.Add(new Branch
+            {
+                Name = def.Name,
+                Slug = def.Slug,
+                Address = def.Address,
+                District = def.District,
+                City = def.City,
+                Phone = def.Phone,
+                Hotline = def.Phone,
+                Email = "contact@hondahieunga.vn",
+                MapEmbedUrl = def.MapEmbedUrl,
+                OpeningHours = def.OpeningHours,
+                IsHeadOffice = def.IsHeadOffice,
+                IsActive = true,
+                SortOrder = def.SortOrder
+            });
+        }
 
         context.Banners.AddRange(
             new Banner
@@ -161,8 +170,10 @@ public static class DbInitializer
 
         context.SiteSettings.AddRange(
             new SiteSetting { Key = "site.name", Value = BrandDefaults.SiteName, Group = "general" },
-            new SiteSetting { Key = "site.phone", Value = "0905 123 456", Group = "contact" },
-            new SiteSetting { Key = "site.address", Value = "123 Nguyễn Văn Linh, Đà Nẵng", Group = "contact" }
+            new SiteSetting { Key = "site.phone", Value = HieuNgaShowrooms.PrimaryPhone, Group = "contact" },
+            new SiteSetting { Key = "site.hotline", Value = HieuNgaShowrooms.PrimaryPhone, Group = "contact" },
+            new SiteSetting { Key = "site.address", Value = HieuNgaShowrooms.PrimaryAddress, Group = "contact" },
+            new SiteSetting { Key = "site.hours", Value = HieuNgaShowrooms.OpeningHours, Group = "contact" }
         );
 
         await context.SaveChangesAsync();

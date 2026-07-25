@@ -43,6 +43,11 @@
                         </div>
                     }
                     <partial name="_LeadTrust" />
+                    @{
+                        ViewData["BranchBookUrl"] = "/dat-lich-lai-thu?source=test-ride";
+                        ViewData["BranchBookLabel"] = "Đặt lịch hẹn";
+                    }
+                    <partial name="_BranchCards" model="Model.Branches" />
                 </div>
 
                 <div class="lg:col-span-7">

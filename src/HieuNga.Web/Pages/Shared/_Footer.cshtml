@@ -1,6 +1,8 @@
+@using HieuNga.Application.DTOs
 @using HieuNga.Web.Filters
 @{
     var site = SiteSettingsViewData.Get(ViewData);
+    var branches = SiteSettingsViewData.GetBranches(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
     var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? null : site.ZaloUrl;
     var facebookUrl = string.IsNullOrWhiteSpace(site.FacebookUrl) ? null : site.FacebookUrl;
@@ -17,13 +19,31 @@
                     <p>
                         <a href="@telHref" hx-boost="false" class="font-semibold text-white hover:text-honda-red transition focus-ring rounded">@site.Hotline</a>
                     </p>
-                    @if (!string.IsNullOrWhiteSpace(site.Address))
+                    @if (branches.Count > 0)
+                    {
+                        <div class="footer-branch-list">
+                            @foreach (var b in branches.Take(2))
+                            {
+                                var phone = SiteSettingsViewData.DisplayPhone(b);
+                                <div class="footer-branch-item">
+                                    <strong>@b.Name</strong>
+                                    <span>@b.Address</span><br />
+                                    <a href="@SiteSettingsViewData.TelHref(b)" hx-boost="false">@phone</a>
+                                    @if (!string.IsNullOrWhiteSpace(b.OpeningHours))
+                                    {
+                                        <span> · @b.OpeningHours</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(site.Address))
                     {
                         <p class="text-gray-400">@site.Address</p>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(site.OpeningHours))
-                    {
-                        <p class="text-gray-500 text-xs">@site.OpeningHours</p>
+                        @if (!string.IsNullOrWhiteSpace(site.OpeningHours))
+                        {
+                            <p class="text-gray-500 text-xs">@site.OpeningHours</p>
+                        }
                     }
                 </div>
                 <div class="mt-6 flex flex-wrap gap-3" aria-label="Mạng xã hội">

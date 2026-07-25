@@ -2175,3 +2175,127 @@ input[type="radio"]:focus-visible {
   transform: translateY(0) scale(0.98);
 }
 
+/* ─── Sprint 4.2 — Branch cards ─── */
+.branch-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+@media (min-width: 640px) {
+  .branch-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.branch-cards-compact .branch-card {
+  padding: 1.15rem 1.25rem;
+}
+.branch-card {
+  position: relative;
+  background: var(--honda-surface);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem 1.5rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition:
+    transform var(--motion-slow) var(--ease-premium),
+    box-shadow var(--motion-slow) var(--ease-premium),
+    border-color var(--motion-base);
+}
+.branch-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(228, 5, 33, 0.16);
+}
+.branch-card-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--honda-red);
+  padding: 0.28rem 0.55rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.35rem;
+}
+.branch-card-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--honda-dark);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.3;
+}
+.branch-card-address {
+  margin-top: 0.35rem;
+  font-size: 0.9375rem;
+  color: #4b5563;
+  line-height: 1.55;
+}
+.branch-card-phone {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--honda-red);
+}
+.branch-card-phone:hover { text-decoration: underline; }
+.branch-card-hours {
+  font-size: 0.8125rem;
+  color: var(--honda-muted);
+  margin-top: 0.15rem;
+}
+.branch-card-hours::before {
+  content: "Giờ mở cửa: ";
+  font-weight: 600;
+  color: #6b7280;
+}
+.branch-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.branch-card-actions .btn-primary,
+.branch-card-actions .btn-secondary,
+.branch-card-actions .btn-ghost {
+  min-height: var(--control-h-sm);
+  padding: 0.55rem 0.9rem;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+.home-branch-map-wrap {
+  margin-top: 1.75rem;
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+.footer-branch-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.footer-branch-item {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+.footer-branch-item strong {
+  display: block;
+  color: #e5e7eb;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+.footer-branch-item a {
+  color: #fca5a5;
+  font-weight: 600;
+}
+.footer-branch-item a:hover { color: #fff; }
+
+

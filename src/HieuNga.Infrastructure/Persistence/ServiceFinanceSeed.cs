@@ -1,3 +1,4 @@
+using HieuNga.Application.Catalog;
 using HieuNga.Domain.Entities;
 using HieuNga.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -314,8 +315,11 @@ public static class ServiceFinanceSeed
         {
             ["site.name"] = (BrandDefaults.SiteName, "general"),
             ["service.pricing_disclaimer"] = (BrandDefaults.ServicePricingDisclaimer, "service"),
-            ["site.zalo"] = ("https://zalo.me/0905123456", "site"),
-            ["site.hours"] = ("T2–T7: 8:00–18:00 · CN: 8:00–17:00", "site"),
+            ["site.zalo"] = ("https://zalo.me/02363849556", "site"),
+            ["site.hours"] = (HieuNgaShowrooms.OpeningHours, "site"),
+            ["site.hotline"] = (HieuNgaShowrooms.PrimaryPhone, "contact"),
+            ["site.phone"] = (HieuNgaShowrooms.PrimaryPhone, "contact"),
+            ["site.address"] = (HieuNgaShowrooms.PrimaryAddress, "contact"),
             ["seo.default_title"] = (BrandDefaults.SeoTitle, "seo"),
             ["seo.default_description"] = (BrandDefaults.SeoDescription, "seo"),
             ["site.footer_text"] = ("Đại lý xe máy uy tín tại Đà Nẵng", "site")

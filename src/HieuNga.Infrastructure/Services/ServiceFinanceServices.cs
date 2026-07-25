@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using HieuNga.Application.Catalog;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Domain.Entities;
@@ -116,12 +117,12 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
     private static readonly Dictionary<string, string> Defaults = new(StringComparer.OrdinalIgnoreCase)
     {
         ["site.name"] = BrandDefaults.SiteName,
-        ["site.hotline"] = "0905 123 456",
-        ["site.phone"] = "0905 123 456",
-        ["site.zalo"] = "https://zalo.me/0905123456",
+        ["site.hotline"] = HieuNgaShowrooms.PrimaryPhone,
+        ["site.phone"] = HieuNgaShowrooms.PrimaryPhone,
+        ["site.zalo"] = "https://zalo.me/02363849556",
         ["site.email"] = "contact@hondahieunga.vn",
-        ["site.address"] = "123 Nguyễn Văn Linh, Đà Nẵng",
-        ["site.hours"] = "T2–T7: 8:00–18:00 · CN: 8:00–17:00",
+        ["site.address"] = HieuNgaShowrooms.PrimaryAddress,
+        ["site.hours"] = HieuNgaShowrooms.OpeningHours,
         ["seo.default_title"] = BrandDefaults.SeoTitle,
         ["seo.default_description"] = BrandDefaults.SeoDescription,
         ["site.facebook"] = "",
