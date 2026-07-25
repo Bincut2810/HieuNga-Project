@@ -11,9 +11,7 @@ public class MotorcycleService(IMotorcycleRepository repository) : IMotorcycleSe
     public async Task<PagedResultDto<MotorcycleListItemDto>> SearchAsync(MotorcycleFilterDto filter, CancellationToken ct = default)
     {
         var (items, total) = await repository.SearchAsync(
-            filter.Query, filter.Category, filter.MinPrice, filter.MaxPrice,
-            filter.Page, filter.PageSize, ct,
-            filter.FeaturedOnly, filter.Sort);
+            filter.Category, filter.Page, filter.PageSize, ct);
 
         return new PagedResultDto<MotorcycleListItemDto>(
             items.Select(m => m.ToListItem()).ToList(), total, filter.Page, filter.PageSize);
@@ -37,7 +35,6 @@ public class MotorcycleService(IMotorcycleRepository repository) : IMotorcycleSe
         var counts = await repository.GetPublishedCategoryCountsAsync(ct);
         return MotorcycleCategoryLabels.All
             .Select(c => new MotorcycleCategoryCountDto(c.Value, c.Label, counts.GetValueOrDefault(c.Value)))
-            .Where(c => c.Count > 0)
             .ToList();
     }
 
@@ -49,7 +46,7 @@ public class MotorcycleService(IMotorcycleRepository repository) : IMotorcycleSe
 
         var price = current.BasePrice;
         var (sameCategory, _) = await repository.SearchAsync(
-            null, current.Category, null, null, 1, 24, ct);
+            current.Category, 1, 24, ct);
 
         var pool = sameCategory
             .Where(m => m.Id != motorcycleId)
@@ -59,8 +56,7 @@ public class MotorcycleService(IMotorcycleRepository repository) : IMotorcycleSe
         // Fill with featured / similar-price bikes if same category is thin
         if (pool.Count < 6)
         {
-            var (all, _) = await repository.SearchAsync(
-                null, null, null, null, 1, 36, ct, featuredOnly: null, sort: "default");
+            var (all, _) = await repository.SearchAsync(null, 1, 36, ct);
             var existing = pool.Select(p => p.Id).ToHashSet();
             foreach (var m in all.Where(x => x.Id != motorcycleId && !existing.Contains(x.Id)).Select(x => x.ToListItem()))
             {

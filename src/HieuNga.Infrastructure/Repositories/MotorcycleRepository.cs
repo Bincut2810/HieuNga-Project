@@ -47,40 +47,29 @@ public class MotorcycleRepository(HieuNgaDbContext context)
     }
 
     public async Task<(IReadOnlyList<Motorcycle> Items, int Total)> SearchAsync(
-        string? query, MotorcycleCategory? category, decimal? minPrice, decimal? maxPrice,
-        int page, int pageSize, CancellationToken ct = default,
-        bool? featuredOnly = null, string? sort = null)
+        MotorcycleCategory? category,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         var q = context.Motorcycles.AsNoTracking()
             .Include(m => m.MediaAssets)
             .Include(m => m.Variants)
             .Where(m => m.IsPublished && !m.IsDeleted);
 
-        if (!string.IsNullOrWhiteSpace(query))
-            q = q.Where(m => m.Name.Contains(query) || (m.ShortDescription != null && m.ShortDescription.Contains(query)));
-
         if (category.HasValue)
             q = q.Where(m => m.Category == category.Value);
 
-        if (minPrice.HasValue)
-            q = q.Where(m => m.BasePrice >= minPrice.Value);
-
-        if (maxPrice.HasValue)
-            q = q.Where(m => m.BasePrice <= maxPrice.Value);
-
-        if (featuredOnly == true)
-            q = q.Where(m => m.IsFeatured);
-
         var total = await q.CountAsync(ct);
 
-        q = (sort ?? "default").ToLowerInvariant() switch
-        {
-            "price_asc" => q.OrderBy(m => m.BasePrice).ThenBy(m => m.SortOrder),
-            "price_desc" => q.OrderByDescending(m => m.BasePrice).ThenBy(m => m.SortOrder),
-            "name" => q.OrderBy(m => m.Name),
-            "newest" => q.OrderByDescending(m => m.CreatedAt),
-            _ => q.OrderByDescending(m => m.IsFeatured).ThenBy(m => m.SortOrder).ThenByDescending(m => m.CreatedAt)
-        };
+        // Default showroom order: Featured → In stock → Newest → Name
+        q = q
+            .OrderByDescending(m => m.IsFeatured)
+            .ThenByDescending(m =>
+                !m.Variants.Any(v => !v.IsDeleted)
+                || m.Variants.Any(v => !v.IsDeleted && v.IsAvailable))
+            .ThenByDescending(m => m.CreatedAt)
+            .ThenBy(m => m.Name);
 
         var items = await q.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         return (items, total);

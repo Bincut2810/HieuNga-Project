@@ -1,26 +1,48 @@
-@model PagedResultDto<MotorcycleListItemDto>
+@model HieuNga.Web.Pages.Xe.IndexModel
+@using HieuNga.Domain
 @{
-    var totalPages = Model.PageSize > 0
-        ? (int)Math.Ceiling(Model.Total / (double)Model.PageSize)
+    var result = Model.Result;
+    var totalPages = result.PageSize > 0
+        ? (int)Math.Ceiling(result.Total / (double)result.PageSize)
         : 1;
     if (totalPages < 1) totalPages = 1;
+
+    string PageHref(int page)
+    {
+        if (Model.Category is null && page <= 1) return "/xe";
+        if (Model.Category is null) return $"/xe?PageNumber={page}";
+        if (page <= 1) return $"/xe?category={(int)Model.Category}";
+        return $"/xe?category={(int)Model.Category}&PageNumber={page}";
+    }
 }
 
-@if (!Model.Items.Any())
+@if (!result.Items.Any())
 {
     <div class="empty-state">
-        <h3>Không tìm thấy xe phù hợp</h3>
-        <p>Thử đổi bộ lọc hoặc xem toàn bộ danh mục.</p>
-        <a href="/xe" class="btn-ghost mt-6 inline-flex">Xóa bộ lọc</a>
+        <h3>Chưa có xe trong danh mục này</h3>
+        <p>Chọn loại xe khác hoặc xem toàn bộ danh mục.</p>
+        <a href="/xe"
+           hx-get="/xe"
+           hx-target="#catalog-browse"
+           hx-swap="innerHTML transition:true"
+           hx-indicator="#catalog-skeleton"
+           hx-push-url="true"
+           class="btn-ghost mt-6 inline-flex">Xem tất cả xe</a>
     </div>
 }
 else
 {
     <div class="flex items-center justify-between gap-3 mb-6">
-        <p class="text-sm text-gray-500">Hiển thị <span class="font-semibold text-honda-dark">@Model.Items.Count</span> / @Model.Total xe</p>
+        <p class="text-sm text-gray-500">
+            @if (Model.Category is { } cat)
+            {
+                <span>@cat.ToDisplayName() · </span>
+            }
+            <span class="font-semibold text-honda-dark">@result.Total</span> xe
+        </p>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 htmx-settling" data-stagger>
-        @foreach (var bike in Model.Items)
+    <div class="catalog-card-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8" data-stagger>
+        @foreach (var bike in result.Items)
         {
             <partial name="_MotorcycleCard" model="bike" />
         }
@@ -30,16 +52,16 @@ else
         <nav class="flex flex-wrap items-center justify-center gap-2 mt-10" aria-label="Phân trang danh mục xe">
             @for (var p = 1; p <= totalPages; p++)
             {
-                var active = p == Model.Page;
-                <a href="/xe?PageNumber=@p"
-                   hx-get="/xe"
-                   hx-include="#catalog-filter"
-                   hx-vals='{"PageNumber":@p}'
-                   hx-target="#catalog-grid"
+                var active = p == result.Page;
+                var href = PageHref(p);
+                <a href="@href"
+                   hx-get="@href"
+                   hx-target="#catalog-browse"
                    hx-swap="innerHTML transition:true"
                    hx-indicator="#catalog-skeleton"
                    hx-push-url="true"
-                   class="min-w-[2.5rem] h-10 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold border transition @(active ? "border-honda-red bg-honda-red text-white" : "border-gray-200 bg-white text-honda-dark hover:border-honda-red hover:text-honda-red")">
+                   class="min-w-[2.5rem] h-10 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold border transition @(active ? "border-honda-red bg-honda-red text-white" : "border-gray-200 bg-white text-honda-dark hover:border-honda-red hover:text-honda-red")"
+                   aria-current="@(active ? "page" : null)">
                     @p
                 </a>
             }

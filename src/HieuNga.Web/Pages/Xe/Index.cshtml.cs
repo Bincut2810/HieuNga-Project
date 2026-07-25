@@ -12,43 +12,30 @@ public class IndexModel(IMotorcycleService motorcycleService) : PageModel
     public PagedResultDto<MotorcycleListItemDto> Result { get; private set; } = null!;
     public IReadOnlyList<MotorcycleCategoryCountDto> CategoryCounts { get; private set; } = [];
 
-    [BindProperty(SupportsGet = true)] public string? Q { get; set; }
     [BindProperty(SupportsGet = true)] public MotorcycleCategory? Category { get; set; }
-    [BindProperty(SupportsGet = true)] public decimal? MinPrice { get; set; }
-    [BindProperty(SupportsGet = true)] public decimal? MaxPrice { get; set; }
-    [BindProperty(SupportsGet = true)] public bool FeaturedOnly { get; set; }
-    [BindProperty(SupportsGet = true)] public string? Sort { get; set; }
     [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
         await LoadAsync(ct);
 
-        // Only return the grid partial for in-page filter requests targeting #catalog-grid.
-        // Boosted navigations (e.g. homepage chips → /xe?category=0) also send HX-Request but
-        // target #main-content and use hx-select="#main-content" — a bare partial has no
-        // #main-content, so the listing would render blank.
-        if (IsCatalogGridHtmxRequest())
-            return Partial("_CatalogGrid", Result);
+        // In-page category/pagination swaps target #catalog-browse.
+        // Boosted navigations (homepage → /xe?category=0) target #main-content and need the full page.
+        if (IsCatalogBrowseHtmxRequest())
+            return Partial("_CatalogBrowse", this);
 
         this.SetSeo(null, "Danh sách xe máy Honda | Xe Máy Hiếu Nga",
             "Khám phá toàn bộ dòng xe Honda chính hãng tại Đà Nẵng.");
         return Page();
     }
 
-    public async Task<IActionResult> OnGetFilterAsync(CancellationToken ct)
-    {
-        await LoadAsync(ct);
-        return Partial("_CatalogGrid", Result);
-    }
-
-    private bool IsCatalogGridHtmxRequest()
+    private bool IsCatalogBrowseHtmxRequest()
     {
         if (!Request.Headers.ContainsKey("HX-Request"))
             return false;
 
         var target = Request.Headers["HX-Target"].ToString();
-        return string.Equals(target, "catalog-grid", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(target, "catalog-browse", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task LoadAsync(CancellationToken ct)
@@ -57,7 +44,7 @@ public class IndexModel(IMotorcycleService motorcycleService) : PageModel
 
         CategoryCounts = await motorcycleService.GetCategoryCountsAsync(ct);
         Result = await motorcycleService.SearchAsync(
-            new MotorcycleFilterDto(Q, Category, MinPrice, MaxPrice, PageNumber, 12, FeaturedOnly ? true : null, Sort),
+            new MotorcycleFilterDto(Category, PageNumber, 12),
             ct);
     }
 }

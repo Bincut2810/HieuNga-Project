@@ -44,14 +44,9 @@ public record MotorcycleFeatureDto(Guid Id, string Title, string? Description, s
 public record MotorcycleTechnologyDto(Guid Id, string Title, string? Description, string ImageUrl, int SortOrder);
 
 public record MotorcycleFilterDto(
-    string? Query,
     MotorcycleCategory? Category,
-    decimal? MinPrice,
-    decimal? MaxPrice,
     int Page = 1,
-    int PageSize = 12,
-    bool? FeaturedOnly = null,
-    string? Sort = null);
+    int PageSize = 12);
 
 public record MotorcycleCategoryCountDto(
     MotorcycleCategory Category,

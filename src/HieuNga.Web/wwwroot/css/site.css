@@ -517,11 +517,86 @@ textarea.lead-input {
   font-size: 1.125rem;
 }
 .empty-state p { margin-top: 0.5rem; font-size: var(--text-sm); }
+#catalog-browse.is-loading,
 #catalog-grid.is-loading,
 #blog-grid.is-loading {
   opacity: 0.55;
   pointer-events: none;
   transition: opacity var(--motion-base);
+}
+
+/* Catalog category chips — Honda-style browse */
+.catalog-cats {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 0.35rem;
+  scroll-snap-type: x proximity;
+}
+.catalog-cats::-webkit-scrollbar {
+  height: 4px;
+}
+.catalog-cats::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+}
+.catalog-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: var(--honda-dark);
+  white-space: nowrap;
+  transition:
+    color var(--motion-base) var(--ease-premium),
+    background var(--motion-base) var(--ease-premium),
+    border-color var(--motion-base) var(--ease-premium),
+    box-shadow var(--motion-base) var(--ease-premium);
+}
+.catalog-cat:hover {
+  border-color: var(--honda-red);
+  color: var(--honda-red);
+}
+.catalog-cat.is-active {
+  border-color: var(--honda-red);
+  background: var(--honda-red);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(228, 5, 33, 0.22);
+}
+.catalog-cat-count {
+  font-weight: 500;
+  opacity: 0.72;
+  font-variant-numeric: tabular-nums;
+}
+.catalog-cat.is-active .catalog-cat-count {
+  opacity: 0.9;
+}
+.catalog-cat:focus-visible {
+  outline: 2px solid var(--honda-red);
+  outline-offset: 2px;
+}
+@media (min-width: 768px) {
+  .catalog-cats {
+    flex-wrap: wrap;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding-bottom: 0;
+  }
+  .catalog-cat {
+    font-size: 0.875rem;
+  }
 }
 
 /* ─── Scroll reveal / motion ─── */

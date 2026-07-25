@@ -306,7 +306,7 @@
   /* ─── HTMX lifecycle ─── */
   document.body.addEventListener('htmx:beforeSwap', (e) => {
     const target = e.detail.target;
-    if (target.id === 'catalog-grid' || target.id === 'blog-grid') {
+    if (target.id === 'catalog-browse' || target.id === 'catalog-grid' || target.id === 'blog-grid') {
       target.classList.add('is-loading');
     }
   });
@@ -335,7 +335,7 @@
       collectParallax(target);
       initCounters(target);
     }
-    if (target.id === 'catalog-grid' || target.id === 'blog-grid') {
+    if (target.id === 'catalog-browse' || target.id === 'catalog-grid' || target.id === 'blog-grid') {
       target.classList.remove('is-loading');
     }
   });

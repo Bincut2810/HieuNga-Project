@@ -26,7 +26,7 @@ Authentication legend:
 |--------|-------|------|---------|-------|--------|----------|-------------|
 | GET | `/` | Anon | Homepage | — | HTML | `IHomepageService` | Read: banners, motorcycles, promotions, branches, reviews |
 | GET | `/xe` | Anon | Catalog | query filters | HTML | `IMotorcycleService.SearchAsync` | Read motorcycles |
-| GET | `/xe?handler=Filter` | Anon | HTMX catalog partial | filter query | Partial HTML | same | Read |
+| GET | `/xe` | Anon | Catalog browse (category + page) | `category`, `PageNumber` | HTML or `_CatalogBrowse` partial when `HX-Target=catalog-browse` | Read |
 | GET | `/xe/{slug}` | Anon | Detail + finance UI | slug | HTML | Motorcycle + FinanceConfig + Installment | Read |
 | GET | `/xe/{slug}?handler=CalculateFinancing` | Anon | HTMX finance result | price/down/term/rate | Partial | `IInstallmentService.Calculate` | None (compute) |
 | GET | `/so-sanh` | Anon | Compare up to 3 bikes | cookie | HTML | Motorcycle + `CompareSessionService` | Read |

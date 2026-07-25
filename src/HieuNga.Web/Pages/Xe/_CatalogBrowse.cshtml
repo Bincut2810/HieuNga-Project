@@ -1,0 +1,51 @@
+@model HieuNga.Web.Pages.Xe.IndexModel
+@using HieuNga.Domain
+@{
+    var allCount = Model.CategoryCounts.Sum(c => c.Count);
+
+    string CatHref(MotorcycleCategory? cat, int page = 1)
+    {
+        if (cat is null && page <= 1) return "/xe";
+        if (cat is null) return $"/xe?PageNumber={page}";
+        if (page <= 1) return $"/xe?category={(int)cat}";
+        return $"/xe?category={(int)cat}&PageNumber={page}";
+    }
+
+    string ChipClass(bool active) => active
+        ? "catalog-cat is-active"
+        : "catalog-cat";
+}
+
+<nav class="catalog-cats" aria-label="Chọn loại xe" data-catalog-cats>
+    <a href="@CatHref(null)"
+       hx-get="@CatHref(null)"
+       hx-target="#catalog-browse"
+       hx-swap="innerHTML transition:true"
+       hx-indicator="#catalog-skeleton"
+       hx-push-url="true"
+       class="@ChipClass(Model.Category is null)"
+       aria-current="@(Model.Category is null ? "page" : null)">
+        Tất cả
+        <span class="catalog-cat-count">@allCount</span>
+    </a>
+    @foreach (var cat in Model.CategoryCounts)
+    {
+        var active = Model.Category == cat.Category;
+        var href = CatHref(cat.Category);
+        <a href="@href"
+           hx-get="@href"
+           hx-target="#catalog-browse"
+           hx-swap="innerHTML transition:true"
+           hx-indicator="#catalog-skeleton"
+           hx-push-url="true"
+           class="@ChipClass(active)"
+           aria-current="@(active ? "page" : null)">
+            @cat.Label
+            <span class="catalog-cat-count">@cat.Count</span>
+        </a>
+    }
+</nav>
+
+<div id="catalog-grid" class="htmx-settling">
+    <partial name="_CatalogGrid" model="Model" />
+</div>
