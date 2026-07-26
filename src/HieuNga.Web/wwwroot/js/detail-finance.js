@@ -56,6 +56,9 @@
     const first = variants[0];
     const price = first ? first.price : Number(config.basePrice);
     const down = Number(config.down ?? roundStep(price * 0.2));
+    const bankIds = banks.map((b) => b.id);
+    const preferredBank = config.bank && bankIds.includes(config.bank) ? config.bank : (banks[0]?.id ?? 'hdb');
+    const months = Number(config.months) > 0 ? Number(config.months) : 12;
 
     return {
       bikeName: config.bikeName || '',
@@ -66,9 +69,9 @@
       price,
       basePrice: Number(config.basePrice),
       banks,
-      bank: banks[0]?.id ?? 'hdb',
+      bank: preferredBank,
       down,
-      months: 12,
+      months,
       downPercent: price > 0 ? Math.min(70, Math.round((down / price) * 100)) : 20,
       downInput: formatVnd(down),
       monthlyAnim: false,

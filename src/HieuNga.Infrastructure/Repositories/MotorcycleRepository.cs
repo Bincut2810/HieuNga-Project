@@ -18,7 +18,7 @@ public class MotorcycleRepository(HieuNgaDbContext context)
             .Include(m => m.Technologies)
             .Include(m => m.SpinFrames)
             .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Slug == slug && m.IsPublished, ct);
+            .FirstOrDefaultAsync(m => m.Slug == slug && m.IsPublished && !m.IsDeleted, ct);
 
     public async Task<IReadOnlyList<Motorcycle>> GetFeaturedAsync(int count, CancellationToken ct = default)
     {

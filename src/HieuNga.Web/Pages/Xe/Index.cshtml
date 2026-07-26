@@ -18,7 +18,9 @@
         <div id="catalog-skeleton" class="htmx-indicator absolute inset-0 z-10 bg-white/90 backdrop-blur-sm rounded-2xl p-4 md:p-6">
             <partial name="_SkeletonMotorcycleGrid" />
         </div>
-        <div id="catalog-browse" class="transition-opacity duration-300">
+        <div id="catalog-browse"
+             class="transition-opacity duration-300"
+             hx-disinherit="hx-select">
             <partial name="_CatalogBrowse" model="Model" />
         </div>
     </div>

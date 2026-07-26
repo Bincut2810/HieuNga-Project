@@ -40,8 +40,10 @@
     {
         bikeName = m.Name,
         motorcycleId = m.Id,
-        basePrice = m.BasePrice,
+        basePrice = (double)m.BasePrice,
         down = (double)defaultDown,
+        months = Model.DefaultTermMonths,
+        bank = Model.DefaultBankId,
         variants = m.Variants.Select(v => new { id = v.Id.ToString().ToLowerInvariant(), name = v.Name, price = (double)v.Price, available = v.IsAvailable }),
         banks = Model.FinanceBanks.Select(b => new
         {

@@ -24,7 +24,9 @@ public sealed class MotorcycleFinancePrefs
             return new MotorcycleFinancePrefs();
         try
         {
-            return JsonSerializer.Deserialize<MotorcycleFinancePrefs>(row.Value) ?? new MotorcycleFinancePrefs();
+            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            return JsonSerializer.Deserialize<MotorcycleFinancePrefs>(row.Value, opts)
+                   ?? new MotorcycleFinancePrefs();
         }
         catch
         {

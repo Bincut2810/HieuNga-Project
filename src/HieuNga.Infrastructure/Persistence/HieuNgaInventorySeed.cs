@@ -119,6 +119,8 @@ public static class HieuNgaInventorySeed
         if (created.Count > 0)
             await context.SaveChangesAsync(ct);
 
+        await EnsureDefaultFinancePrefsAsync(context, logger, ct);
+
         var after = await CountPublishedAsync(context, ct);
         var report = new InventorySeedReport(before, after, created);
         await WriteReportAsync(report, logger);
@@ -127,6 +129,56 @@ public static class HieuNgaInventorySeed
             created.Count,
             string.Join(", ", after.Select(kv => $"{kv.Key.ToDisplayName()}={kv.Value}")));
         return report;
+    }
+
+    /// <summary>
+    /// Ensures every published bike with a price has MotorcycleFinancePrefs defaults
+    /// (calculator on, 20% down, 12 months) — same shape as DemoMotorcycleImporter.
+    /// </summary>
+    private static async Task EnsureDefaultFinancePrefsAsync(
+        HieuNgaDbContext context, ILogger logger, CancellationToken ct)
+    {
+        var bikeIds = await context.Motorcycles.AsNoTracking()
+            .Where(m => m.IsPublished && !m.IsDeleted && m.BasePrice > 0)
+            .Select(m => m.Id)
+            .ToListAsync(ct);
+        if (bikeIds.Count == 0) return;
+
+        var keys = bikeIds.Select(id => $"motorcycle.finance.{id:N}").ToList();
+        var existingKeys = await context.SiteSettings.AsNoTracking()
+            .Where(s => !s.IsDeleted && keys.Contains(s.Key))
+            .Select(s => s.Key)
+            .ToListAsync(ct);
+        var existing = existingKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // PascalCase to match MotorcycleFinancePrefs.LoadAsync
+        var payload = JsonSerializer.Serialize(new
+        {
+            CalculatorEnabled = true,
+            DefaultBankId = (string?)null,
+            DefaultDownPaymentPercent = 20m,
+            DefaultTermMonths = 12
+        });
+
+        var added = 0;
+        foreach (var id in bikeIds)
+        {
+            var key = $"motorcycle.finance.{id:N}";
+            if (existing.Contains(key)) continue;
+
+            context.SiteSettings.Add(new SiteSetting
+            {
+                Key = key,
+                Value = payload,
+                Group = "motorcycle-finance"
+            });
+            added++;
+        }
+
+        if (added == 0) return;
+
+        await context.SaveChangesAsync(ct);
+        logger.LogInformation("Ensured default finance prefs for {Count} published motorcycles", added);
     }
 
     private static async Task WriteReportAsync(InventorySeedReport report, ILogger logger)

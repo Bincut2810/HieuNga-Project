@@ -22,6 +22,7 @@ public class ChiTietModel(
     public bool ShowInstallmentCalculator { get; private set; } = true;
     public decimal DefaultDownPayment { get; private set; }
     public int DefaultTermMonths { get; private set; } = 12;
+    public string? DefaultBankId { get; private set; }
     public bool IsAvailable { get; private set; } = true;
     public string AvailabilityLabel { get; private set; } = "Còn hàng";
     public string? FuelConsumption { get; private set; }
@@ -38,11 +39,15 @@ public class ChiTietModel(
 
         FinanceBanks = await financeConfig.GetActiveBanksAsync(ct);
         var prefs = await MotorcycleFinancePrefs.LoadAsync(db, Motorcycle.Id, ct);
-        ShowInstallmentCalculator = prefs.CalculatorEnabled && FinanceBanks.Count > 0;
+        var hasPrice = Motorcycle.BasePrice > 0
+                       || Motorcycle.Variants.Any(v => v.Price > 0);
+        ShowInstallmentCalculator = prefs.CalculatorEnabled && hasPrice && FinanceBanks.Count > 0;
 
         Related = await motorcycleService.GetRelatedAsync(Motorcycle.Id, ct);
 
-        var price = Motorcycle.Variants.FirstOrDefault()?.Price ?? Motorcycle.BasePrice;
+        var price = Motorcycle.Variants.FirstOrDefault(v => v.Price > 0)?.Price
+                    ?? Motorcycle.Variants.FirstOrDefault()?.Price
+                    ?? Motorcycle.BasePrice;
         var downPct = prefs.DefaultDownPaymentPercent > 0 ? prefs.DefaultDownPaymentPercent : 20m;
         DefaultTermMonths = prefs.DefaultTermMonths > 0 ? prefs.DefaultTermMonths : 12;
         DefaultDownPayment = Math.Round(price * (downPct / 100m) / 500_000m) * 500_000m;
@@ -51,6 +56,7 @@ public class ChiTietModel(
         if (!string.IsNullOrEmpty(prefs.DefaultBankId))
             defaultBank = FinanceBanks.FirstOrDefault(b => b.Id == prefs.DefaultBankId);
         defaultBank ??= await financeConfig.GetDefaultBankAsync(ct);
+        DefaultBankId = defaultBank?.Id;
 
         if (defaultBank is not null && ShowInstallmentCalculator)
         {

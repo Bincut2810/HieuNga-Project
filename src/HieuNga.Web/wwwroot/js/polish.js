@@ -93,7 +93,16 @@
       );
     }
     const scope = root || document;
-    scope.querySelectorAll('.reveal:not(.is-visible)').forEach((el) => revealObserver.observe(el));
+    scope.querySelectorAll('.reveal:not(.is-visible)').forEach((el) => {
+      revealObserver.observe(el);
+      // Immediately reveal in-viewport nodes (HTMX swaps often miss the first IO tick)
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || 0;
+      if (rect.bottom > 0 && rect.top < vh) {
+        el.classList.add('is-visible');
+        revealObserver.unobserve(el);
+      }
+    });
   }
 
   /* ─── Stagger: ensure direct children of [data-stagger] get .reveal ─── */
@@ -317,11 +326,66 @@
 
     syncTitleFromResponse(e.detail.xhr);
     initPage(target);
+    bootDetailPageModules(target);
 
     if (!prefersReducedMotion) {
       target.classList.add('page-enter');
       setTimeout(() => target.classList.remove('page-enter'), 320);
     }
+  }
+
+  /** HTMX boost strips/ignores inline scripts in swapped HTML — re-boot detail modules. */
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      if (src.indexOf('detail-finance') >= 0 && typeof window.bootMotorcycleFinance === 'function') {
+        resolve();
+        return;
+      }
+      if (src.indexOf('detail-viewer') >= 0 && typeof window.registerMotorcycleDetailUi === 'function') {
+        resolve();
+        return;
+      }
+      if (document.querySelector('script[data-hn-src="' + src + '"]')) {
+        resolve();
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = src;
+      s.dataset.hnSrc = src;
+      s.async = false;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load ' + src));
+      document.body.appendChild(s);
+    });
+  }
+
+  function bootDetailPageModules(root) {
+    const scope = root || document;
+    const financeCfg = scope.querySelector('#motorcycle-finance-config');
+    const needsViewer = !!scope.querySelector('.detail-page');
+
+    const tasks = [];
+    if (financeCfg) tasks.push(loadScriptOnce('/js/detail-finance.js'));
+    if (needsViewer) tasks.push(loadScriptOnce('/js/detail-viewer.js'));
+    if (!tasks.length) return;
+
+    Promise.all(tasks)
+      .then(() => {
+        if (financeCfg && typeof window.bootMotorcycleFinance === 'function') {
+          try {
+            window.bootMotorcycleFinance(JSON.parse(financeCfg.textContent || '{}'));
+          } catch (err) {
+            console.warn('Finance init:', err);
+          }
+        }
+        if (needsViewer && typeof window.registerMotorcycleDetailUi === 'function') {
+          try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
+        }
+        if (needsViewer && typeof Alpine !== 'undefined' && typeof Alpine.initTree === 'function') {
+          try { Alpine.initTree(scope); } catch (err) { console.warn('Alpine initTree:', err); }
+        }
+      })
+      .catch((err) => console.warn('Detail module load:', err));
   }
 
   document.body.addEventListener('htmx:afterSwap', (e) => {
@@ -349,7 +413,10 @@
 
   document.body.addEventListener('htmx:historyRestore', () => {
     const main = document.getElementById('main-content');
-    if (main) initPage(main);
+    if (main) {
+      initPage(main);
+      bootDetailPageModules(main);
+    }
     updateNavActive();
     requestAnimationFrame(scrollAfterNavigation);
   });
