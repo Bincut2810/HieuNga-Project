@@ -1,7 +1,7 @@
 # Motorcycle Detail Page — Phase 1 Full Audit
 
-> Read-only audit before refactor. No deletions performed in this phase.  
-> Brand: Xe Máy Hiếu Nga · Route: `/xe/{slug}`
+> **Superseded for finance:** see [PHASE3_FINANCE_FINAL.md](./PHASE3_FINANCE_FINAL.md).  
+> Historical audit only. Brand: Xe Máy Hiếu Nga · Route: `/xe/{slug}`
 
 ---
 

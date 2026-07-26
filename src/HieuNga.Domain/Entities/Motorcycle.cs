@@ -22,6 +22,8 @@ public class Motorcycle : BaseEntity, ISeoEntity
     public bool IsPublished { get; set; } = true;
     public int SortOrder { get; set; }
     public string? ThumbnailUrl { get; set; }
+    /// <summary>Optional dedicated hero / banner image for the detail page.</summary>
+    public string? HeroImageUrl { get; set; }
     public string? MetaTitle { get; set; }
     public string? MetaDescription { get; set; }
     public string? MetaKeywords { get; set; }

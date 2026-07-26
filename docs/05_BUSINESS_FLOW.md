@@ -54,14 +54,14 @@ HTMX Filter handler → same service → partial grid
 
 ```
 Visitor → GET /xe/{slug}
-       → Load MotorcycleDetailDto + active FinanceBankDto list
-       → Client Alpine store (detail-finance.js) for interactive calc
-       → Optional HTMX CalculateFinancing → IInstallmentService.Calculate
+       → MotorcyclePricing.ResolveEffectivePrice
+       → FinanceBanks (CMS) → FinanceCalculatorViewModel
+       → _DetailFinanceCalculator + finance-calculator.js (vanilla)
 ```
 
-**Calculator note:** Server `InstallmentService.Calculate` uses amortization formula when monthly rate provided. Client JS uses a simpler demo formula (`principal/n + principal*rate`). Prefer treating UI as **estimate only**.
+**Canonical doc:** [PHASE3_FINANCE_FINAL.md](./PHASE3_FINANCE_FINAL.md)
 
-Banks come from DB (`FinanceConfigService`); JS has fallback list if empty.
+**Note:** `/tra-gop` lead flow still uses `InstallmentService.Calculate` (amortizing) — separate from the detail flat estimator.
 
 ---
 

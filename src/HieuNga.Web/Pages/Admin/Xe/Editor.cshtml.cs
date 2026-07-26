@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using HieuNga.Application.Interfaces;
+using HieuNga.Application.Media;
 using HieuNga.Domain;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
@@ -18,7 +19,7 @@ namespace HieuNga.Web.Pages.Admin.Xe;
 
 /// <summary>
 /// Unified Motorcycle CMS editor (Sprint 2.1).
-/// Replaces fragmented Sua / Gia / NoiDung editing UX. Create via optional id.
+/// Media Studio is async via /admin/api/xe/{id}/media — this page hosts the shell.
 /// </summary>
 public class EditorModel(
     IRepository<Motorcycle> motorcycleRepo,
@@ -26,7 +27,7 @@ public class EditorModel(
     IUnitOfWork uow,
     HieuNgaDbContext db,
     IImageStorageService imageStorage,
-    IFinanceConfigService financeConfig) : PageModel
+    IMotorcycleMediaStudioService mediaStudio) : PageModel
 {
     public static readonly string[] ValidTabs =
         ["general", "media", "specifications", "features", "finance", "seo", "publish"];
@@ -67,16 +68,12 @@ public class EditorModel(
     [BindProperty]
     public TechInput NewTech { get; set; } = new();
 
-    [BindProperty]
-    public MotorcycleFinancePrefs FinancePrefs { get; set; } = new();
-
     public IReadOnlyList<VariantRow> Variants { get; private set; } = [];
     public IReadOnlyList<MotorcycleColor> Colors { get; private set; } = [];
     public IReadOnlyList<MediaAsset> Gallery { get; private set; } = [];
     public IReadOnlyList<MotorcycleFeature> Features { get; private set; } = [];
     public IReadOnlyList<MotorcycleTechnology> Technologies { get; private set; } = [];
     public IReadOnlyList<MotorcycleSpinFrame> SpinFrames { get; private set; } = [];
-    public IReadOnlyList<Application.DTOs.FinanceBankDto> FinanceBanks { get; private set; } = [];
 
     public SelectList CategoryOptions => new(
         MotorcycleCategoryLabels.All.Select(c => new { Value = (int)c.Value, Text = c.Label }),
@@ -204,474 +201,8 @@ public class EditorModel(
         bike.SortOrder = Input.SortOrder;
         await motorcycleRepo.UpdateAsync(bike, ct);
         await uow.SaveChangesAsync(ct);
-        if (bike.IsPublished)
-            await MotorcycleFinancePrefs.EnsureDefaultsAsync(db, bike.Id, ct);
         this.SetSuccess("Đã cập nhật trạng thái publish.");
         return RedirectToPage(new { id = Id, tab = "publish" });
-    }
-
-    public async Task<IActionResult> OnPostSaveThumbnailAsync(CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-
-        var uploadedUrl = await MotorcycleImageUploadHelper.TryUploadAsync(
-            ThumbnailFile, imageStorage, ModelState, $"motorcycles/{Id:N}", "ThumbnailFile", ct);
-        if (!ModelState.IsValid) return Page();
-        if (uploadedUrl is null && string.IsNullOrWhiteSpace(Input.ThumbnailUrl))
-        {
-            ModelState.AddModelError(string.Empty, "Chọn ảnh hoặc dán URL thumbnail.");
-            return Page();
-        }
-
-        var bike = await motorcycleRepo.GetByIdAsync(Id.Value, ct);
-        if (bike is null) return NotFound();
-        bike.ThumbnailUrl = uploadedUrl ?? Input.ThumbnailUrl;
-        await motorcycleRepo.UpdateAsync(bike, ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã cập nhật thumbnail.");
-        return RedirectToPage(new { id = Id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostRemoveThumbnailAsync(CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        var bike = await motorcycleRepo.GetByIdAsync(Id.Value, ct);
-        if (bike is null) return NotFound();
-        bike.ThumbnailUrl = null;
-        await motorcycleRepo.UpdateAsync(bike, ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã xóa thumbnail.");
-        return RedirectToPage(new { id = Id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostSaveSpecsAsync(CancellationToken ct)
-    {
-        Tab = "specifications";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-
-        var bike = await motorcycleRepo.GetByIdAsync(Id.Value, ct);
-        if (bike is null) return NotFound();
-        bike.TechnicalSpecsJson = SerializeSpecs(SpecsLines);
-        await motorcycleRepo.UpdateAsync(bike, ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã lưu thông số kỹ thuật.");
-        return RedirectToPage(new { id = Id, tab = "specifications" });
-    }
-
-    public async Task<IActionResult> OnPostSaveVariantAsync(CancellationToken ct)
-    {
-        Tab = "finance";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        if (!ModelState.IsValid) return Page();
-
-        var id = Id.Value;
-        if (VariantForm.Id.HasValue)
-        {
-            var variant = await variantRepo.GetByIdAsync(VariantForm.Id.Value, ct);
-            if (variant is null || variant.IsDeleted || variant.MotorcycleId != id) return NotFound();
-            variant.Name = VariantForm.Name.Trim();
-            variant.Price = VariantForm.Price;
-            variant.StockQuantity = VariantForm.StockQuantity;
-            variant.IsAvailable = VariantForm.IsAvailable;
-            await variantRepo.UpdateAsync(variant, ct);
-        }
-        else
-        {
-            await variantRepo.AddAsync(new MotorcycleVariant
-            {
-                MotorcycleId = id,
-                Name = VariantForm.Name.Trim(),
-                Price = VariantForm.Price,
-                StockQuantity = VariantForm.StockQuantity,
-                IsAvailable = VariantForm.IsAvailable
-            }, ct);
-        }
-
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã lưu phiên bản giá.");
-        return RedirectToPage(new { id, tab = "finance" });
-    }
-
-    public async Task<IActionResult> OnPostDeleteVariantAsync(Guid variantId, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var variant = await variantRepo.GetByIdAsync(variantId, ct);
-        if (variant is null || variant.MotorcycleId != id) return NotFound();
-        await variantRepo.SoftDeleteAsync(variant, ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã xóa phiên bản.");
-        return RedirectToPage(new { id, tab = "finance" });
-    }
-
-    public async Task<IActionResult> OnPostAddGalleryAsync(List<IFormFile>? galleryFiles, CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        if (galleryFiles is null || galleryFiles.Count == 0)
-        {
-            ModelState.AddModelError(string.Empty, "Chọn ít nhất một ảnh gallery.");
-            return Page();
-        }
-
-        var id = Id.Value;
-        var maxSort = await db.MediaAssets.Where(m => m.MotorcycleId == id && !m.IsDeleted)
-            .Select(m => (int?)m.SortOrder).MaxAsync(ct) ?? -1;
-        var sort = maxSort + 1;
-        var added = 0;
-        foreach (var file in galleryFiles.Where(f => f.Length > 0))
-        {
-            var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-                file, imageStorage, ModelState, $"gallery/{id:N}", "galleryFiles", ct);
-            if (url is null) continue;
-            db.MediaAssets.Add(new MediaAsset
-            {
-                MotorcycleId = id,
-                FileName = file.FileName,
-                Url = url,
-                Type = MediaType.Image,
-                SortOrder = sort++,
-                FileSizeBytes = file.Length
-            });
-            added++;
-        }
-
-        if (added == 0)
-        {
-            if (ModelState.IsValid)
-                ModelState.AddModelError(string.Empty, "Không tải được ảnh nào.");
-            return Page();
-        }
-
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess($"Đã thêm {added} ảnh gallery.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostReplaceGalleryAsync(Guid mediaId, IFormFile? imageFile, CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        var asset = await db.MediaAssets.FirstOrDefaultAsync(m => m.Id == mediaId && m.MotorcycleId == Id && !m.IsDeleted, ct);
-        if (asset is null) return NotFound();
-        var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-            imageFile, imageStorage, ModelState, $"gallery/{Id:N}", "imageFile", ct);
-        if (url is null)
-        {
-            ModelState.AddModelError(string.Empty, "Chọn ảnh để thay thế.");
-            return Page();
-        }
-        asset.Url = url;
-        asset.FileName = imageFile!.FileName;
-        asset.FileSizeBytes = imageFile.Length;
-        asset.UpdatedAt = DateTime.UtcNow;
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã thay ảnh gallery.");
-        return RedirectToPage(new { id = Id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostUpdateGalleryCaptionAsync(Guid mediaId, string? caption, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var asset = await db.MediaAssets.FirstOrDefaultAsync(m => m.Id == mediaId && m.MotorcycleId == id && !m.IsDeleted, ct);
-        if (asset is null) return NotFound();
-        asset.AltText = string.IsNullOrWhiteSpace(caption) ? null : caption.Trim();
-        asset.UpdatedAt = DateTime.UtcNow;
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã lưu caption.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostReorderGalleryAsync(string? orderIds, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var ids = ParseGuidList(orderIds);
-        var assets = await db.MediaAssets.Where(m => m.MotorcycleId == id && !m.IsDeleted).ToListAsync(ct);
-        for (var i = 0; i < ids.Count; i++)
-        {
-            var asset = assets.FirstOrDefault(a => a.Id == ids[i]);
-            if (asset is null) continue;
-            asset.SortOrder = i;
-            asset.UpdatedAt = DateTime.UtcNow;
-        }
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã sắp xếp gallery.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostBulkDeleteGalleryAsync(List<Guid>? mediaIds, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        if (mediaIds is null || mediaIds.Count == 0)
-        {
-            this.SetError("Chọn ít nhất một ảnh để xóa.");
-            return RedirectToPage(new { id, tab = "media" });
-        }
-        var assets = await db.MediaAssets
-            .Where(m => m.MotorcycleId == id && mediaIds.Contains(m.Id) && !m.IsDeleted)
-            .ToListAsync(ct);
-        foreach (var asset in assets)
-        {
-            asset.IsDeleted = true;
-            asset.UpdatedAt = DateTime.UtcNow;
-        }
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess($"Đã xóa {assets.Count} ảnh gallery.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostDeleteGalleryAsync(Guid mediaId, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var asset = await db.MediaAssets.FirstOrDefaultAsync(m => m.Id == mediaId && m.MotorcycleId == id, ct);
-        if (asset is not null)
-        {
-            asset.IsDeleted = true;
-            asset.UpdatedAt = DateTime.UtcNow;
-            await uow.SaveChangesAsync(ct);
-        }
-        this.SetSuccess("Đã xóa ảnh gallery.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostAddColorAsync(IFormFile? imageFile, CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        if (!ModelState.IsValid) return Page();
-
-        var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-            imageFile, imageStorage, ModelState, $"colors/{Id:N}", "imageFile", ct);
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            ModelState.AddModelError(string.Empty, "Vui lòng tải ảnh màu sắc.");
-            return Page();
-        }
-
-        var maxSort = await db.MotorcycleColors.Where(c => c.MotorcycleId == Id && !c.IsDeleted)
-            .Select(c => (int?)c.SortOrder).MaxAsync(ct) ?? -1;
-
-        db.MotorcycleColors.Add(new MotorcycleColor
-        {
-            MotorcycleId = Id.Value,
-            Name = NewColor.Name.Trim(),
-            HexCode = NewColor.HexCode.Trim(),
-            ImageUrl = url,
-            SortOrder = NewColor.SortOrder != 0 ? NewColor.SortOrder : maxSort + 1
-        });
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã thêm màu.");
-        return RedirectToPage(new { id = Id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostReplaceColorImageAsync(Guid colorId, IFormFile? imageFile, CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        var color = await db.MotorcycleColors.FirstOrDefaultAsync(c => c.Id == colorId && c.MotorcycleId == Id && !c.IsDeleted, ct);
-        if (color is null) return NotFound();
-        var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-            imageFile, imageStorage, ModelState, $"colors/{Id:N}", "imageFile", ct);
-        if (url is null)
-        {
-            ModelState.AddModelError(string.Empty, "Chọn ảnh để thay thế.");
-            return Page();
-        }
-        color.ImageUrl = url;
-        color.UpdatedAt = DateTime.UtcNow;
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã thay ảnh màu.");
-        return RedirectToPage(new { id = Id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostReorderColorsAsync(string? orderIds, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var ids = ParseGuidList(orderIds);
-        var colors = await db.MotorcycleColors.Where(c => c.MotorcycleId == id && !c.IsDeleted).ToListAsync(ct);
-        for (var i = 0; i < ids.Count; i++)
-        {
-            var color = colors.FirstOrDefault(c => c.Id == ids[i]);
-            if (color is null) continue;
-            color.SortOrder = i;
-            color.UpdatedAt = DateTime.UtcNow;
-        }
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã sắp xếp màu.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostDeleteColorAsync(Guid colorId, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var color = await db.MotorcycleColors.FirstOrDefaultAsync(c => c.Id == colorId && c.MotorcycleId == id, ct);
-        if (color is not null)
-        {
-            color.IsDeleted = true;
-            color.UpdatedAt = DateTime.UtcNow;
-            await uow.SaveChangesAsync(ct);
-        }
-        this.SetSuccess("Đã xóa màu.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostUploadSpinAsync(List<IFormFile>? spinFiles, CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        if (spinFiles is null || spinFiles.Count == 0)
-        {
-            ModelState.AddModelError(string.Empty, "Chọn ít nhất một ảnh 360.");
-            return Page();
-        }
-
-        var id = Id.Value;
-        var files = spinFiles.Where(f => f.Length > 0).ToList();
-        var numbered = files
-            .Select(f => (File: f, Num: MotorcycleImageUploadHelper.TryParseFrameNumber(f.FileName)))
-            .ToList();
-        var useNumbers = numbered.All(x => x.Num.HasValue);
-
-        var existingMax = await db.MotorcycleSpinFrames
-            .Where(f => f.MotorcycleId == id && !f.IsDeleted)
-            .Select(f => (int?)f.FrameIndex).MaxAsync(ct) ?? -1;
-        var next = existingMax + 1;
-        var added = 0;
-
-        IEnumerable<(IFormFile File, int Index)> ordered;
-        if (useNumbers)
-        {
-            ordered = numbered
-                .OrderBy(x => x.Num!.Value)
-                .Select(x => (x.File, x.Num!.Value));
-        }
-        else
-        {
-            ordered = files
-                .OrderBy(f => f.FileName, StringComparer.OrdinalIgnoreCase)
-                .Select(f => (f, next++));
-        }
-
-        foreach (var (file, frameIndex) in ordered)
-        {
-            var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-                file, imageStorage, ModelState, $"360/{id:N}", "spinFiles", ct);
-            if (url is null) continue;
-            db.MotorcycleSpinFrames.Add(new MotorcycleSpinFrame
-            {
-                MotorcycleId = id,
-                ImageUrl = url,
-                FrameIndex = frameIndex
-            });
-            added++;
-        }
-
-        if (added == 0)
-        {
-            if (ModelState.IsValid)
-                ModelState.AddModelError(string.Empty, "Không tải được khung 360 nào.");
-            return Page();
-        }
-
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess(useNumbers
-            ? $"Đã tải {added} khung 360 (theo số trong tên file)."
-            : $"Đã tải {added} khung 360.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostReorderSpinAsync(string? orderIds, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var ids = ParseGuidList(orderIds);
-        var frames = await db.MotorcycleSpinFrames.Where(f => f.MotorcycleId == id && !f.IsDeleted).ToListAsync(ct);
-        for (var i = 0; i < ids.Count; i++)
-        {
-            var frame = frames.FirstOrDefault(f => f.Id == ids[i]);
-            if (frame is null) continue;
-            frame.FrameIndex = i;
-            frame.UpdatedAt = DateTime.UtcNow;
-        }
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã sắp xếp khung 360.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostReplaceSpinFrameAsync(Guid frameId, IFormFile? imageFile, CancellationToken ct)
-    {
-        Tab = "media";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        var frame = await db.MotorcycleSpinFrames.FirstOrDefaultAsync(f => f.Id == frameId && f.MotorcycleId == Id && !f.IsDeleted, ct);
-        if (frame is null) return NotFound();
-        var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-            imageFile, imageStorage, ModelState, $"360/{Id:N}", "imageFile", ct);
-        if (url is null)
-        {
-            ModelState.AddModelError(string.Empty, "Chọn ảnh để thay khung.");
-            return Page();
-        }
-        frame.ImageUrl = url;
-        frame.UpdatedAt = DateTime.UtcNow;
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess($"Đã thay Frame {frame.FrameIndex + 1:D3}.");
-        return RedirectToPage(new { id = Id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostDeleteSpinFrameAsync(Guid frameId, CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var frame = await db.MotorcycleSpinFrames.FirstOrDefaultAsync(f => f.Id == frameId && f.MotorcycleId == id, ct);
-        if (frame is not null)
-        {
-            frame.IsDeleted = true;
-            frame.UpdatedAt = DateTime.UtcNow;
-            await uow.SaveChangesAsync(ct);
-        }
-        this.SetSuccess("Đã xóa khung 360.");
-        return RedirectToPage(new { id, tab = "media" });
-    }
-
-    public async Task<IActionResult> OnPostClearSpinAsync(CancellationToken ct)
-    {
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        var id = Id!.Value;
-        var frames = await db.MotorcycleSpinFrames.Where(f => f.MotorcycleId == id && !f.IsDeleted).ToListAsync(ct);
-        foreach (var f in frames)
-        {
-            f.IsDeleted = true;
-            f.UpdatedAt = DateTime.UtcNow;
-        }
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã xóa toàn bộ khung 360.");
-        return RedirectToPage(new { id, tab = "media" });
     }
 
     public async Task<IActionResult> OnPostAddFeatureAsync(IFormFile? imageFile, CancellationToken ct)
@@ -681,8 +212,7 @@ public class EditorModel(
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
-        var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-            imageFile, imageStorage, ModelState, "features", "imageFile", ct);
+        var url = await TryStudioUploadAsync(imageFile, "features", ct);
         if (string.IsNullOrWhiteSpace(url))
         {
             ModelState.AddModelError(string.Empty, "Vui lòng tải ảnh điểm nổi bật.");
@@ -716,7 +246,7 @@ public class EditorModel(
         item.Description = description?.Trim();
         if (imageFile is { Length: > 0 })
         {
-            var url = await MotorcycleImageUploadHelper.TryUploadAsync(imageFile, imageStorage, ModelState, "features", "imageFile", ct);
+            var url = await TryStudioUploadAsync(imageFile, "features", ct);
             if (url is not null) item.ImageUrl = url;
         }
         item.UpdatedAt = DateTime.UtcNow;
@@ -785,8 +315,7 @@ public class EditorModel(
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
-        var url = await MotorcycleImageUploadHelper.TryUploadAsync(
-            imageFile, imageStorage, ModelState, "technology", "imageFile", ct);
+        var url = await TryStudioUploadAsync(imageFile, "technology", ct);
         if (string.IsNullOrWhiteSpace(url))
         {
             ModelState.AddModelError(string.Empty, "Vui lòng tải ảnh công nghệ.");
@@ -820,7 +349,7 @@ public class EditorModel(
         item.Description = description?.Trim();
         if (imageFile is { Length: > 0 })
         {
-            var url = await MotorcycleImageUploadHelper.TryUploadAsync(imageFile, imageStorage, ModelState, "technology", "imageFile", ct);
+            var url = await TryStudioUploadAsync(imageFile, "technology", ct);
             if (url is not null) item.ImageUrl = url;
         }
         item.UpdatedAt = DateTime.UtcNow;
@@ -880,17 +409,6 @@ public class EditorModel(
         }
         this.SetSuccess("Đã xóa công nghệ.");
         return RedirectToPage(new { id, tab = "features" });
-    }
-
-    public async Task<IActionResult> OnPostSaveFinancePrefsAsync(CancellationToken ct)
-    {
-        Tab = "finance";
-        SetViewData();
-        if (IsCreate) return RedirectToPage(new { tab = "general" });
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        await MotorcycleFinancePrefs.SaveAsync(db, Id.Value, FinancePrefs, ct);
-        this.SetSuccess("Đã lưu finance settings.");
-        return RedirectToPage(new { id = Id, tab = "finance" });
     }
 
     public async Task<IActionResult> OnPostDuplicateMotorcycleAsync(CancellationToken ct)
@@ -1009,9 +527,6 @@ public class EditorModel(
         }
         await uow.SaveChangesAsync(ct);
 
-        var prefs = await MotorcycleFinancePrefs.LoadAsync(db, sourceId, ct);
-        await MotorcycleFinancePrefs.SaveAsync(db, clone.Id, prefs, ct);
-
         this.SetSuccess("Đã nhân bản xe (Draft).");
         return RedirectToPage(new { id = clone.Id, tab = "general" });
     }
@@ -1020,8 +535,7 @@ public class EditorModel(
     {
         ApplyPublishStatusToInput();
 
-        var uploadedUrl = await MotorcycleImageUploadHelper.TryUploadThumbnailAsync(
-            ThumbnailFile, imageStorage, ModelState, cancellationToken: ct);
+        var uploadedUrl = await TryStudioUploadAsync(ThumbnailFile, "motorcycles", ct);
         if (!ModelState.IsValid)
         {
             if (!IsCreate) await LoadRelatedAsync(Id!.Value, ct);
@@ -1159,8 +673,6 @@ public class EditorModel(
         PublishStatus = bike.IsPublished ? "published" : "draft";
         SpecsLines = ParseSpecsToLines(bike.TechnicalSpecsJson);
         await LoadRelatedAsync(id, ct);
-        FinancePrefs = await MotorcycleFinancePrefs.LoadAsync(db, id, ct);
-        FinanceBanks = await financeConfig.GetActiveBanksAsync(ct);
         return true;
     }
 
@@ -1184,8 +696,6 @@ public class EditorModel(
             .Where(s => s.MotorcycleId == id && !s.IsDeleted).OrderBy(s => s.FrameIndex).ToListAsync(ct);
     }
 
-    private async Task<string?> UploadOrFailAsync(IFormFile? file, string folder, CancellationToken ct) =>
-        await MotorcycleImageUploadHelper.TryUploadAsync(file, imageStorage, ModelState, folder, cancellationToken: ct);
 
     private static List<Guid> ParseGuidList(string? csv)
     {
@@ -1196,8 +706,18 @@ public class EditorModel(
             .ToList();
     }
 
-    public IReadOnlyList<int> MissingSpinFrames =>
-        MotorcycleImageUploadHelper.FindMissingFrameIndices(SpinFrames.Select(f => f.FrameIndex));
+    private async Task<string?> TryStudioUploadAsync(IFormFile? file, string folder, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0) return null;
+        var upload = await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct);
+        var (ok, url, error) = await mediaStudio.UploadOnlyAsync(upload, folder, ct);
+        if (!ok)
+        {
+            ModelState.AddModelError(string.Empty, error ?? "Không tải được ảnh.");
+            return null;
+        }
+        return url;
+    }
 
     private static MotorcycleInputModel Map(Motorcycle m) => new()
     {

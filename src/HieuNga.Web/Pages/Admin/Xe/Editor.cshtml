@@ -43,10 +43,10 @@
         }
     }
     <a class="@TabClass("general")" href="@TabHref("general")" data-tab="general">General</a>
-    <a class="@TabClass("media")" href="@TabHref("media")" data-tab="media" title="@(isCreate ? "Lưu xe trước" : null)">Media</a>
+    <a class="@TabClass("media")" href="@TabHref("media")" data-tab="media" title="@(isCreate ? "Lưu xe trước" : null)">Media Studio</a>
     <a class="@TabClass("specifications")" href="@TabHref("specifications")" data-tab="specifications">Specifications</a>
     <a class="@TabClass("features")" href="@TabHref("features")" data-tab="features">Features</a>
-    <a class="@TabClass("finance")" href="@TabHref("finance")" data-tab="finance">Finance</a>
+    <a class="@TabClass("finance")" href="@TabHref("finance")" data-tab="finance">Giá</a>
     <a class="@TabClass("seo")" href="@TabHref("seo")" data-tab="seo">SEO</a>
     <a class="@TabClass("publish")" href="@TabHref("publish")" data-tab="publish">Publish</a>
 </nav>
@@ -85,6 +85,6 @@ else if (tab == "publish")
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/motorcycle-editor.js" asp-append-version="true"></script>
-    <script src="~/js/motorcycle-media.js" asp-append-version="true"></script>
+    <script src="~/js/media-studio.js" asp-append-version="true"></script>
     <script src="~/js/motorcycle-content.js" asp-append-version="true"></script>
 }

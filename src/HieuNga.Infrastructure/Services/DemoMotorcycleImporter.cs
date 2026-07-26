@@ -188,7 +188,6 @@ public sealed class DemoMotorcycleImporter(
             ImportVariants(bike, meta);
 
             await db.SaveChangesAsync(ct);
-            await SaveFinancePrefsAsync(bike.Id, meta.Finance, ct);
             await tx.CommitAsync(ct);
 
             var action = isNew ? "Đã import" : "Đã cập nhật (reimport)";
@@ -526,7 +525,6 @@ public sealed class DemoMotorcycleImporter(
 
         ImportVariants(bike, meta);
         await db.SaveChangesAsync(ct);
-        await SaveFinancePrefsAsync(bike.Id, meta.Finance, ct);
         await tx.CommitAsync(ct);
     }
 
@@ -868,37 +866,6 @@ public sealed class DemoMotorcycleImporter(
             });
         }
         return count;
-    }
-
-    private async Task SaveFinancePrefsAsync(Guid motorcycleId, DemoFinanceDefaults finance, CancellationToken ct)
-    {
-        var key = $"motorcycle.finance.{motorcycleId:N}";
-        // PascalCase to match MotorcycleFinancePrefs.LoadAsync default deserializer
-        var payload = JsonSerializer.Serialize(new
-        {
-            CalculatorEnabled = finance.CalculatorEnabled,
-            DefaultBankId = finance.DefaultBankId,
-            DefaultDownPaymentPercent = finance.DefaultDownPaymentPercent,
-            DefaultTermMonths = finance.DefaultTermMonths
-        });
-
-        var row = await db.SiteSettings.FirstOrDefaultAsync(s => s.Key == key && !s.IsDeleted, ct);
-        if (row is null)
-        {
-            db.SiteSettings.Add(new SiteSetting
-            {
-                Key = key,
-                Value = payload,
-                Group = "motorcycle-finance"
-            });
-        }
-        else
-        {
-            row.Value = payload;
-            row.UpdatedAt = DateTime.UtcNow;
-        }
-
-        await db.SaveChangesAsync(ct);
     }
 
     private async Task<string?> UploadIfExistsAsync(

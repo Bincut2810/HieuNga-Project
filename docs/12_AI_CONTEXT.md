@@ -48,7 +48,7 @@ If asked to “implement warranty/payment/inventory”, treat as **new module de
 | Module | Why critical |
 |--------|----------------|
 | `DbInitializer` / `ServiceFinanceSeed` | Startup migrate+seed; can mutate banks/branding |
-| `FinanceConfigService` + `detail-finance.js` | Customer-facing loan estimates |
+| `FinanceConfigService` + `finance-calculator.js` | Detail loan estimates (see PHASE3_FINANCE_FINAL.md) |
 | `BookingService` | Lead capture integrity |
 | `IImageStorageService` | Staging upload persistence |
 | `SiteSettingsPageFilter` | Global contact/SEO injection |

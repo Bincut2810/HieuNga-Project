@@ -27,7 +27,6 @@
 - `ServiceFinanceSeed.cs` — seed + bank sync + branding migration in one static class.
 - `DbInitializer.cs` — migrate + multi-seed orchestration.
 - Admin `ContentModels.cs` / `BangGiaModels.cs` / `TraGopModels.cs` / `KhachHangModels.cs` — multi-PageModel files.
-- `detail-finance.js` — substantial client store.
 
 ## Soft-delete inconsistency
 

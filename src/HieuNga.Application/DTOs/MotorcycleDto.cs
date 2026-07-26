@@ -28,6 +28,7 @@ public record MotorcycleDetailDto(
     string? FuelType,
     string? Transmission,
     string? ThumbnailUrl,
+    string? HeroImageUrl,
     IReadOnlyList<MotorcycleVariantDto> Variants,
     IReadOnlyList<MotorcycleColorDto> Colors,
     IReadOnlyList<string> GalleryUrls,

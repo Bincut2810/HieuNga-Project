@@ -82,6 +82,7 @@ public static class EntityMappers
             m.Id, m.Name, m.Slug, m.ShortDescription, m.Description, m.Category, m.BasePrice,
 
             m.EngineCc, m.FuelType, m.Transmission, thumb,
+            MotorcycleImageCatalog.IsValidImageUrl(m.HeroImageUrl) ? m.HeroImageUrl : null,
 
             m.Variants.Where(v => !v.IsDeleted).Select(v => new MotorcycleVariantDto(v.Id, v.Name, v.Price, v.StockQuantity, v.IsAvailable)).ToList(),
 

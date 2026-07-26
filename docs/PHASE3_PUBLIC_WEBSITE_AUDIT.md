@@ -25,8 +25,8 @@
 - **Hero patterns:** `_PageHero` vs custom dark bands (home, `/xe`, detail) — inconsistent.
 - **Unused homepage CMS:** `HeroBanners`, `Promotions`, `Testimonials` fetched, not rendered.
 - **Hardcoded:** `_CtaBanner` Unsplash + phone; some hotline fallbacks; home service tiles.
-- **Dead / waste:** `_DetailGallery.cshtml` orphan; `detail-finance.js` + `detail-viewer.js` loaded globally; `/so-sanh` without entry points; admin link in public header.
-- **Dual finance:** Detail (banks + prefs) vs `/tra-gop` (fixed default rate).
+- **Dead / waste:** `_DetailGallery.cshtml` orphan; `/so-sanh` without entry points; admin link in public header.
+- **Finance:** Detail uses shared CMS banks + `finance-calculator.js` (see PHASE3_FINANCE_FINAL.md). `/tra-gop` remains a separate amortizing lead calculator.
 
 ---
 

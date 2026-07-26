@@ -30,15 +30,15 @@ public class DemoCatalogDefinitionsTests
     }
 
     [Fact]
-    public void Catalog_items_are_published_with_finance_defaults()
+    public void Catalog_items_are_published_with_core_fields()
     {
         Assert.All(DemoCatalogDefinitions.All, m =>
         {
             Assert.True(m.Published);
-            Assert.True(m.Finance.CalculatorEnabled);
             Assert.False(string.IsNullOrWhiteSpace(m.Name));
             Assert.NotEmpty(m.Specifications);
             Assert.NotEmpty(m.Colors);
+            Assert.True(m.Price > 0);
         });
     }
 }

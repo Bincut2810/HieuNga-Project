@@ -5,24 +5,18 @@
 @using HieuNga.Web.Filters
 @{
     var m = Model.Motorcycle!;
+    var finance = Model.Finance;
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
     var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? "https://zalo.me/" : site.ZaloUrl;
-    var activePrice = Model.EffectivePrice > 0
-        ? Model.EffectivePrice
-        : (m.Variants.FirstOrDefault(v => v.Price > 0)?.Price ?? m.BasePrice);
-    var defaultDown = Model.DefaultDownPayment > 0
-        ? Model.DefaultDownPayment
-        : (activePrice > 0 ? Math.Round(activePrice * 0.2m / 500_000) * 500_000 : 0m);
-    var monthlyEstimate = Model.InitialFinance?.MonthlyPayment
-        ?? (activePrice > 0
-            ? Math.Round((activePrice - defaultDown) / Math.Max(1, Model.DefaultTermMonths) + (activePrice - defaultDown) * Model.DefaultMonthlyRate, 0)
-            : 0m);
+    var activePrice = finance.Price;
+    var monthlyEstimate = finance.EstimatedMonthlyPayment;
     var relatedBikes = Model.Related.Take(6).ToList();
     var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
     var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}";
     var categoryLabel = m.Category.ToDisplayName();
-    var heroImage = m.Colors.FirstOrDefault(c => !string.IsNullOrEmpty(c.ImageUrl))?.ImageUrl
+    var heroImage = m.HeroImageUrl
+        ?? m.Colors.FirstOrDefault(c => !string.IsNullOrEmpty(c.ImageUrl))?.ImageUrl
         ?? m.ThumbnailUrl
         ?? m.GalleryUrls.FirstOrDefault()
         ?? "/images/motorcycles/default.svg";
@@ -41,44 +35,6 @@
         hex = c.HexCode,
         imageUrl = string.IsNullOrWhiteSpace(c.ImageUrl) ? heroImage : c.ImageUrl
     }).ToList();
-    var financeBanksBoot = Model.FinanceBanks.Count > 0
-        ? Model.FinanceBanks.Select(b => new
-        {
-            id = b.Id,
-            name = b.Name,
-            initials = b.Initials,
-            monthlyRate = (double)b.MonthlyRate,
-            ratePercent = (double)b.RatePercent,
-            rateLabel = b.RateLabel,
-            trust = b.Trust,
-            color = b.Color
-        }).Cast<object>().ToList()
-        : new List<object>
-        {
-            new
-            {
-                id = "hdb",
-                name = "HD Bank",
-                initials = "HDB",
-                monthlyRate = (double)Model.DefaultMonthlyRate,
-                ratePercent = (double)(Model.DefaultMonthlyRate * 100m),
-                rateLabel = "0,79%/tháng",
-                trust = "Đối tác trả góp",
-                color = "#C8102E"
-            }
-        };
-    var financeBoot = new
-    {
-        bikeName = m.Name,
-        motorcycleId = m.Id,
-        basePrice = (double)activePrice,
-        down = (double)defaultDown,
-        months = Model.DefaultTermMonths,
-        bank = Model.DefaultBankId ?? "hdb",
-        variants = m.Variants.Select(v => new { id = v.Id.ToString().ToLowerInvariant(), name = v.Name, price = (double)v.Price, available = v.IsAvailable }),
-        banks = financeBanksBoot
-    };
-    var financeBootJson = JsonSerializer.Serialize(financeBoot);
     var colorBootJson = JsonSerializer.Serialize(new
     {
         storageKey = $"hn-color-{m.Id}",
@@ -146,7 +102,6 @@
 }
 
 <div class="detail-page bg-white" x-data="detailColorHero(@Html.Raw(colorBootJson))">
-    <script type="application/json" id="motorcycle-finance-config">@Html.Raw(financeBootJson)</script>
 
     @* ─── PHASE 1: Hero V2 ─── *@
     <section class="detail-hero relative overflow-hidden border-b border-gray-100 bg-gradient-to-b from-gray-50 via-white to-white" aria-label="Thông tin mua xe">
@@ -214,14 +169,12 @@
 
                     <div class="detail-price-card">
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Giá niêm yết</p>
-                        <p class="text-3xl md:text-4xl font-bold text-honda-red mt-1 tabular-nums tracking-tight"
-                           x-text="$store.motorcycleDetail ? $store.motorcycleDetail.formatVnd($store.motorcycleDetail.price) : '@activePrice.ToVnd()'"></p>
-                        @if (Model.ShowInstallmentCalculator)
+                        <p class="text-3xl md:text-4xl font-bold text-honda-red mt-1 tabular-nums tracking-tight">@activePrice.ToVnd()</p>
+                        @if (finance.CalculatorEnabled)
                         {
                             <p class="text-sm text-gray-600 mt-2">
                                 Trả góp từ ~
-                                <span class="font-semibold text-honda-red tabular-nums"
-                                      x-text="$store.motorcycleDetail ? new Intl.NumberFormat('vi-VN').format($store.motorcycleDetail.monthly) : '@((long)monthlyEstimate)'"></span> ₫/tháng
+                                <span class="font-semibold text-honda-red tabular-nums">@((long)monthlyEstimate).ToString("N0")</span> ₫/tháng
                             </p>
                         }
                     </div>
@@ -263,7 +216,7 @@
                     <div class="detail-cta-stack">
                         <a href="@consultUrl" class="btn-primary touch-press detail-ripple w-full py-3.5 text-center justify-center">Tư vấn mua xe</a>
                         <div class="grid grid-cols-2 gap-2.5">
-                            @if (Model.ShowInstallmentCalculator)
+                            @if (finance.CalculatorEnabled)
                             {
                                 <a href="#financing" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Tính trả góp</a>
                             }
@@ -583,7 +536,7 @@
                         ("Bảo hành chính hãng", Model.Warranty ?? "Theo tiêu chuẩn Honda Việt Nam tại đại lý HEAD."),
                         ("Hỗ trợ chính thức", "Tư vấn rõ ràng — báo giá minh bạch tại Xe Máy Hiếu Nga."),
                         ("Nhắc bảo dưỡng", "Lịch bảo dưỡng định kỳ theo km tại xưởng HEAD."),
-                        ("Tóm tắt trả góp", Model.ShowInstallmentCalculator
+                        ("Tóm tắt trả góp", finance.CalculatorEnabled
                             ? $"Ước tính từ ~{((long)monthlyEstimate):N0} ₫/tháng — tính chi tiết bên dưới."
                             : "Tính trả góp nhanh trên trang Tra góp."),
                         ("Hỗ trợ đại lý", "Thủ tục giấy tờ, đăng ký nhanh tại showroom."),
@@ -600,7 +553,7 @@
             </div>
             <div class="mt-8 flex flex-wrap gap-2.5">
                 <a href="@consultUrl" class="btn-primary touch-press">Tư vấn mua xe</a>
-                <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="btn-secondary touch-press">Tính trả góp</a>
+                <a href="@(finance.CalculatorEnabled ? "#financing" : "/tra-gop")" class="btn-secondary touch-press">Tính trả góp</a>
                 <a href="@viewBikeUrl" class="detail-ghost-btn touch-press">Đặt lịch xem xe</a>
             </div>
 
@@ -615,10 +568,10 @@
         </div>
     </section>
 
-    @* ─── Finance calculator (logic unchanged) ─── *@
-    @if (Model.ShowInstallmentCalculator)
+    @* ─── Finance calculator ─── *@
+    @if (finance.CalculatorEnabled)
     {
-        <partial name="Shared/_DetailFinanceCalculator" model="@((Motorcycle: m, MotorcycleId: m.Id, DefaultDown: defaultDown))" />
+        <partial name="Shared/_DetailFinanceCalculator" model="@((Motorcycle: m, Finance: finance))" />
     }
 
     @* ─── PHASE 9: Related Motorcycles ─── *@
@@ -682,21 +635,13 @@
         <a href="@consultUrl" class="detail-sticky-item touch-press">
             <span class="detail-sticky-label">Tư vấn</span>
         </a>
-        <a href="@(Model.ShowInstallmentCalculator ? "#financing" : "/tra-gop")" class="detail-sticky-item detail-sticky-primary touch-press">
+        <a href="@(finance.CalculatorEnabled ? "#financing" : "/tra-gop")" class="detail-sticky-item detail-sticky-primary touch-press">
             <span class="detail-sticky-label">Trả góp</span>
         </a>
     </div>
 </div>
 
-<script src="~/js/detail-finance.js" asp-append-version="true"></script>
 <script src="~/js/detail-viewer.js" asp-append-version="true"></script>
-<script>
-    (function () {
-        var el = document.getElementById('motorcycle-finance-config');
-        if (!el || !window.bootMotorcycleFinance) return;
-        try { window.bootMotorcycleFinance(JSON.parse(el.textContent)); } catch (e) { console.warn('Finance init:', e); }
-    })();
-</script>
 
 <script type="application/ld+json">
 {

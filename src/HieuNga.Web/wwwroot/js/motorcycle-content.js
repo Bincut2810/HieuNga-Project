@@ -197,40 +197,6 @@
     refresh();
   }
 
-  /* ── Finance live preview (public Alpine formula) ── */
-  function initFinancePreview() {
-    var root = qs('[data-finance-tab]');
-    if (!root) return;
-    var price = parseFloat(root.getAttribute('data-price') || '0');
-    var banks = [];
-    try { banks = JSON.parse(root.getAttribute('data-banks') || '[]'); } catch (e) { banks = []; }
-    var bankSel = qs('[data-finance-bank]', root);
-    var downEl = qs('[data-finance-down]', root);
-    var termEl = qs('[data-finance-term]', root);
-    var out = qs('[data-finance-monthly]', root);
-
-    function calc() {
-      var bankId = bankSel && bankSel.value;
-      var bank = banks.find(function (b) { return b.id === bankId; }) || banks[0];
-      var rate = bank ? bank.monthlyRate : 0.0079;
-      var downPct = parseFloat(downEl && downEl.value) || 20;
-      var months = parseInt(termEl && termEl.value, 10) || 12;
-      var down = Math.round(price * (downPct / 100) / 500000) * 500000;
-      var principal = price - down;
-      if (principal <= 0 || months <= 0) {
-        if (out) out.textContent = '~ 0 ₫/tháng';
-        return;
-      }
-      var monthly = Math.round(principal / months + principal * rate);
-      if (out) out.textContent = '~ ' + monthly.toLocaleString('vi-VN') + ' ₫/tháng';
-    }
-    [bankSel, downEl, termEl].forEach(function (el) {
-      if (el) el.addEventListener('input', calc);
-      if (el) el.addEventListener('change', calc);
-    });
-    calc();
-  }
-
   /* ── Editor chrome: sticky tabs, Ctrl+S, unsaved, autosave UI ── */
   function initEditorChrome() {
     var tabs = qs('.admin-editor-tabs');
@@ -283,7 +249,6 @@
     initSpecBuilder();
     initContentSortable();
     initSeo();
-    initFinancePreview();
     initEditorChrome();
   });
 })();

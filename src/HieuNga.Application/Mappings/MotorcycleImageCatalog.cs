@@ -1,19 +1,13 @@
+using HieuNga.Application.Mappings;
+
 namespace HieuNga.Application.Mappings;
 
-/// <summary>Canonical demo motorcycle imagery — local static files (demo-stable, no CDN failures).</summary>
+/// <summary>Fallback static SVGs when a motorcycle has no uploaded media.</summary>
 public static class MotorcycleImageCatalog
 {
-    public static readonly HashSet<string> DemoSlugs = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "honda-vision-2025",
-        "honda-sh-160i",
-        "honda-winner-x",
-        "honda-cb150r"
-    };
-
     public const string Default = "/images/motorcycles/default.svg";
 
-    public static string GetThumbnail(string slug) => slug.ToLowerInvariant() switch
+    public static string GetFallbackThumbnail(string? slug) => slug?.ToLowerInvariant() switch
     {
         "honda-vision-2025" => "/images/motorcycles/honda-vision-2025.svg",
         "honda-sh-160i" => "/images/motorcycles/honda-sh-160i.svg",
@@ -22,49 +16,42 @@ public static class MotorcycleImageCatalog
         _ => Default
     };
 
-    public static string GetGalleryPrimary(string slug) => GetThumbnail(slug);
-
     public static bool IsValidImageUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url)) return false;
-        if (url.StartsWith("/images/motorcycles/", StringComparison.OrdinalIgnoreCase)) return true;
-        if (url.StartsWith("/images/", StringComparison.OrdinalIgnoreCase)
-            && (url.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
-                || url.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                || url.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
-            return true;
+        if (url.StartsWith("/images/", StringComparison.OrdinalIgnoreCase)) return true;
+        if (url.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)) return true;
         return url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
                || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Demo inventory always uses local catalog URLs (ignores broken DB/CDN links).</summary>
+    /// <summary>Prefer real CMS URLs; fall back to static SVG only when empty/invalid.</summary>
     public static string ResolveThumbnail(string slug, string? thumbnailUrl, string? firstMediaUrl = null)
     {
-        if (DemoSlugs.Contains(slug))
-            return GetThumbnail(slug);
-
         if (IsValidImageUrl(thumbnailUrl)) return thumbnailUrl!;
         if (IsValidImageUrl(firstMediaUrl)) return firstMediaUrl!;
-        return GetThumbnail(slug);
+        return GetFallbackThumbnail(slug);
     }
 
     public static IReadOnlyList<string> ResolveGallery(string slug, IEnumerable<string?> urls)
     {
-        if (DemoSlugs.Contains(slug))
-        {
-            var primary = GetGalleryPrimary(slug);
-            return [primary, primary, GetThumbnail(slug)];
-        }
-
         var list = urls
             .Where(IsValidImageUrl)
             .Select(u => u!)
             .Distinct()
-            .Take(8)
             .ToList();
 
         if (list.Count > 0) return list;
-
-        return [GetGalleryPrimary(slug), GetThumbnail(slug)];
+        var fallback = GetFallbackThumbnail(slug);
+        return [fallback];
     }
+
+    // Back-compat aliases used by seed/enricher
+    public static readonly HashSet<string> DemoSlugs = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "honda-vision-2025", "honda-sh-160i", "honda-winner-x", "honda-cb150r"
+    };
+
+    public static string GetThumbnail(string slug) => GetFallbackThumbnail(slug);
+    public static string GetGalleryPrimary(string slug) => GetFallbackThumbnail(slug);
 }

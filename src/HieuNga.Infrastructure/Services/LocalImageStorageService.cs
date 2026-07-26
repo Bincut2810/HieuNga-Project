@@ -56,7 +56,9 @@ public sealed class LocalImageStorageService(
 
         var publicUrl = $"/uploads/{safeFolder}/{storedName}";
         logger.LogInformation("Stored image at {PublicUrl}", publicUrl);
-        return ImageUploadResult.Ok(publicUrl);
+        long? bytes = null;
+        try { bytes = new FileInfo(physicalPath).Length; } catch { /* ignore */ }
+        return ImageUploadResult.Ok(publicUrl, bytes: bytes);
     }
 
     private string? Validate(Stream content, string fileName, string contentType)

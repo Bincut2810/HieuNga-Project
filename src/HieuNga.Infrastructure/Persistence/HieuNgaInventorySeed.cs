@@ -120,7 +120,6 @@ public static class HieuNgaInventorySeed
             await context.SaveChangesAsync(ct);
 
         await EnsurePricedVariantsAsync(context, logger, ct);
-        await EnsureDefaultFinancePrefsAsync(context, logger, ct);
 
         var after = await CountPublishedAsync(context, ct);
         var report = new InventorySeedReport(before, after, created);
@@ -201,90 +200,6 @@ public static class HieuNgaInventorySeed
         if (fixedCount == 0) return;
         await context.SaveChangesAsync(ct);
         logger.LogInformation("Ensured priced variants / BasePrice for {Count} published motorcycles", fixedCount);
-    }
-
-    /// <summary>
-    /// Ensures every published bike with an effective selling price has MotorcycleFinancePrefs defaults
-    /// (calculator on, 20% down, 12 months) — same shape as DemoMotorcycleImporter.
-    /// </summary>
-    private static async Task EnsureDefaultFinancePrefsAsync(
-        HieuNgaDbContext context, ILogger logger, CancellationToken ct)
-    {
-        var bikes = await context.Motorcycles.AsNoTracking()
-            .Include(m => m.Variants)
-            .Where(m => m.IsPublished && !m.IsDeleted)
-            .Select(m => new
-            {
-                m.Id,
-                m.Slug,
-                m.BasePrice,
-                VariantPrices = m.Variants.Where(v => !v.IsDeleted).Select(v => v.Price).ToList()
-            })
-            .ToListAsync(ct);
-
-        static decimal EffectivePrice(decimal basePrice, List<decimal> variantPrices)
-        {
-            foreach (var p in variantPrices)
-                if (p > 0) return p;
-            return basePrice > 0 ? basePrice : 0m;
-        }
-
-        var eligible = bikes.Where(b => EffectivePrice(b.BasePrice, b.VariantPrices) > 0).ToList();
-        if (eligible.Count == 0) return;
-
-        var keys = eligible.Select(b => $"motorcycle.finance.{b.Id:N}").ToList();
-        var existingKeys = await context.SiteSettings.AsNoTracking()
-            .Where(s => !s.IsDeleted && keys.Contains(s.Key))
-            .Select(s => s.Key)
-            .ToListAsync(ct);
-        var existing = existingKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var payload = JsonSerializer.Serialize(new
-        {
-            CalculatorEnabled = true,
-            DefaultBankId = (string?)null,
-            DefaultDownPaymentPercent = 20m,
-            DefaultTermMonths = 12
-        });
-
-        var added = 0;
-        var stillMissing = new List<string>();
-        foreach (var bike in eligible)
-        {
-            var key = $"motorcycle.finance.{bike.Id:N}";
-            if (existing.Contains(key)) continue;
-
-            context.SiteSettings.Add(new SiteSetting
-            {
-                Key = key,
-                Value = payload,
-                Group = "motorcycle-finance"
-            });
-            added++;
-            stillMissing.Add(bike.Slug);
-        }
-
-        if (added > 0)
-        {
-            await context.SaveChangesAsync(ct);
-            logger.LogInformation(
-                "Ensured default finance prefs for {Count} published motorcycles: {Slugs}",
-                added,
-                string.Join(", ", stillMissing));
-        }
-
-        // Log any published bikes that still cannot get prefs (no effective price)
-        var noPrice = bikes
-            .Where(b => EffectivePrice(b.BasePrice, b.VariantPrices) <= 0)
-            .Select(b => b.Slug)
-            .OrderBy(s => s)
-            .ToList();
-        if (noPrice.Count > 0)
-        {
-            logger.LogWarning(
-                "Published motorcycles without effective selling price (finance skipped): {Slugs}",
-                string.Join(", ", noPrice));
-        }
     }
 
     private static async Task WriteReportAsync(InventorySeedReport report, ILogger logger)

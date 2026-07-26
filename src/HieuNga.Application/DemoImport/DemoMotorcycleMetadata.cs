@@ -23,7 +23,6 @@ public sealed class DemoMotorcycleMetadata
     public List<DemoContentCard> Features { get; set; } = [];
     public List<DemoContentCard> Technology { get; set; } = [];
     public DemoSeoMetadata Seo { get; set; } = new();
-    public DemoFinanceDefaults Finance { get; set; } = new();
     public DemoAssetHints Assets { get; set; } = new();
 }
 
@@ -65,14 +64,6 @@ public sealed class DemoSeoMetadata
     public string? MetaDescription { get; set; }
     public string? MetaKeywords { get; set; }
     public string? CanonicalUrl { get; set; }
-}
-
-public sealed class DemoFinanceDefaults
-{
-    public bool CalculatorEnabled { get; set; } = true;
-    public string? DefaultBankId { get; set; }
-    public decimal DefaultDownPaymentPercent { get; set; } = 20;
-    public int DefaultTermMonths { get; set; } = 12;
 }
 
 public sealed class DemoAssetHints

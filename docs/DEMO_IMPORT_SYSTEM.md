@@ -106,7 +106,7 @@ Slug is the **idempotency key**. Reimport updates the same motorcycle and replac
 1. Admin → **Inventory** → **Import Demo Data** (`/admin/xe/import-demo`)
 2. Package cards show Ready / Imported / missing metadata
 3. **Import** or **Reimport**
-4. Service reads `metadata.json`, uploads images via `IImageStorageService`, upserts entities in a DB transaction, writes finance prefs to `SiteSetting` (`motorcycle.finance.{id}`)
+4. Service reads `metadata.json`, uploads images via `IImageStorageService`, upserts entities in a DB transaction. Detail finance calculator needs no per-bike prefs — only a valid price + CMS banks (see PHASE3_FINANCE_FINAL.md).
 5. Success toast → redirect to motorcycle editor
 
 **Delete Demo** soft-deletes the motorcycle (`IsDeleted`, unpublished).

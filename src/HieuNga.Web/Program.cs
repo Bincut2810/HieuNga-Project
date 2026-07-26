@@ -2,9 +2,11 @@ using HieuNga.Application;
 using HieuNga.Application.Options;
 using HieuNga.Infrastructure;
 using HieuNga.Infrastructure.Persistence;
+using HieuNga.Web.Endpoints;
 using HieuNga.Web.Filters;
 using HieuNga.Web.Middleware;
 using HieuNga.Web.Services;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 
 // Render.com injects PORT — bind Kestrel before CreateBuilder finishes URL config
@@ -35,6 +37,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CompareSessionService>();
 builder.Services.AddResponseCompression();
 builder.Services.AddAntiforgery();
+builder.Services.Configure<FormOptions>(o =>
+{
+    o.MultipartBodyLengthLimit = 105_000_000; // ~100 MB folder import
+});
 builder.Services.AddScoped<SiteSettingsPageFilter>();
 builder.Services.AddRazorPages(options =>
 {
@@ -102,6 +108,7 @@ app.MapGet("/health", async (HieuNgaDbContext db, IHostEnvironment env, Cancella
         ? Results.Json(payload)
         : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
 });
+app.MapMediaStudioApi();
 app.MapRazorPages();
 
 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
@@ -110,19 +117,6 @@ try
     using var scope = app.Services.CreateScope();
     await DbInitializer.InitializeAsync(scope.ServiceProvider);
     logger.LogInformation("Database initialization completed.");
-
-    var db = scope.ServiceProvider.GetRequiredService<HieuNga.Infrastructure.Persistence.HieuNgaDbContext>();
-    var missingAfterEnsure = await HieuNga.Web.Services.MotorcycleFinancePrefs.EnsureDefaultsForPublishedAsync(db, logger);
-    var audit = await HieuNga.Web.Services.MotorcycleFinancePrefs.AuditPublishedAsync(db);
-    if (missingAfterEnsure.Count > 0)
-        logger.LogWarning("Finance prefs still missing after ensure: {Slugs}", string.Join(", ", missingAfterEnsure));
-    if (audit.MissingPriceSlugs.Count > 0)
-        logger.LogWarning("Published bikes without effective price: {Slugs}", string.Join(", ", audit.MissingPriceSlugs));
-    if (audit.CalculatorDisabledSlugs.Count > 0)
-        logger.LogWarning("Published bikes with CalculatorEnabled=false: {Slugs}", string.Join(", ", audit.CalculatorDisabledSlugs));
-    logger.LogInformation(
-        "Finance audit: published={Published}, missingPrefs={MissingPrefs}, missingPrice={MissingPrice}, calcOff={CalcOff}",
-        audit.PublishedCount, audit.MissingPrefsSlugs.Count, audit.MissingPriceSlugs.Count, audit.CalculatorDisabledSlugs.Count);
 }
 catch (Exception ex)
 {

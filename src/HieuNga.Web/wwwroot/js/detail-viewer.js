@@ -1,6 +1,6 @@
 /**
  * Motorcycle detail V2 — color/gallery lightbox, 360 viewer, features, specs nav, sticky CTA.
- * Installment calculator remains in detail-finance.js (formula unchanged).
+ * Detail installment UI lives in ~/js/finance-calculator.js (layout module).
  */
 (function () {
   'use strict';

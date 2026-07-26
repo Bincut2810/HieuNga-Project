@@ -167,12 +167,6 @@ public static class DemoCatalogDefinitions
                 MetaTitle = $"{name} | Xe Máy Hiếu Nga",
                 MetaDescription = shortDesc
             },
-            Finance = new DemoFinanceDefaults
-            {
-                CalculatorEnabled = true,
-                DefaultDownPaymentPercent = 20,
-                DefaultTermMonths = 12
-            },
             Assets = new DemoAssetHints { Thumbnail = thumb }
         };
     }

@@ -52,7 +52,7 @@ Home / Listing / Detail / Promo / Service / News
 
 **New:** `LeadAttribution.cs`, `_UniversalCta`, `_LeadSuccess`, `_LeadTrust`, `_LeadVehicleCard`  
 **Pages:** `LienHe/*`, `DatLichLaiThu/*`, `TraGop/*`  
-**Shared:** `_CtaBanner`, `_MobileCta`, `_DetailFinanceCalculator`, `_DetailFinancingResult`, `_HomeFeaturedCard`  
+**Shared:** `_CtaBanner`, `_MobileCta`, `_DetailFinanceCalculator`, `_HomeFeaturedCard`  
 **Services:** `BookingService` (MotorcycleId + attribution)  
 **Admin (display only):** LichHen/TraGop ChiTiet — Nguồn lead  
 **CSS:** lead journey styles  

@@ -745,6 +745,9 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Property<string>("ThumbnailUrl")
                         .HasColumnType("text");
 
+                    b.Property<string>("HeroImageUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("Transmission")
                         .HasColumnType("text");
 

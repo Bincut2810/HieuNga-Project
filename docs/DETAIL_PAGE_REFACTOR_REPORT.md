@@ -1,8 +1,7 @@
 # Motorcycle Detail Refactor — Phase Report
 
 > Brand: Xe Máy Hiếu Nga · Route: `/xe/{slug}`  
-> Installment calculator business logic: **unchanged**  
-> No Honda.com.vn source copied — UX structure only
+> **Finance subsystem closed:** [PHASE3_FINANCE_FINAL.md](./PHASE3_FINANCE_FINAL.md) (replaces `detail-finance.js` / Alpine notes below).
 
 ---
 
@@ -198,7 +197,8 @@ No.
 ## Phase 8 — Do not break
 
 ### 1. Audit
-Untouched: auth cookie / Admin folder; `detail-finance.js` formula; SEO `SetSeo` + Product JSON-LD; Cloudinary/Local storage; Application installment service; EF migrations applied on startup pattern.
+Untouched at the time: auth cookie / Admin folder; SEO `SetSeo` + Product JSON-LD; Cloudinary/Local storage; Application installment service; EF migrations applied on startup pattern.  
+**(Finance later rewritten — see PHASE3_FINANCE_FINAL.md.)**
 
 ### 2. Implementation Plan
 Verify Release build + existing tests; spot-check finance partial wiring.
@@ -227,7 +227,7 @@ Apply `MotorcycleDetailContentAndCategories` on deploy.
 | Area | Path |
 |------|------|
 | Detail | `Pages/Xe/ChiTiet.cshtml` |
-| Finance (keep) | `Pages/Shared/_DetailFinanceCalculator.cshtml`, `wwwroot/js/detail-finance.js` |
+| Finance (current) | `_DetailFinanceCalculator.cshtml`, `finance-calculator.js` — see PHASE3_FINANCE_FINAL.md |
 | Viewer JS | `wwwroot/js/detail-viewer.js` |
 | Admin media | `Pages/Admin/Xe/NoiDung.cshtml(.cs)` |
 | Migration | `…/Migrations/20260725102641_MotorcycleDetailContentAndCategories.cs` |

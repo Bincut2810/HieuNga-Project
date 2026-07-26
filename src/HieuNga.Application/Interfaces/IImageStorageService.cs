@@ -2,10 +2,7 @@ namespace HieuNga.Application.Interfaces;
 
 public interface IImageStorageService
 {
-    /// <summary>Whether file upload is available in the current environment.</summary>
     bool SupportsUpload { get; }
-
-    /// <summary>Human-readable note for Admin UI (e.g. local vs cloud persistence).</summary>
     string StorageDescription { get; }
 
     Task<ImageUploadResult> UploadAsync(
@@ -16,8 +13,27 @@ public interface IImageStorageService
         CancellationToken cancellationToken = default);
 }
 
-public sealed record ImageUploadResult(bool Success, string? PublicUrl, string? ErrorMessage)
+/// <summary>Result of a storage upload. DeliveryUrl may be an optimized CDN URL (e.g. Cloudinary f_auto).</summary>
+public sealed record ImageUploadResult(
+    bool Success,
+    string? PublicUrl,
+    string? ErrorMessage,
+    int? Width = null,
+    int? Height = null,
+    long? Bytes = null,
+    string? DeliveryUrl = null)
 {
-    public static ImageUploadResult Ok(string publicUrl) => new(true, publicUrl, null);
-    public static ImageUploadResult Fail(string error) => new(false, null, error);
+    public string? EffectiveUrl =>
+        !string.IsNullOrWhiteSpace(DeliveryUrl) ? DeliveryUrl : PublicUrl;
+
+    public static ImageUploadResult Ok(
+        string publicUrl,
+        int? width = null,
+        int? height = null,
+        long? bytes = null,
+        string? deliveryUrl = null) =>
+        new(true, publicUrl, null, width, height, bytes, deliveryUrl);
+
+    public static ImageUploadResult Fail(string error) =>
+        new(false, null, error);
 }

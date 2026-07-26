@@ -1,3 +1,5 @@
+using HieuNga.Application.Finance;
+
 namespace HieuNga.Web.Extensions;
 
 public static class PriceExtensions
@@ -7,7 +9,7 @@ public static class PriceExtensions
 
     public static string ToEstimatedMonthly(this decimal price)
     {
-        var monthly = Math.Round(price * 0.8m / 12, 0);
+        var monthly = FinanceMath.EstimatedMonthly(price);
         return string.Format(System.Globalization.CultureInfo.GetCultureInfo("vi-VN"), "{0:N0} ₫", monthly);
     }
 }

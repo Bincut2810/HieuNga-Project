@@ -1,80 +1,27 @@
-@using System.Text.Json
 @using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.Xe.EditorModel
 
 @if (Model.IsCreate)
 {
     <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Lưu xe trước", "Finance tab mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Quick Create")' />
+             model='new AdminEmptyStateModel("Lưu xe trước", "Tab giá mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Quick Create")' />
 }
 else
 {
-    var prefs = Model.FinancePrefs;
-    var price = Model.Variants.FirstOrDefault(v => v.IsAvailable)?.Price
-        ?? Model.Variants.FirstOrDefault()?.Price
-        ?? Model.Input.BasePrice;
-    var banksJson = JsonSerializer.Serialize(Model.FinanceBanks.Select(b => new
-    {
-                id = b.Id,
-                name = b.Name,
-                monthlyRate = (double)b.MonthlyRate
-            }));
+    <div class="admin-editor-panel" style="max-width:64rem;">
+        <div class="admin-form-card" style="margin-bottom:1.25rem;">
+            <h2 class="admin-form-section-title">Giá niêm yết</h2>
+            <p class="admin-hint" style="margin:0.35rem 0 0;">
+                Máy tính trả góp dùng giá phiên bản dương đầu tiên; nếu không có thì dùng BasePrice.
+                Ngân hàng / lãi suất quản lý tại <a href="/admin/tra-gop">Admin · Trả góp</a>.
+            </p>
+            <p style="margin-top:0.75rem;font-size:1.25rem;font-weight:700;color:var(--admin-honda-red);">
+                @Model.Input.BasePrice.ToVnd()
+            </p>
+            <p class="admin-hint">Sửa BasePrice ở tab General.</p>
+        </div>
 
-    <div class="admin-editor-panel" style="max-width:64rem;" data-finance-tab
-         data-price="@price"
-         data-banks='@Html.Raw(banksJson)'>
-        <form method="post" asp-page-handler="SaveFinancePrefs" class="admin-form-card" data-dirty-form>
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="Id" value="@Model.Id" />
-            <h2 class="admin-form-section-title">Calculator settings</h2>
-            <p class="admin-hint" style="margin:0.35rem 0 1rem;">Không đổi công thức trả góp công khai — chỉ cấu hình mặc định / bật tắt.</p>
-
-            <label class="admin-publish-option" style="margin-bottom:0.75rem;">
-                <input asp-for="FinancePrefs.CalculatorEnabled" type="checkbox" />
-                <span>
-                    <strong>Enable calculator</strong>
-                    <span class="admin-hint">Ẩn khối trả góp trên trang chi tiết khi tắt.</span>
-                </span>
-            </label>
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;">
-                <div>
-                    <label class="admin-label">Default bank</label>
-                    <select asp-for="FinancePrefs.DefaultBankId" class="admin-select" data-finance-bank>
-                        <option value="">— Mặc định hệ thống —</option>
-                        @foreach (var b in Model.FinanceBanks)
-                        {
-                            <option value="@b.Id">@b.Name (@b.RateLabel)</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label class="admin-label">Default down payment %</label>
-                    <input asp-for="FinancePrefs.DefaultDownPaymentPercent" type="number" min="0" max="90" step="1" class="admin-input" data-finance-down />
-                </div>
-                <div>
-                    <label class="admin-label">Default term (months)</label>
-                    <input asp-for="FinancePrefs.DefaultTermMonths" type="number" min="3" max="60" step="1" class="admin-input" data-finance-term />
-                </div>
-            </div>
-
-            <div class="finance-live-preview" style="margin-top:1rem;">
-                <p class="admin-label">Live payment preview</p>
-                <p class="finance-live-amount" data-finance-monthly>~ — ₫/tháng</p>
-                <p class="admin-hint">Công thức giống trang public (Alpine calculator).</p>
-            </div>
-
-            <details class="admin-collapse" style="margin-top:1rem;">
-                <summary>Advanced</summary>
-                <p class="admin-hint" style="margin-top:0.75rem;">Lãi suất ngân hàng chỉnh ở <a href="/admin/tra-gop/lai-suat">Finance → Interest Rates</a>. Biến thể giá bên dưới.</p>
-            </details>
-
-            <div class="admin-form-actions">
-                <button type="submit" class="admin-btn-primary">Lưu settings</button>
-            </div>
-        </form>
-
-        <div class="admin-finance-grid" style="margin-top:1.25rem;">
+        <div class="admin-finance-grid">
             <form method="post" asp-page-handler="SaveVariant" class="admin-form-card" data-dirty-form>
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" value="@Model.Id" />
@@ -114,7 +61,7 @@ else
                 @if (Model.Variants.Count == 0)
                 {
                     <partial name="Admin/Shared/_AdminEmptyState"
-                             model='new AdminEmptyStateModel("Chưa có phiên bản", "Thêm phiên bản để máy tính trả góp dùng đúng giá.")' />
+                             model='new AdminEmptyStateModel("Chưa có phiên bản", "Thêm phiên bản để trang chi tiết dùng đúng giá bán.")' />
                 }
                 else
                 {

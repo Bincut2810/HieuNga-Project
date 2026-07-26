@@ -63,8 +63,26 @@ public sealed class CloudinaryImageStorageService(
         if (string.IsNullOrWhiteSpace(url))
             return AppImageUploadResult.Fail("Cloudinary không trả về URL ảnh.");
 
+        var delivery = ToAutoOptimizedUrl(url);
         logger.LogInformation("Uploaded image to Cloudinary folder {Folder}", folder);
-        return AppImageUploadResult.Ok(url);
+        return AppImageUploadResult.Ok(
+            url,
+            result.Width > 0 ? result.Width : null,
+            result.Height > 0 ? result.Height : null,
+            result.Bytes > 0 ? result.Bytes : null,
+            delivery);
+    }
+
+    /// <summary>Inserts f_auto,q_auto into Cloudinary delivery URL for WebP/AVIF when supported.</summary>
+    private static string ToAutoOptimizedUrl(string secureUrl)
+    {
+        const string marker = "/upload/";
+        var idx = secureUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return secureUrl;
+        var insertAt = idx + marker.Length;
+        if (secureUrl.IndexOf("f_auto", insertAt, StringComparison.OrdinalIgnoreCase) >= 0)
+            return secureUrl;
+        return secureUrl.Insert(insertAt, "f_auto,q_auto/");
     }
 
     private Cloudinary BuildClient()

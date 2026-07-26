@@ -236,18 +236,6 @@
     });
   }
 
-  /* ─── Motorcycle detail finance calculator ─── */
-  function initMotorcycleFinance(root) {
-    const scope = root || document;
-    const financeCfg = scope.querySelector('#motorcycle-finance-config');
-    if (!financeCfg || !window.bootMotorcycleFinance) return;
-    try {
-      window.bootMotorcycleFinance(JSON.parse(financeCfg.textContent));
-    } catch (_) {
-      /* ignore */
-    }
-  }
-
   /* ─── Sticky header shrink ─── */
   function onScroll() {
     if (!header) return;
@@ -289,7 +277,6 @@
     collectParallax(scope);
     initCounters(scope);
     updateNavActive();
-    initMotorcycleFinance(scope);
     initBookingFromQuery();
     tickParallax();
 
@@ -325,7 +312,6 @@
     if (target.id !== 'main-content') return;
 
     syncTitleFromResponse(e.detail.xhr);
-    // Boot finance store BEFORE initPage/Alpine.initTree so calculator bindings resolve.
     bootDetailPageModules(target).then(() => {
       initPage(target);
       if (!prefersReducedMotion) {
@@ -335,13 +321,9 @@
     });
   }
 
-  /** HTMX boost strips/ignores inline scripts — load modules, register store, then init Alpine. */
+  /** HTMX boost strips/ignores inline scripts — load detail viewer when needed. */
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
-      if (src.indexOf('detail-finance') >= 0 && typeof window.bootMotorcycleFinance === 'function') {
-        resolve();
-        return;
-      }
       if (src.indexOf('detail-viewer') >= 0 && typeof window.registerMotorcycleDetailUi === 'function') {
         resolve();
         return;
@@ -360,35 +342,16 @@
     });
   }
 
-  /** Boot finance after full load AND HTMX boost/history. Returns a Promise. */
   function bootDetailPageModules(root) {
     const scope = root || document;
-    const financeCfg = scope.querySelector('#motorcycle-finance-config');
     const needsViewer = !!scope.querySelector('.detail-page');
+    if (!needsViewer) return Promise.resolve();
 
-    const tasks = [];
-    if (financeCfg) tasks.push(loadScriptOnce('/js/detail-finance.js'));
-    if (needsViewer) tasks.push(loadScriptOnce('/js/detail-viewer.js'));
-
-    const runBoot = () => {
-      if (financeCfg && typeof window.bootMotorcycleFinance === 'function') {
-        try {
-          window.bootMotorcycleFinance(JSON.parse(financeCfg.textContent || '{}'));
-        } catch (err) {
-          console.warn('Finance init:', err);
-        }
-      }
-      if (needsViewer && typeof window.registerMotorcycleDetailUi === 'function') {
+    return loadScriptOnce('/js/detail-viewer.js').then(() => {
+      if (typeof window.registerMotorcycleDetailUi === 'function') {
         try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
       }
-    };
-
-    if (!tasks.length) {
-      runBoot();
-      return Promise.resolve();
-    }
-
-    return Promise.all(tasks).then(runBoot).catch((err) => {
+    }).catch((err) => {
       console.warn('Detail module load:', err);
     });
   }

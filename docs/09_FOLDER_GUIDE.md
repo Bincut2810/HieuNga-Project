@@ -60,7 +60,7 @@
 | `Services/` | Web-only helpers (compare cookie, upload helper) |
 | `Extensions/` | SEO/price helpers |
 | `wwwroot/css` | site.css, admin.css |
-| `wwwroot/js` | polish.js, detail-finance.js |
+| `wwwroot/js` | polish.js, finance-calculator.js, detail-viewer.js, homepage.js |
 | `wwwroot/images` | Static demo assets |
 | `wwwroot/uploads` | Local uploads (gitignored) |
 | `Views/Shared/Components/` | Optional ViewComponents |

@@ -1074,8 +1074,7 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
     box-shadow var(--motion-base) var(--ease-premium),
     transform var(--motion-fast) var(--ease-premium);
 }
-.finance-bank-card.is-selected,
-.bank-card.is-selected {
+.finance-bank-card.is-selected {
   border-color: #E40521;
   background: #fff5f5;
   box-shadow: 0 0 0 3px rgba(228, 5, 33, 0.12);
@@ -1100,20 +1099,9 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
   0% { opacity: 0.6; transform: scale(0.97); }
   100% { opacity: 1; transform: scale(1); }
 }
-.finance-number-pop {
-  animation: financePop 0.4s var(--ease-premium);
-}
 
 .finance-monthly-hero {
   transition: transform var(--motion-base) var(--ease-premium), opacity var(--motion-base);
-}
-.finance-monthly-hero.is-updating {
-  animation: financeMonthlyPulse 0.45s var(--ease-premium);
-}
-@keyframes financeMonthlyPulse {
-  0% { opacity: 0.65; transform: scale(0.97); }
-  50% { opacity: 1; transform: scale(1.02); }
-  100% { opacity: 1; transform: scale(1); }
 }
 
 .finance-variant-card:active {
