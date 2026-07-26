@@ -325,16 +325,17 @@
     if (target.id !== 'main-content') return;
 
     syncTitleFromResponse(e.detail.xhr);
-    initPage(target);
-    bootDetailPageModules(target);
-
-    if (!prefersReducedMotion) {
-      target.classList.add('page-enter');
-      setTimeout(() => target.classList.remove('page-enter'), 320);
-    }
+    // Boot finance store BEFORE initPage/Alpine.initTree so calculator bindings resolve.
+    bootDetailPageModules(target).then(() => {
+      initPage(target);
+      if (!prefersReducedMotion) {
+        target.classList.add('page-enter');
+        setTimeout(() => target.classList.remove('page-enter'), 320);
+      }
+    });
   }
 
-  /** HTMX boost strips/ignores inline scripts in swapped HTML — re-boot detail modules. */
+  /** HTMX boost strips/ignores inline scripts — load modules, register store, then init Alpine. */
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
       if (src.indexOf('detail-finance') >= 0 && typeof window.bootMotorcycleFinance === 'function') {
@@ -359,7 +360,7 @@
     });
   }
 
-  /** Boot finance after full load AND HTMX boost/history. */
+  /** Boot finance after full load AND HTMX boost/history. Returns a Promise. */
   function bootDetailPageModules(root) {
     const scope = root || document;
     const financeCfg = scope.querySelector('#motorcycle-finance-config');
@@ -380,17 +381,16 @@
       if (needsViewer && typeof window.registerMotorcycleDetailUi === 'function') {
         try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
       }
-      if (needsViewer && typeof Alpine !== 'undefined' && typeof Alpine.initTree === 'function') {
-        try { Alpine.initTree(scope); } catch (err) { console.warn('Alpine initTree:', err); }
-      }
     };
 
     if (!tasks.length) {
       runBoot();
-      return;
+      return Promise.resolve();
     }
 
-    Promise.all(tasks).then(runBoot).catch((err) => console.warn('Detail module load:', err));
+    return Promise.all(tasks).then(runBoot).catch((err) => {
+      console.warn('Detail module load:', err);
+    });
   }
 
   document.body.addEventListener('htmx:afterSwap', (e) => {
@@ -419,8 +419,7 @@
   document.body.addEventListener('htmx:historyRestore', () => {
     const main = document.getElementById('main-content');
     if (main) {
-      initPage(main);
-      bootDetailPageModules(main);
+      bootDetailPageModules(main).then(() => initPage(main));
     }
     updateNavActive();
     requestAnimationFrame(scrollAfterNavigation);

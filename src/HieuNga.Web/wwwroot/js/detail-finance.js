@@ -220,27 +220,27 @@
 
   function registerStore(config) {
     const store = buildStore(config);
-    if (typeof Alpine !== 'undefined' && typeof Alpine.store === 'function') {
+
+    function apply() {
       Alpine.store('motorcycleDetail', store);
       store.init();
+    }
+
+    if (typeof Alpine !== 'undefined' && typeof Alpine.store === 'function') {
+      // Alpine already booted (full page after defer, or HTMX re-visit)
+      apply();
       return store;
     }
-    document.addEventListener(
-      'alpine:init',
-      () => {
-        Alpine.store('motorcycleDetail', store);
-        store.init();
-      },
-      { once: true }
-    );
+
+    document.addEventListener('alpine:init', apply, { once: true });
     return store;
   }
 
   window.registerMotorcycleFinance = registerStore;
 
-  /** Boot from inline config (full page + HTMX) */
+  /** Boot from inline config (full page + HTMX). Always safe to call repeatedly. */
   window.bootMotorcycleFinance = function (config) {
-    return registerStore(config);
+    return registerStore(config || {});
   };
 
 })();
