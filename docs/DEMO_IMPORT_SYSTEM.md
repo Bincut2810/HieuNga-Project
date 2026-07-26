@@ -19,7 +19,7 @@ Creates **25** presentation motorcycles (`demo-*` slugs), ~5 per category:
 Media comes from `DemoAssets/_Shared/` (copied from Vision placeholders if missing):
 
 - thumbnail, gallery (4), colors (3), features/tech
-- `360/001.jpg` … `036.jpg` (duplicated placeholder so the public 360 viewer works)
+- optional `angles/front.jpg` … `front-right.jpg` (six named angles; skipped unless ≥6 distinct files)
 
 Shared images are uploaded **once**, then URL-reused across catalog bikes (fast, layouts filled). Replace per-bike media later in the Motorcycle Editor.
 
@@ -58,10 +58,13 @@ Vision/
     01.jpg
     02.jpg
     …
-  360/
-    001.jpg
-    002.jpg
-    …                    ← need ≥ 2 frames for public 360 viewer
+  angles/
+    front.jpg
+    front-left.jpg
+    left.jpg
+    rear.jpg
+    right.jpg
+    front-right.jpg      ← need ≥ 2 angles for public viewer
   colors/
     black.jpg
     white.jpg
@@ -71,7 +74,7 @@ Vision/
   README.md
 ```
 
-Supported extensions: `.jpg` `.jpeg` `.png` `.webp` `.gif` `.svg`
+Legacy `360/` folders are still accepted if files are named by angle key (or mapped in order). Supported extensions: `.jpg` `.jpeg` `.png` `.webp` `.gif` `.svg`
 
 ## Image naming
 
@@ -79,7 +82,7 @@ Supported extensions: `.jpg` `.jpeg` `.png` `.webp` `.gif` `.svg`
 |------|------------|
 | Thumbnail | `thumbnail.jpg` (or name in `assets.thumbnail`) |
 | Gallery | Sorted alphanumeric files in `gallery/` |
-| 360 | Files in `360/`; frame index parsed from trailing digits (`001`, `frame_12`) |
+| Angles | Named files in `angles/` (`front`, `front-left`, `left`, `rear`, `right`, `front-right`) |
 | Colors | File name from metadata `colors[].image`, else `{slugified-name}.jpg` |
 | Features / tech | File name from card `image` field under `features/` or `technology/` |
 
@@ -97,7 +100,7 @@ Key fields:
 - `engineCc`, `fuelType`, `transmission`
 - `highlights[]`, `specifications[]` (`icon`, `label`, `value`; `icon: "group"` = section header)
 - `variants[]`, `colors[]`, `features[]`, `technology[]`
-- `seo`, `finance`, `assets` (folder/file hints)
+- `seo`, `finance`, `assets` (folder/file hints; `spinFolder` defaults to `angles`)
 
 Slug is the **idempotency key**. Reimport updates the same motorcycle and replaces child assets.
 
@@ -119,7 +122,7 @@ Slug is the **idempotency key**. Reimport updates the same motorcycle and replac
 | Production (Render) | Cloudinary when `ImageStorage__Cloudinary__*` is set |
 | Production without Cloudinary | Import blocked with clear error |
 
-Folders used: `demo/{motorcycleId}/thumb|gallery|colors|360|features|technology`
+Folders used: `demo/{motorcycleId}/thumb|gallery|colors|angles|features|technology`
 
 No duplicate upload helpers — same `IImageStorageService.UploadAsync` as the CMS Media tab.
 
@@ -136,5 +139,5 @@ Stub folders (Lead, SH, …) already appear in Admin; they stay disabled until `
 ## Safety
 
 - Running Import twice does **not** create duplicate slugs.
-- Reimport replaces variants, colors, gallery, 360, features, technologies.
+- Reimport replaces variants, colors, gallery, angles, features, technologies.
 - Missing image files produce warnings; the motorcycle is still created when possible.

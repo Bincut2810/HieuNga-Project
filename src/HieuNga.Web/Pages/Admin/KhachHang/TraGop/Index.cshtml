@@ -1,21 +1,58 @@
 @page "/admin/khach-hang/tra-gop"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.TraGopLeadIndexModel
 
-<h1 class="text-2xl font-bold">Yêu cầu trả góp</h1>
-<form method="get" class="mt-6"><input name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="border rounded-lg px-3 py-2 text-sm" /><button type="submit" class="ml-2 border px-4 py-2 rounded-lg text-sm">Lọc</button></form>
-<div class="mt-6 bg-white border rounded-2xl overflow-hidden">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-500 text-left"><tr><th class="px-6 py-4">Khách hàng</th><th class="px-6 py-4">Giá xe</th><th class="px-6 py-4">Xử lý</th><th class="px-6 py-4"></th></tr></thead>
-        <tbody class="divide-y">
-            @foreach (var item in Model.Items)
-            {
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4"><p class="font-medium">@item.CustomerName</p><p class="text-xs text-gray-500">@item.Phone</p></td>
-                    <td class="px-6 py-4 text-honda-red">@item.VehiclePrice.ToVnd()</td>
-                    <td class="px-6 py-4">@(item.IsProcessed ? "Đã xử lý" : "Chờ")</td>
-                    <td class="px-6 py-4 text-right"><a href="/admin/khach-hang/tra-gop/@item.Id" class="text-honda-red font-medium">Chi tiết</a></td>
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel("Yêu cầu trả góp")' />
+
+<form method="get" class="admin-toolbar">
+    <div class="admin-toolbar-fields">
+        <div class="admin-field">
+            <label for="q" class="admin-label">Tìm kiếm</label>
+            <input id="q" name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="admin-input" />
+        </div>
+        <div class="admin-toolbar-actions">
+            <button type="submit" class="admin-btn admin-btn-secondary">Lọc</button>
+        </div>
+    </div>
+</form>
+
+<div class="admin-card admin-table-wrap">
+    <div class="admin-table-scroll">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Giá xe</th>
+                    <th>Xử lý</th>
+                    <th></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <p class="admin-table-primary">@item.CustomerName</p>
+                            <p class="admin-table-secondary">@item.Phone</p>
+                        </td>
+                        <td style="color: var(--admin-honda-red); font-weight: 600;">@item.VehiclePrice.ToVnd()</td>
+                        <td>
+                            @if (item.IsProcessed)
+                            {
+                                <span class="admin-badge admin-badge-success">Đã xử lý</span>
+                            }
+                            else
+                            {
+                                <span class="admin-badge admin-badge-warning">Chờ</span>
+                            }
+                        </td>
+                        <td class="text-right">
+                            <a href="/admin/khach-hang/tra-gop/@item.Id" class="admin-action admin-action-edit">Chi tiết</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

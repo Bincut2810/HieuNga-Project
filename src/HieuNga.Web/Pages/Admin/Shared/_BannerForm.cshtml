@@ -1,43 +1,80 @@
 @model HieuNga.Web.Pages.Admin.BannerInputModel
 @using HieuNga.Domain.Enums
-<div><label asp-for="Title" class="block text-sm font-medium mb-1">Tiêu đề *</label><input asp-for="Title" class="w-full border rounded-lg px-3 py-2 text-sm" /><span asp-validation-for="Title" class="text-red-600 text-xs"></span></div>
-<div><label asp-for="Subtitle" class="block text-sm font-medium mb-1">Phụ đề</label><input asp-for="Subtitle" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div><label asp-for="Badge" class="block text-sm font-medium mb-1">Badge / Eyebrow</label><input asp-for="Badge" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Xe Máy Hiếu Nga · HEAD Đà Nẵng" /></div>
-<div><label asp-for="ImageUrl" class="block text-sm font-medium mb-1">Ảnh desktop URL *</label><input asp-for="ImageUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /><span asp-validation-for="ImageUrl" class="text-red-600 text-xs"></span></div>
-<div><label asp-for="MobileImageUrl" class="block text-sm font-medium mb-1">Ảnh mobile URL</label><input asp-for="MobileImageUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div><label asp-for="CtaText" class="block text-sm font-medium mb-1">CTA chính — text</label><input asp-for="CtaText" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-    <div><label asp-for="CtaUrl" class="block text-sm font-medium mb-1">CTA chính — URL</label><input asp-for="CtaUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-</div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div><label asp-for="SecondaryCtaText" class="block text-sm font-medium mb-1">CTA phụ — text</label><input asp-for="SecondaryCtaText" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-    <div><label asp-for="SecondaryCtaUrl" class="block text-sm font-medium mb-1">CTA phụ — URL</label><input asp-for="SecondaryCtaUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-</div>
-<div class="grid md:grid-cols-2 gap-3">
+<div class="admin-form-stack">
     <div>
-        <label asp-for="OverlayStrength" class="block text-sm font-medium mb-1">Độ đậm overlay (0–100)</label>
-        <input asp-for="OverlayStrength" type="number" min="0" max="100" class="w-full border rounded-lg px-3 py-2 text-sm" />
-        <span asp-validation-for="OverlayStrength" class="text-red-600 text-xs"></span>
+        <label asp-for="Title" class="admin-label">Tiêu đề *</label>
+        <input asp-for="Title" class="admin-input" />
+        <span asp-validation-for="Title" class="admin-validation"></span>
     </div>
     <div>
-        <label asp-for="TextAlignment" class="block text-sm font-medium mb-1">Căn chữ</label>
-        <select asp-for="TextAlignment" asp-items="Html.GetEnumSelectList<BannerTextAlignment>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select>
-    </div>
-</div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div><label asp-for="Position" class="block text-sm font-medium mb-1">Vị trí</label><select asp-for="Position" asp-items="Html.GetEnumSelectList<BannerPosition>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select></div>
-    <div><label asp-for="SortOrder" class="block text-sm font-medium mb-1">Ưu tiên (thứ tự)</label><input asp-for="SortOrder" type="number" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-</div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div>
-        <label asp-for="StartDate" class="block text-sm font-medium mb-1">Lịch — bắt đầu</label>
-        <input asp-for="StartDate" type="datetime-local" class="w-full border rounded-lg px-3 py-2 text-sm" />
-        <p class="text-xs text-gray-500 mt-1">Để trống = không giới hạn</p>
+        <label asp-for="Subtitle" class="admin-label">Phụ đề</label>
+        <input asp-for="Subtitle" class="admin-input" />
     </div>
     <div>
-        <label asp-for="EndDate" class="block text-sm font-medium mb-1">Lịch — kết thúc</label>
-        <input asp-for="EndDate" type="datetime-local" class="w-full border rounded-lg px-3 py-2 text-sm" />
-        <p class="text-xs text-gray-500 mt-1">Để trống = không giới hạn</p>
+        <label asp-for="Badge" class="admin-label">Badge / Eyebrow</label>
+        <input asp-for="Badge" class="admin-input" placeholder="Xe Máy Hiếu Nga · HEAD Đà Nẵng" />
     </div>
+    <div>
+        <label asp-for="ImageUrl" class="admin-label">Ảnh desktop URL *</label>
+        <input asp-for="ImageUrl" class="admin-input" />
+        <span asp-validation-for="ImageUrl" class="admin-validation"></span>
+    </div>
+    <div>
+        <label asp-for="MobileImageUrl" class="admin-label">Ảnh mobile URL</label>
+        <input asp-for="MobileImageUrl" class="admin-input" />
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="CtaText" class="admin-label">CTA chính — text</label>
+            <input asp-for="CtaText" class="admin-input" />
+        </div>
+        <div>
+            <label asp-for="CtaUrl" class="admin-label">CTA chính — URL</label>
+            <input asp-for="CtaUrl" class="admin-input" />
+        </div>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="SecondaryCtaText" class="admin-label">CTA phụ — text</label>
+            <input asp-for="SecondaryCtaText" class="admin-input" />
+        </div>
+        <div>
+            <label asp-for="SecondaryCtaUrl" class="admin-label">CTA phụ — URL</label>
+            <input asp-for="SecondaryCtaUrl" class="admin-input" />
+        </div>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="OverlayStrength" class="admin-label">Độ đậm overlay (0–100)</label>
+            <input asp-for="OverlayStrength" type="number" min="0" max="100" class="admin-input" />
+            <span asp-validation-for="OverlayStrength" class="admin-validation"></span>
+        </div>
+        <div>
+            <label asp-for="TextAlignment" class="admin-label">Căn chữ</label>
+            <select asp-for="TextAlignment" asp-items="Html.GetEnumSelectList<BannerTextAlignment>()" class="admin-select"></select>
+        </div>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="Position" class="admin-label">Vị trí</label>
+            <select asp-for="Position" asp-items="Html.GetEnumSelectList<BannerPosition>()" class="admin-select"></select>
+        </div>
+        <div>
+            <label asp-for="SortOrder" class="admin-label">Ưu tiên (thứ tự)</label>
+            <input asp-for="SortOrder" type="number" class="admin-input" />
+        </div>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="StartDate" class="admin-label">Lịch — bắt đầu</label>
+            <input asp-for="StartDate" type="datetime-local" class="admin-input" />
+            <p class="admin-hint">Để trống = không giới hạn</p>
+        </div>
+        <div>
+            <label asp-for="EndDate" class="admin-label">Lịch — kết thúc</label>
+            <input asp-for="EndDate" type="datetime-local" class="admin-input" />
+            <p class="admin-hint">Để trống = không giới hạn</p>
+        </div>
+    </div>
+    <label class="admin-check"><input asp-for="IsActive" type="checkbox" /> Đã xuất bản (kích hoạt)</label>
 </div>
-<label class="flex items-center gap-2 text-sm"><input asp-for="IsActive" type="checkbox" /> Đã xuất bản (kích hoạt)</label>

@@ -1,9 +1,16 @@
 @page "/admin/khuyen-mai/sua/{id:guid}"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhuyenMaiSuaModel
-<h1 class="text-2xl font-bold">Sửa khuyến mãi</h1>
-<form method="post" class="mt-8 bg-white border rounded-2xl p-6 max-w-3xl space-y-3">
+
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel("Sửa khuyến mãi")' />
+
+<form method="post" class="admin-form-card" style="max-width: 48rem;">
     @Html.AntiForgeryToken()
     <partial name="Admin/Shared/_PromotionForm" model="Model.Input" />
-    <button type="submit" class="bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu</button>
+    <div class="admin-form-actions">
+        <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
+    </div>
 </form>
+
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

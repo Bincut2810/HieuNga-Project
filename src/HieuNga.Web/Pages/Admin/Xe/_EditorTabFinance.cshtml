@@ -13,7 +13,7 @@ else
             <h2 class="admin-form-section-title">Giá niêm yết</h2>
             <p class="admin-hint" style="margin:0.35rem 0 0;">
                 Máy tính trả góp dùng giá phiên bản dương đầu tiên; nếu không có thì dùng BasePrice.
-                Ngân hàng / lãi suất quản lý tại <a href="/admin/tra-gop">Admin · Trả góp</a>.
+                Ngân hàng / lãi suất quản lý tại <a href="/admin/tra-gop/ngan-hang">Admin · Banks</a>.
             </p>
             <p style="margin-top:0.75rem;font-size:1.25rem;font-weight:700;color:var(--admin-honda-red);">
                 @Model.Input.BasePrice.ToVnd()
@@ -102,6 +102,20 @@ else
                         </table>
                     </div>
                 }
+            </div>
+        </div>
+
+        <div class="admin-editor-savebar" data-editor-savebar>
+            <div class="admin-editor-savebar-inner">
+                <p class="admin-muted" style="margin:0;">Giá phiên bản lưu theo form</p>
+                <div class="admin-editor-savebar-actions">
+                    <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
+                    @if (!string.IsNullOrEmpty(Model.PublicSlug))
+                    {
+                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
+                    }
+                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Publish</a>
+                </div>
             </div>
         </div>
     </div>

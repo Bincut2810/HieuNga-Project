@@ -1,27 +1,40 @@
 @page "/admin/khach-hang/bao-duong/{id:guid}"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.BaoDuongDetailModel
 
-<h1 class="text-2xl font-bold">Chi tiết bảo dưỡng</h1>
-<p class="text-sm text-gray-500 mt-1"><a href="/admin/khach-hang/bao-duong" class="hover:text-honda-red">← Danh sách</a></p>
+<header class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Chi tiết bảo dưỡng</h1>
+        <p class="admin-page-subtitle"><a href="/admin/khach-hang/bao-duong" style="color: var(--admin-honda-red);">← Danh sách</a></p>
+    </div>
+</header>
 
 @if (Model.Booking is not null)
 {
     var b = Model.Booking;
-    <div class="mt-6 grid lg:grid-cols-2 gap-8">
-        <div class="bg-white border rounded-2xl p-6 space-y-2 text-sm">
+    <div class="admin-grid-2">
+        <div class="admin-card admin-card-padded admin-form-stack">
             <p><strong>@b.CustomerName</strong> · @b.Phone</p>
             <p>Xe: @(b.MotorcycleModel ?? "—") · @(b.LicensePlate ?? "")</p>
             <p>Dịch vụ: @b.ServiceType</p>
             <p>Ngày: @b.PreferredDate.ToString("dd/MM/yyyy") @b.PreferredTime</p>
             <p>Ghi chú: @(b.Notes ?? "—")</p>
         </div>
-        <form method="post" class="bg-white border rounded-2xl p-6">
+        <form method="post" class="admin-form-card">
             @Html.AntiForgeryToken()
-            <div class="space-y-4">
-                <div><label asp-for="Input.Status" class="block text-sm font-medium mb-1">Trạng thái</label><select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<BookingStatus>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select></div>
-                <div><label asp-for="Input.AdminNotes" class="block text-sm font-medium mb-1">Ghi chú admin</label><textarea asp-for="Input.AdminNotes" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
+            <div class="admin-form-stack">
+                <div>
+                    <label asp-for="Input.Status" class="admin-label">Trạng thái</label>
+                    <select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<BookingStatus>()" class="admin-select"></select>
+                </div>
+                <div>
+                    <label asp-for="Input.AdminNotes" class="admin-label">Ghi chú admin</label>
+                    <textarea asp-for="Input.AdminNotes" rows="4" class="admin-textarea"></textarea>
+                </div>
             </div>
-            <button type="submit" class="mt-4 bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu</button>
+            <div class="admin-form-actions">
+                <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
+            </div>
         </form>
     </div>
 }

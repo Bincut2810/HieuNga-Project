@@ -1,46 +1,53 @@
 @page "/admin/khach-hang/lich-hen/{id:guid}"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.LichHenDetailModel
 
-<h1 class="text-2xl font-bold">Chi tiết lịch hẹn</h1>
-<p class="text-sm text-gray-500 mt-1"><a href="/admin/khach-hang/lich-hen" class="hover:text-honda-red">← Danh sách</a></p>
+<header class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Chi tiết lịch hẹn</h1>
+        <p class="admin-page-subtitle"><a href="/admin/khach-hang/lich-hen" style="color: var(--admin-honda-red);">← Danh sách</a></p>
+    </div>
+</header>
 
 @if (Model.Booking is not null)
 {
     var b = Model.Booking;
-    <div class="mt-6 grid lg:grid-cols-2 gap-8">
-        <div class="bg-white border rounded-2xl p-6 space-y-2 text-sm">
-            <p><span class="text-gray-500">Khách:</span> <strong>@b.CustomerName</strong></p>
-            <p><span class="text-gray-500">SĐT:</span> @b.Phone</p>
-            <p><span class="text-gray-500">Email:</span> @(b.Email ?? "—")</p>
-            <p><span class="text-gray-500">Loại:</span> @b.Type</p>
-            <p><span class="text-gray-500">Ngày hẹn:</span> @b.PreferredDate.ToString("dd/MM/yyyy") @b.PreferredTime</p>
-            <p><span class="text-gray-500">Xe:</span> @(b.Motorcycle?.Name ?? "—")</p>
-            <p><span class="text-gray-500">Chi nhánh:</span> @(b.Branch?.Name ?? "—")</p>
-            <p><span class="text-gray-500">Ghi chú KH:</span> @(b.Notes ?? "—")</p>
+    <div class="admin-grid-2">
+        <div class="admin-card admin-card-padded admin-form-stack">
+            <p><span class="admin-hint">Khách:</span> <strong>@b.CustomerName</strong></p>
+            <p><span class="admin-hint">SĐT:</span> @b.Phone</p>
+            <p><span class="admin-hint">Email:</span> @(b.Email ?? "—")</p>
+            <p><span class="admin-hint">Loại:</span> @b.Type</p>
+            <p><span class="admin-hint">Ngày hẹn:</span> @b.PreferredDate.ToString("dd/MM/yyyy") @b.PreferredTime</p>
+            <p><span class="admin-hint">Xe:</span> @(b.Motorcycle?.Name ?? "—")</p>
+            <p><span class="admin-hint">Chi nhánh:</span> @(b.Branch?.Name ?? "—")</p>
+            <p><span class="admin-hint">Ghi chú KH:</span> @(b.Notes ?? "—")</p>
             @{
                 var leadSrc = HieuNga.Application.LeadAttribution.ExtractSourceLabel(b.Notes);
             }
             @if (!string.IsNullOrWhiteSpace(leadSrc))
             {
-                <p class="mt-2 pt-2 border-t border-gray-100">
-                    <span class="text-gray-500">Nguồn lead:</span>
-                    <strong class="text-honda-red">@leadSrc</strong>
+                <p style="padding-top: 0.75rem; border-top: 1px solid var(--admin-border);">
+                    <span class="admin-hint">Nguồn lead:</span>
+                    <strong style="color: var(--admin-honda-red);">@leadSrc</strong>
                 </p>
             }
         </div>
-        <form method="post" class="bg-white border rounded-2xl p-6">
+        <form method="post" class="admin-form-card">
             @Html.AntiForgeryToken()
-            <div class="space-y-4">
+            <div class="admin-form-stack">
                 <div>
-                    <label asp-for="Input.Status" class="block text-sm font-medium mb-1">Trạng thái</label>
-                    <select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<BookingStatus>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select>
+                    <label asp-for="Input.Status" class="admin-label">Trạng thái</label>
+                    <select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<BookingStatus>()" class="admin-select"></select>
                 </div>
                 <div>
-                    <label asp-for="Input.AdminNotes" class="block text-sm font-medium mb-1">Ghi chú admin</label>
-                    <textarea asp-for="Input.AdminNotes" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+                    <label asp-for="Input.AdminNotes" class="admin-label">Ghi chú admin</label>
+                    <textarea asp-for="Input.AdminNotes" rows="4" class="admin-textarea"></textarea>
                 </div>
             </div>
-            <button type="submit" class="mt-4 bg-honda-red text-white px-4 py-2 rounded-lg font-semibold">Lưu</button>
+            <div class="admin-form-actions">
+                <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
+            </div>
         </form>
     </div>
 }

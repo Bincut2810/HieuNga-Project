@@ -32,6 +32,6 @@ else
             <dl class="spec-preview-list" data-spec-preview></dl>
         </aside>
 
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu specifications")' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Save Draft", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
     </form>
 }

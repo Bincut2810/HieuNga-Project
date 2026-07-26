@@ -1,3 +1,5 @@
+using HieuNga.Domain.Enums;
+
 namespace HieuNga.Application.Media;
 
 /// <summary>In-memory upload payload — Web layer adapts IFormFile to this.</summary>
@@ -29,10 +31,9 @@ public interface IMotorcycleMediaStudioService
     Task<MediaMutationResult> ReorderColorsAsync(Guid motorcycleId, IReadOnlyList<Guid> orderedIds, CancellationToken ct = default);
     Task<MediaMutationResult> DeleteColorAsync(Guid motorcycleId, Guid colorId, CancellationToken ct = default);
 
-    Task<MediaMutationResult> UploadSpinAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> files, CancellationToken ct = default);
-    Task<MediaMutationResult> ReorderSpinAsync(Guid motorcycleId, IReadOnlyList<Guid> orderedIds, CancellationToken ct = default);
-    Task<MediaMutationResult> DeleteSpinAsync(Guid motorcycleId, IReadOnlyList<Guid> frameIds, CancellationToken ct = default);
-    Task<MediaMutationResult> ClearSpinAsync(Guid motorcycleId, CancellationToken ct = default);
+    Task<MediaMutationResult> SetAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, MediaFileUpload file, CancellationToken ct = default);
+    Task<MediaMutationResult> ClearAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, CancellationToken ct = default);
+    Task<MediaMutationResult> ClearAllAnglesAsync(Guid motorcycleId, CancellationToken ct = default);
 
     Task<SmartImportSummaryDto> SmartImportAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> entries, CancellationToken ct = default);
 

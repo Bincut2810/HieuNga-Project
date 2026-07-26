@@ -4,12 +4,18 @@
     <div class="admin-editor-savebar-inner">
         <p class="admin-editor-savebar-hint" data-dirty-hint hidden>Có thay đổi chưa lưu</p>
         <div class="admin-editor-savebar-actions">
-            <a href="/admin/xe" class="admin-btn-secondary" data-cancel-link>Cancel</a>
+            <a href="/admin/xe" class="admin-btn admin-btn-ghost" data-cancel-link>Hủy</a>
             @if (!string.IsNullOrEmpty(Model.PreviewUrl))
             {
-                <a href="@Model.PreviewUrl" target="_blank" rel="noopener" class="admin-btn-ghost">Preview</a>
+                <a href="@Model.PreviewUrl" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
             }
-            <button type="submit" class="admin-btn-primary">@Model.SaveText</button>
+            @if (!string.IsNullOrEmpty(Model.PublishTabUrl) && !Model.IsPublishTab)
+            {
+                <a href="@Model.PublishTabUrl" class="admin-btn admin-btn-secondary">Publish</a>
+            }
+            <button type="submit" class="admin-btn admin-btn-primary">
+                @(Model.IsPublishTab ? "Publish" : Model.SaveText)
+            </button>
         </div>
     </div>
 </div>

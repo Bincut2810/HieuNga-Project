@@ -522,7 +522,7 @@ public class EditorModel(
             {
                 MotorcycleId = clone.Id,
                 ImageUrl = s.ImageUrl,
-                FrameIndex = s.FrameIndex
+                Angle = s.Angle
             });
         }
         await uow.SaveChangesAsync(ct);
@@ -590,7 +590,7 @@ public class EditorModel(
             };
             await motorcycleRepo.AddAsync(entity, ct);
             await uow.SaveChangesAsync(ct);
-            this.SetSuccess("Đã tạo Draft. Tiếp tục thêm gallery, màu và 360.");
+            this.SetSuccess("Đã tạo Draft. Tiếp tục thêm gallery, màu và góc xem.");
             return RedirectToPage(new { id = entity.Id, tab = "media" });
         }
 
@@ -693,7 +693,7 @@ public class EditorModel(
         Technologies = await db.MotorcycleTechnologies.AsNoTracking()
             .Where(t => t.MotorcycleId == id && !t.IsDeleted).OrderBy(t => t.SortOrder).ToListAsync(ct);
         SpinFrames = await db.MotorcycleSpinFrames.AsNoTracking()
-            .Where(s => s.MotorcycleId == id && !s.IsDeleted).OrderBy(s => s.FrameIndex).ToListAsync(ct);
+            .Where(s => s.MotorcycleId == id && !s.IsDeleted).OrderBy(s => s.Angle).ToListAsync(ct);
     }
 
 

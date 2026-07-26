@@ -44,7 +44,7 @@
         heroSrc = heroImage,
         name = m.Name
     });
-    var spinJson = JsonSerializer.Serialize(m.SpinFrameUrls);
+    var angleJson = JsonSerializer.Serialize(m.AngleImages.Select(a => new { angle = a.Angle, label = a.Label, url = a.Url }));
     var engineLabel = m.EngineCc.HasValue ? $"{m.EngineCc} cc" : null;
     var schemaAvailability = Model.IsAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
     ViewData["CtaXe"] = m.Slug;
@@ -316,22 +316,21 @@
         </section>
     }
 
-    @* ─── PHASE 4: 360 Viewer Premium ─── *@
-    @if (m.SpinFrameUrls.Count >= 2)
+    @* ─── Six-angle viewer ─── *@
+    @if (m.AngleImages.Count >= 2)
     {
-        <section class="detail-section detail-section-muted reveal" aria-labelledby="spin-heading" id="xem-360">
+        <section class="detail-section detail-section-muted reveal" aria-labelledby="angles-heading" id="xem-360">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
-                 x-data="detailSpin360(@Html.Raw(spinJson))">
+                 x-data="detailAngleViewer(@Html.Raw(angleJson))">
                 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
                     <div>
                         <p class="section-eyebrow">Trải nghiệm</p>
-                        <h2 id="spin-heading" class="section-title">Xem 360°</h2>
-                        <p class="section-subtitle">Kéo · Vuốt · Phát tự động</p>
+                        <h2 id="angles-heading" class="section-title">Xem đa góc</h2>
+                        <p class="section-subtitle">Kéo hoặc vuốt giữa 6 góc chụp</p>
                     </div>
-                    <div class="detail-spin-toolbar" role="toolbar" aria-label="Điều khiển 360">
-                        <button type="button" class="detail-spin-btn" @@click="togglePlay()" :aria-pressed="playing.toString()" x-text="playing ? 'Tạm dừng' : 'Phát'"></button>
-                        <button type="button" class="detail-spin-btn" @@click="toggleAutoRotate()" :aria-pressed="autoRotate.toString()" :class="autoRotate ? 'is-on' : ''">Tự xoay</button>
-                        <button type="button" class="detail-spin-btn" @@click="reset()" aria-label="Đặt lại khung đầu">Reset</button>
+                    <div class="detail-spin-toolbar" role="toolbar" aria-label="Góc xem">
+                        <button type="button" class="detail-spin-btn" @@click="prev()" aria-label="Góc trước">←</button>
+                        <button type="button" class="detail-spin-btn" @@click="next()" aria-label="Góc sau">→</button>
                         <button type="button" class="detail-spin-btn" @@click="toggleFullscreen()">Toàn màn hình</button>
                     </div>
                 </div>
@@ -347,20 +346,27 @@
                     <div class="absolute inset-0 flex items-center justify-center bg-white/85 z-10" x-show="loading" x-transition.opacity>
                         <div class="flex flex-col items-center gap-2">
                             <span class="detail-spin-loader" aria-hidden="true"></span>
-                            <span class="text-xs font-medium text-gray-500">Đang tải 360°… <span class="tabular-nums" x-text="Math.round(loadRatio * 100) + '%'"></span></span>
+                            <span class="text-xs font-medium text-gray-500">Đang tải góc xem…</span>
                         </div>
                     </div>
-                    <img :src="src" alt="360 @m.Name"
-                         class="absolute inset-0 w-full h-full object-contain p-4 pointer-events-none transition-opacity duration-150"
+                    <img :src="src" :alt="label + ' — @m.Name'"
+                         class="absolute inset-0 w-full h-full object-contain p-4 pointer-events-none transition-opacity duration-200"
                          :class="loading ? 'opacity-40' : 'opacity-100'"
-                         draggable="false" decoding="async" width="960" height="600" />
-                    <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="showHint && !dragging && !loading && !playing" x-transition.opacity>
-                        <span class="detail-spin-hint">← Kéo hoặc vuốt để xoay →</span>
+                         draggable="false" decoding="async" loading="lazy" width="960" height="600" />
+                    <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="showHint && !dragging && !loading" x-transition.opacity>
+                        <span class="detail-spin-hint">← Kéo hoặc vuốt để đổi góc →</span>
                     </div>
                 </div>
-                <p class="mt-3 text-center text-xs text-gray-400 tabular-nums" aria-live="polite">
-                    Khung <span x-text="frameLabel"></span>
-                </p>
+                <div class="mt-4 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Chọn góc">
+                    <template x-for="(item, i) in angles" :key="item.angle">
+                        <button type="button"
+                                class="detail-spin-btn text-xs"
+                                :class="i === index ? 'is-on' : ''"
+                                @@click="go(i)"
+                                x-text="item.label"></button>
+                    </template>
+                </div>
+                <p class="mt-3 text-center text-xs text-gray-400" aria-live="polite" x-text="label"></p>
             </div>
         </section>
     }

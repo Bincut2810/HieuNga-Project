@@ -34,5 +34,19 @@ else
             "ReorderTech",
             Model.SupportsImageUpload,
             Model.Technologies.Select(t => new ContentCardItemModel(t.Id, t.Title, t.Description, t.ImageUrl, t.SortOrder)).ToList())' />
+
+        <div class="admin-editor-savebar" data-editor-savebar>
+            <div class="admin-editor-savebar-inner">
+                <p class="admin-muted" style="margin:0;">Features lưu theo từng thẻ</p>
+                <div class="admin-editor-savebar-actions">
+                    <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
+                    @if (!string.IsNullOrEmpty(Model.PublicSlug))
+                    {
+                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
+                    }
+                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Publish</a>
+                </div>
+            </div>
+        </div>
     </div>
 }

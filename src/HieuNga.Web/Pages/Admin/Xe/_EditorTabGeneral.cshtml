@@ -51,7 +51,7 @@
                 </div>
             </div>
         </div>
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(null, "Tạo Draft → Media")' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(null, "Save Draft", null, false)' />
     </form>
 }
 else
@@ -112,6 +112,6 @@ else
                 </div>
             </section>
         </div>
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu")' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Save Draft", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
     </form>
 }

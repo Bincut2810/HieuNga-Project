@@ -28,8 +28,6 @@
       this.state = null;
       this.selectedGallery = new Set();
       this.busy = false;
-      this.spinTimer = null;
-      this.spinIndex = 0;
     }
 
     async init() {
@@ -108,7 +106,7 @@
       const publish = s.publish || s.Publish;
       const gallery = s.gallery || s.Gallery || [];
       const colors = s.colors || s.Colors || [];
-      const spin = s.spin || s.Spin;
+      const angles = s.angles || s.Angles;
       const thumb = s.thumbnail || s.Thumbnail;
       const hero = s.hero || s.Hero;
 
@@ -160,7 +158,7 @@
         ${this.renderImport()}
         ${this.renderGallery(gallery)}
         ${this.renderColors(colors)}
-        ${this.renderSpin(spin)}
+        ${this.renderAngles(angles)}
       `;
 
       this.bindAfterRender();
@@ -196,7 +194,7 @@
         <section class="ms-card ms-import">
           <div class="ms-card-head">
             <h3>Smart Import</h3>
-            <p class="ms-hint">Chọn cả thư mục xe: thumbnail.jpg · hero.jpg · gallery/ · colors/ · 360/</p>
+            <p class="ms-hint">Chọn cả thư mục xe: thumbnail.jpg · hero.jpg · gallery/ · colors/ · angles/ (front.jpg…)</p>
           </div>
           <div class="ms-dropzone ms-dropzone-wide" data-drop="import" tabindex="0">
             <div class="ms-drop-empty"><strong>Kéo thư mục hoặc chọn nhiều file</strong><span>Hệ thống tự nhận diện</span></div>
@@ -265,7 +263,7 @@
                 <div class="ms-color-body">
                   <strong>${esc(c.name || c.Name)}</strong>
                   <span>${esc(c.hexCode || c.HexCode)}</span>
-                  <span class="ms-mini">Gallery ${(c.galleryCount ?? c.GalleryCount) || 0} · 360 ${(c.spinCount ?? c.SpinCount) || 0}</span>
+                  <span class="ms-mini">Gallery ${(c.galleryCount ?? c.GalleryCount) || 0} · Góc ${(c.angleFilledCount ?? c.AngleFilledCount) || 0}/6</span>
                 </div>
               </article>`;
             }).join('') || '<p class="ms-hint">Chưa có màu — thêm màu đầu tiên.</p>'}
@@ -287,39 +285,43 @@
         </section>`;
     }
 
-    renderSpin(spin) {
-      const frames = (spin && (spin.frames || spin.Frames)) || [];
-      const label = spin && (spin.statusLabel || spin.StatusLabel);
-      const missing = (spin && (spin.missingIndices || spin.MissingIndices)) || [];
-      const first = frames[0] && (frames[0].url || frames[0].Url);
+    renderAngles(angles) {
+      const slots = (angles && (angles.slots || angles.Slots)) || [];
+      const label = angles && (angles.statusLabel || angles.StatusLabel);
+      const filled = angles && (angles.filledCount ?? angles.FilledCount) || 0;
       return `
         <section class="ms-card">
           <div class="ms-card-head row">
             <div>
-              <h3>360 Studio</h3>
-              <p class="ms-hint">${esc(label)} ${missing.length ? '· thiếu ' + missing.slice(0, 8).map(i => String(i + 1).padStart(3, '0')).join(', ') : ''}</p>
+              <h3>Motorcycle 360 Viewer <span class="ms-count">${filled}/6</span></h3>
+              <p class="ms-hint">${esc(label || '6 góc cố định — kéo thả từng vị trí')}</p>
             </div>
             <div class="ms-actions">
-              <button type="button" class="ms-btn danger" data-spin-clear ${frames.length ? '' : 'hidden'}>Xóa tất cả</button>
-              <button type="button" class="ms-btn primary" data-pick="spin">Tải khung</button>
-              <input type="file" accept="image/*" multiple hidden data-file="spin" />
+              <button type="button" class="ms-btn danger" data-angles-clear ${filled ? '' : 'hidden'}>Xóa tất cả góc</button>
             </div>
           </div>
-          <div class="ms-spin-layout">
-            <div class="ms-spin-preview" data-spin-preview>
-              ${first ? `<img src="${esc(first)}" alt="360" data-spin-img />` : '<div class="ms-drop-empty">Kéo 001.jpg … 036.jpg</div>'}
-              <div class="ms-spin-controls" ${frames.length < 2 ? 'hidden' : ''}>
-                <button type="button" data-spin-play>Play</button>
-                <input type="range" min="0" max="${Math.max(frames.length - 1, 0)}" value="0" data-spin-scrub />
-              </div>
-            </div>
-            <div class="ms-dropzone ms-dropzone-wide" data-drop="spin" tabindex="0">
-              <div class="ms-spin-strip" data-sortable="spin">
-                ${frames.map(f => `<button type="button" class="ms-spin-thumb" draggable="true" data-id="${f.id || f.Id}" data-spin-goto="${f.frameIndex ?? f.FrameIndex}">
-                  <img src="${esc(f.url || f.Url)}" alt="" /><span>${esc(f.label || f.Label)}</span>
-                </button>`).join('') || '<div class="ms-drop-empty"><strong>Thả khung 360 tại đây</strong></div>'}
-              </div>
-            </div>
+          <div class="ms-angle-grid">
+            ${slots.map(slot => {
+              const key = slot.key || slot.Key;
+              const url = slot.url || slot.Url;
+              const lab = slot.label || slot.Label;
+              return `<article class="ms-angle-slot" data-angle-key="${esc(key)}">
+                <div class="ms-dropzone ms-angle-drop ${url ? 'has-image' : ''}" data-drop-angle="${esc(key)}" tabindex="0">
+                  ${url
+                    ? `<img src="${esc(url)}" alt="${esc(lab)}" />`
+                    : `<div class="ms-drop-empty"><strong>${esc(lab)}</strong><span>Kéo ảnh vào đây</span></div>`}
+                  <input type="file" accept="image/*" hidden data-file-angle="${esc(key)}" />
+                </div>
+                <div class="ms-angle-meta">
+                  <strong>${esc(lab)}</strong>
+                  <span class="ms-mini">${esc(key)}</span>
+                </div>
+                <div class="ms-actions">
+                  <button type="button" class="ms-btn primary" data-pick-angle="${esc(key)}">${url ? 'Replace' : 'Upload'}</button>
+                  ${url ? `<button type="button" class="ms-btn danger" data-clear-angle="${esc(key)}">Xóa</button>` : ''}
+                </div>
+              </article>`;
+            }).join('') || '<p class="ms-hint">Không tải được danh sách góc.</p>'}
           </div>
         </section>`;
     }
@@ -356,7 +358,6 @@
           if (!files.length) return;
           if (key === 'thumbnail' || key === 'hero') this.uploadSlot(key, files[0]);
           else if (key === 'gallery') this.uploadGallery(files);
-          else if (key === 'spin') this.uploadSpin(files);
           else if (key === 'import' || key === 'import-files') this.smartImport(files);
         });
       });
@@ -372,11 +373,10 @@
           if (!files.length) return;
           if (slot === 'thumbnail' || slot === 'hero') this.uploadSlot(slot, files[0]);
           else if (slot === 'gallery') this.uploadGallery(files);
-          else if (slot === 'spin') this.uploadSpin(files);
           else if (slot === 'import') this.smartImport(files);
         });
         zone.addEventListener('click', (e) => {
-          if (e.target.closest('input,button,a,article,.ms-g-card,.ms-spin-thumb')) return;
+          if (e.target.closest('input,button,a,article,.ms-g-card,.ms-angle-slot')) return;
           const input = qs(`[data-file="${slot}"]`, this.root) || qs(`[data-file="${slot}-files"]`, this.root);
           if (input) input.click();
         });
@@ -388,7 +388,7 @@
 
       this.bindGallery();
       this.bindColors();
-      this.bindSpin();
+      this.bindAngles();
       this.bindSortable();
     }
 
@@ -472,44 +472,57 @@
       });
     }
 
-    bindSpin() {
-      const frames = (this.state.spin || this.state.Spin || {}).frames || (this.state.spin || this.state.Spin || {}).Frames || [];
-      const img = qs('[data-spin-img]', this.root);
-      const scrub = qs('[data-spin-scrub]', this.root);
-      const play = qs('[data-spin-play]', this.root);
-
-      const show = (i) => {
-        this.spinIndex = i;
-        const f = frames[i];
-        if (img && f) img.src = f.url || f.Url;
-        if (scrub) scrub.value = String(i);
-      };
-
-      scrub?.addEventListener('input', () => show(Number(scrub.value)));
-      play?.addEventListener('click', () => {
-        if (this.spinTimer) {
-          clearInterval(this.spinTimer);
-          this.spinTimer = null;
-          play.textContent = 'Play';
-          return;
-        }
-        play.textContent = 'Pause';
-        this.spinTimer = setInterval(() => show((this.spinIndex + 1) % frames.length), 80);
-      });
-      qsa('[data-spin-goto]', this.root).forEach(btn => {
+    bindAngles() {
+      qsa('[data-pick-angle]', this.root).forEach(btn => {
         btn.addEventListener('click', () => {
-          const idx = frames.findIndex(f => String(f.frameIndex ?? f.FrameIndex) === btn.getAttribute('data-spin-goto'));
-          if (idx >= 0) show(idx);
+          const key = btn.getAttribute('data-pick-angle');
+          const input = qs(`[data-file-angle="${key}"]`, this.root);
+          if (input) input.click();
         });
       });
-      qs('[data-spin-clear]', this.root)?.addEventListener('click', async () => {
-        if (!confirm('Xóa toàn bộ khung 360?')) return;
-        await this.mutate('/spin', { method: 'DELETE', label: 'Đang xóa 360…' });
+
+      qsa('[data-file-angle]', this.root).forEach(input => {
+        input.addEventListener('change', () => {
+          const key = input.getAttribute('data-file-angle');
+          const file = (input.files || [])[0];
+          input.value = '';
+          if (file) this.uploadAngle(key, file);
+        });
+      });
+
+      qsa('[data-drop-angle]', this.root).forEach(zone => {
+        const key = zone.getAttribute('data-drop-angle');
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drag'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('is-drag'));
+        zone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zone.classList.remove('is-drag');
+          const file = (e.dataTransfer.files || [])[0];
+          if (file) this.uploadAngle(key, file);
+        });
+        zone.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return;
+          const input = qs(`[data-file-angle="${key}"]`, this.root);
+          if (input) input.click();
+        });
+      });
+
+      qsa('[data-clear-angle]', this.root).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const key = btn.getAttribute('data-clear-angle');
+          if (!confirm('Xóa góc này?')) return;
+          await this.mutate('/angles/' + encodeURIComponent(key), { method: 'DELETE', label: 'Đang xóa góc…' });
+        });
+      });
+
+      qs('[data-angles-clear]', this.root)?.addEventListener('click', async () => {
+        if (!confirm('Xóa toàn bộ 6 góc xem?')) return;
+        await this.mutate('/angles', { method: 'DELETE', label: 'Đang xóa góc…' });
       });
     }
 
     bindSortable() {
-      ['gallery', 'colors', 'spin'].forEach(kind => {
+      ['gallery', 'colors'].forEach(kind => {
         const wrap = qs(`[data-sortable="${kind}"]`, this.root);
         if (!wrap) return;
         let dragEl = null;
@@ -518,7 +531,7 @@
           el.addEventListener('dragend', async () => {
             el.classList.remove('is-dragging');
             const ids = qsa('[data-id],[data-color-id]', wrap).map(n => n.getAttribute('data-id') || n.getAttribute('data-color-id'));
-            const path = kind === 'gallery' ? '/gallery/reorder' : kind === 'colors' ? '/colors/reorder' : '/spin/reorder';
+            const path = kind === 'gallery' ? '/gallery/reorder' : '/colors/reorder';
             await this.mutate(path, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -552,10 +565,10 @@
       return this.mutate('/gallery', { method: 'POST', body: fd, label: 'Đang tải gallery…' });
     }
 
-    uploadSpin(files) {
+    uploadAngle(key, file) {
       const fd = new FormData();
-      files.forEach(f => fd.append('files', f));
-      return this.mutate('/spin', { method: 'POST', body: fd, label: 'Đang tải 360…' });
+      fd.append('file', file);
+      return this.mutate('/angles/' + encodeURIComponent(key), { method: 'POST', body: fd, label: 'Đang tải góc…' });
     }
 
     async smartImport(files) {

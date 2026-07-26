@@ -70,7 +70,7 @@ public sealed class DemoAssetHints
 {
     public string Thumbnail { get; set; } = "thumbnail.jpg";
     public string GalleryFolder { get; set; } = "gallery";
-    public string SpinFolder { get; set; } = "360";
+    public string SpinFolder { get; set; } = "angles";
     public string ColorsFolder { get; set; } = "colors";
     public string FeaturesFolder { get; set; } = "features";
     public string TechnologyFolder { get; set; } = "technology";

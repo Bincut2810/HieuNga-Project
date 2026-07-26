@@ -1,26 +1,57 @@
 @page "/admin/khach-hang/lich-hen"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.LichHenIndexModel
 
-<h1 class="text-2xl font-bold">Lịch hẹn</h1>
-<form method="get" class="mt-6 flex flex-wrap gap-3 items-end">
-    <input name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="border rounded-lg px-3 py-2 text-sm" />
-    <select name="status" asp-items="Model.StatusOptions" class="border rounded-lg px-3 py-2 text-sm"><option value="">Tất cả trạng thái</option></select>
-    <button type="submit" class="border px-4 py-2 rounded-lg text-sm">Lọc</button>
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel("Lịch hẹn")' />
+
+<form method="get" class="admin-toolbar">
+    <div class="admin-toolbar-fields">
+        <div class="admin-field">
+            <label for="q" class="admin-label">Tìm kiếm</label>
+            <input id="q" name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="admin-input" />
+        </div>
+        <div class="admin-field admin-field-sm">
+            <label for="status" class="admin-label">Trạng thái</label>
+            <select id="status" name="status" asp-items="Model.StatusOptions" class="admin-select">
+                <option value="">Tất cả trạng thái</option>
+            </select>
+        </div>
+        <div class="admin-toolbar-actions">
+            <button type="submit" class="admin-btn admin-btn-secondary">Lọc</button>
+        </div>
+    </div>
 </form>
-<div class="mt-6 bg-white border rounded-2xl overflow-hidden">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-500 text-left"><tr><th class="px-6 py-4">Khách hàng</th><th class="px-6 py-4">Loại</th><th class="px-6 py-4">Ngày</th><th class="px-6 py-4">Trạng thái</th><th class="px-6 py-4"></th></tr></thead>
-        <tbody class="divide-y">
-            @foreach (var item in Model.Items)
-            {
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4"><p class="font-medium">@item.CustomerName</p><p class="text-gray-500 text-xs">@item.Phone</p></td>
-                    <td class="px-6 py-4">@item.Type</td>
-                    <td class="px-6 py-4">@item.PreferredDate.ToString("dd/MM/yyyy")</td>
-                    <td class="px-6 py-4">@item.Status</td>
-                    <td class="px-6 py-4 text-right"><a href="/admin/khach-hang/lich-hen/@item.Id" class="text-honda-red font-medium">Chi tiết</a></td>
+
+<div class="admin-card admin-table-wrap">
+    <div class="admin-table-scroll">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Loại</th>
+                    <th>Ngày</th>
+                    <th>Trạng thái</th>
+                    <th></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <p class="admin-table-primary">@item.CustomerName</p>
+                            <p class="admin-table-secondary">@item.Phone</p>
+                        </td>
+                        <td>@item.Type</td>
+                        <td>@item.PreferredDate.ToString("dd/MM/yyyy")</td>
+                        <td>@item.Status</td>
+                        <td class="text-right">
+                            <a href="/admin/khach-hang/lich-hen/@item.Id" class="admin-action admin-action-edit">Chi tiết</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

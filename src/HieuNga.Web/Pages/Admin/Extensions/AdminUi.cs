@@ -56,7 +56,11 @@ public record AdminListItemModel(
     string EditText = "Sửa",
     string ViewText = "Xem →");
 
-public record EditorSaveBarModel(string? PreviewSlug, string SaveText = "Lưu")
+public record EditorSaveBarModel(
+    string? PreviewSlug,
+    string SaveText = "Save Draft",
+    string? PublishTabUrl = null,
+    bool IsPublishTab = false)
 {
     public string? PreviewUrl => string.IsNullOrEmpty(PreviewSlug) ? null : $"/xe/{PreviewSlug}";
 }

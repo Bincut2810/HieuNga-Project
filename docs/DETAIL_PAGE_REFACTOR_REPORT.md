@@ -1,7 +1,8 @@
 # Motorcycle Detail Refactor — Phase Report
 
 > Brand: Xe Máy Hiếu Nga · Route: `/xe/{slug}`  
-> **Finance subsystem closed:** [PHASE3_FINANCE_FINAL.md](./PHASE3_FINANCE_FINAL.md) (replaces `detail-finance.js` / Alpine notes below).
+> **Finance subsystem closed:** [PHASE3_FINANCE_FINAL.md](./PHASE3_FINANCE_FINAL.md) (replaces `detail-finance.js` / Alpine notes below).  
+> **360 viewer (2026-07):** Six fixed angles (`detailAngleViewer` + Media Studio `/angles/{key}`). Legacy 36-frame FrameIndex / gap / preload queue removed.
 
 ---
 

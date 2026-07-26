@@ -51,7 +51,8 @@ public class MotorcycleSpinFrameConfiguration : IEntityTypeConfiguration<Motorcy
     {
         builder.ToTable("motorcycle_spin_frames");
         builder.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
-        builder.HasIndex(x => new { x.MotorcycleId, x.FrameIndex });
+        builder.Property(x => x.Angle).HasConversion<int>();
+        builder.HasIndex(x => new { x.MotorcycleId, x.Angle });
         builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using HieuNga.Application.Interfaces;
 using HieuNga.Application.Media;
 using HieuNga.Application.Options;
+using HieuNga.Domain;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
 using HieuNga.Infrastructure.Persistence;
@@ -15,7 +16,6 @@ public sealed class MotorcycleMediaStudioService(
     IImageStorageService storage,
     IOptions<ImageStorageOptions> options) : IMotorcycleMediaStudioService
 {
-    public const int ExpectedSpinFrames = 36;
     private static readonly HashSet<string> AllowedTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"
@@ -241,81 +241,55 @@ public sealed class MotorcycleMediaStudioService(
         return await OkAsync(motorcycleId, "Đã xóa màu.", ct);
     }
 
-    public async Task<MediaMutationResult> UploadSpinAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> files, CancellationToken ct = default)
+    public async Task<MediaMutationResult> SetAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, MediaFileUpload file, CancellationToken ct = default)
     {
         if (!await BikeExistsAsync(motorcycleId, ct)) return Fail("Không tìm thấy xe.");
-        if (files.Count == 0) return Fail("Chọn khung 360 để tải lên.");
+        if ((int)angle < 0 || (int)angle >= MotorcycleViewAngleCatalog.Count)
+            return Fail("Góc xem không hợp lệ.");
 
-        var numbered = files.Select(f => (File: f, Num: MediaFrameNaming.TryParseFrameNumber(f.FileName))).ToList();
-        var useNumbers = numbered.All(x => x.Num.HasValue);
-        var existing = await db.MotorcycleSpinFrames.Where(f => f.MotorcycleId == motorcycleId && !f.IsDeleted).ToListAsync(ct);
-        var existingMax = existing.Count == 0 ? -1 : existing.Max(f => f.FrameIndex);
-        var next = existingMax + 1;
-        var byIndex = existing.ToDictionary(f => f.FrameIndex);
-        var added = 0;
+        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Angles), ct);
+        if (!uploaded.Ok) return Fail(uploaded.Error!);
 
-        IEnumerable<(MediaFileUpload File, int Index)> ordered = useNumbers
-            ? numbered.OrderBy(x => x.Num!.Value).Select(x => (x.File, x.Num!.Value))
-            : files.OrderBy(f => f.FileName, StringComparer.OrdinalIgnoreCase).Select(f => (f, next++));
+        var existing = await db.MotorcycleSpinFrames
+            .FirstOrDefaultAsync(f => f.MotorcycleId == motorcycleId && f.Angle == angle && !f.IsDeleted, ct);
 
-        foreach (var (file, frameIndex) in ordered)
+        if (existing is not null)
         {
-            var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Spin), ct);
-            if (!uploaded.Ok) continue;
-
-            if (byIndex.TryGetValue(frameIndex, out var existingFrame))
+            existing.ImageUrl = uploaded.Url!;
+            existing.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            db.MotorcycleSpinFrames.Add(new MotorcycleSpinFrame
             {
-                existingFrame.ImageUrl = uploaded.Url!;
-                existingFrame.UpdatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                var frame = new MotorcycleSpinFrame
-                {
-                    MotorcycleId = motorcycleId,
-                    ImageUrl = uploaded.Url!,
-                    FrameIndex = frameIndex
-                };
-                db.MotorcycleSpinFrames.Add(frame);
-                byIndex[frameIndex] = frame;
-            }
-            added++;
+                MotorcycleId = motorcycleId,
+                ImageUrl = uploaded.Url!,
+                Angle = angle
+            });
         }
 
-        if (added == 0) return Fail("Không tải được khung 360 nào.");
         await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, $"Đã cập nhật {added} khung 360.", ct);
+        var label = MotorcycleViewAngleCatalog.Get(angle).LabelVi;
+        return await OkAsync(motorcycleId, $"Đã cập nhật góc {label}.", ct);
     }
 
-    public async Task<MediaMutationResult> ReorderSpinAsync(Guid motorcycleId, IReadOnlyList<Guid> orderedIds, CancellationToken ct = default)
-    {
-        var frames = await db.MotorcycleSpinFrames.Where(f => f.MotorcycleId == motorcycleId && !f.IsDeleted).ToListAsync(ct);
-        for (var i = 0; i < orderedIds.Count; i++)
-        {
-            var frame = frames.FirstOrDefault(f => f.Id == orderedIds[i]);
-            if (frame is null) continue;
-            frame.FrameIndex = i;
-            frame.UpdatedAt = DateTime.UtcNow;
-        }
-        await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, null, ct);
-    }
-
-    public async Task<MediaMutationResult> DeleteSpinAsync(Guid motorcycleId, IReadOnlyList<Guid> frameIds, CancellationToken ct = default)
+    public async Task<MediaMutationResult> ClearAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, CancellationToken ct = default)
     {
         var frames = await db.MotorcycleSpinFrames
-            .Where(f => f.MotorcycleId == motorcycleId && frameIds.Contains(f.Id) && !f.IsDeleted)
+            .Where(f => f.MotorcycleId == motorcycleId && f.Angle == angle && !f.IsDeleted)
             .ToListAsync(ct);
+        if (frames.Count == 0) return Fail("Không tìm thấy góc xem.");
         foreach (var f in frames)
         {
             f.IsDeleted = true;
             f.UpdatedAt = DateTime.UtcNow;
         }
         await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, $"Đã xóa {frames.Count} khung.", ct);
+        var label = MotorcycleViewAngleCatalog.Get(angle).LabelVi;
+        return await OkAsync(motorcycleId, $"Đã xóa góc {label}.", ct);
     }
 
-    public async Task<MediaMutationResult> ClearSpinAsync(Guid motorcycleId, CancellationToken ct = default)
+    public async Task<MediaMutationResult> ClearAllAnglesAsync(Guid motorcycleId, CancellationToken ct = default)
     {
         var frames = await db.MotorcycleSpinFrames.Where(f => f.MotorcycleId == motorcycleId && !f.IsDeleted).ToListAsync(ct);
         foreach (var f in frames)
@@ -324,7 +298,7 @@ public sealed class MotorcycleMediaStudioService(
             f.UpdatedAt = DateTime.UtcNow;
         }
         await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, "Đã xóa toàn bộ 360.", ct);
+        return await OkAsync(motorcycleId, "Đã xóa toàn bộ góc xem.", ct);
     }
 
     public async Task<SmartImportSummaryDto> SmartImportAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> entries, CancellationToken ct = default)
@@ -333,10 +307,10 @@ public sealed class MotorcycleMediaStudioService(
             return new SmartImportSummaryDto(false, "Không tìm thấy xe.", 0, 0, 0, 0, 0, [], null);
 
         var warnings = new List<string>();
-        var thumb = 0; var hero = 0; var gallery = 0; var colors = 0; var spin = 0;
+        var thumb = 0; var hero = 0; var gallery = 0; var colors = 0; var angles = 0;
 
         var galleryFiles = new List<MediaFileUpload>();
-        var spinFiles = new List<MediaFileUpload>();
+        var angleEntries = new List<(MotorcycleViewAngle Angle, MediaFileUpload File)>();
         var colorGroups = new Dictionary<string, List<MediaFileUpload>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var entry in entries)
@@ -357,8 +331,16 @@ public sealed class MotorcycleMediaStudioService(
             }
             else if (lower.Contains("/gallery/") || lower.StartsWith("gallery/"))
                 galleryFiles.Add(entry);
-            else if (lower.Contains("/360/") || lower.StartsWith("360/") || lower.Contains("/spin/"))
-                spinFiles.Add(entry);
+            else if (IsAngleFolderPath(lower) || MotorcycleViewAngleCatalog.TryParseKey(fileName, out _))
+            {
+                if (!MotorcycleViewAngleCatalog.TryParseKey(fileName, out var angle)
+                    && !MotorcycleViewAngleCatalog.TryParseKey(Path.GetFileNameWithoutExtension(fileName), out angle))
+                {
+                    warnings.Add($"Không nhận diện góc: {path}");
+                    continue;
+                }
+                angleEntries.Add((angle, entry));
+            }
             else if (TryColorFolder(lower, out var colorName))
             {
                 if (!colorGroups.TryGetValue(colorName, out var list))
@@ -367,7 +349,6 @@ public sealed class MotorcycleMediaStudioService(
             }
             else if (lower.Contains("/colors/") || lower.StartsWith("colors/"))
             {
-                // loose file under colors/
                 var name = Path.GetFileNameWithoutExtension(fileName);
                 if (!colorGroups.TryGetValue(name, out var list))
                     colorGroups[name] = list = [];
@@ -384,11 +365,11 @@ public sealed class MotorcycleMediaStudioService(
             else warnings.Add(r.Message ?? "Gallery import failed");
         }
 
-        if (spinFiles.Count > 0)
+        foreach (var (angle, file) in angleEntries)
         {
-            var r = await UploadSpinAsync(motorcycleId, spinFiles, ct);
-            if (r.Success) spin = spinFiles.Count;
-            else warnings.Add(r.Message ?? "360 import failed");
+            var r = await SetAngleAsync(motorcycleId, angle, file, ct);
+            if (r.Success) angles++;
+            else warnings.Add(r.Message ?? file.FileName);
         }
 
         foreach (var (name, files) in colorGroups)
@@ -403,8 +384,8 @@ public sealed class MotorcycleMediaStudioService(
         var state = await GetStateAsync(motorcycleId, ct);
         return new SmartImportSummaryDto(
             true,
-            $"Đã import: thumb {thumb}, hero {hero}, gallery {gallery}, màu {colors}, 360 {spin}.",
-            thumb, hero, gallery, colors, spin, warnings, state);
+            $"Đã import: thumb {thumb}, hero {hero}, gallery {gallery}, màu {colors}, góc {angles}.",
+            thumb, hero, gallery, colors, angles, warnings, state);
     }
 
     public async Task<(bool Ok, string? Url, string? Error)> UploadOnlyAsync(MediaFileUpload file, string folder, CancellationToken ct = default)
@@ -439,17 +420,39 @@ public sealed class MotorcycleMediaStudioService(
         var gallery = bike.MediaAssets.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder)
             .Select(a => new GalleryItemDto(a.Id, a.Url, a.FileName, a.AltText, a.SortOrder, a.Width, a.Height, a.FileSizeBytes))
             .ToList();
-        var frames = bike.SpinFrames.Where(f => !f.IsDeleted).OrderBy(f => f.FrameIndex)
-            .Select(f => new SpinFrameDto(f.Id, f.ImageUrl, f.FrameIndex, $"Frame {f.FrameIndex + 1:D3}"))
-            .ToList();
-        var missing = FindMissing(frames.Select(f => f.FrameIndex));
-        var spinComplete = frames.Count >= ExpectedSpinFrames && missing.Count == 0;
-        var colors = bike.Colors.Where(c => !c.IsDeleted).OrderBy(c => c.SortOrder)
-            .Select(c => new ColorCardDto(c.Id, c.Name, c.HexCode, c.ImageUrl, c.SortOrder, gallery.Count, frames.Count))
+
+        var byAngle = bike.SpinFrames.Where(f => !f.IsDeleted)
+            .GroupBy(f => f.Angle)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).First());
+
+        var slots = MotorcycleViewAngleCatalog.All
+            .Select(e =>
+            {
+                byAngle.TryGetValue(e.Angle, out var frame);
+                return new AngleSlotDto(e.Key, e.LabelVi, (int)e.Angle, frame?.Id, frame?.ImageUrl);
+            })
             .ToList();
 
-        var health = BuildHealth(bike, gallery, colors, frames, missing, spinComplete);
-        var publish = BuildPublish(bike, gallery, colors, frames);
+        var filled = slots.Count(s => !string.IsNullOrWhiteSpace(s.Url));
+        var complete = filled == MotorcycleViewAngleCatalog.Count;
+        var unused = filled == 0;
+        var anglesComplete = complete || unused;
+
+        var colors = bike.Colors.Where(c => !c.IsDeleted).OrderBy(c => c.SortOrder)
+            .Select(c => new ColorCardDto(c.Id, c.Name, c.HexCode, c.ImageUrl, c.SortOrder, gallery.Count, filled))
+            .ToList();
+
+        var health = BuildHealth(bike, gallery, colors, filled, complete, unused);
+        var publish = BuildPublish(bike, gallery, colors, filled);
+
+        string statusLabel;
+        if (unused) statusLabel = "Chưa có góc xem";
+        else if (complete) statusLabel = $"{filled} / {MotorcycleViewAngleCatalog.Count} · Ready";
+        else
+        {
+            var missing = slots.Where(s => string.IsNullOrWhiteSpace(s.Url)).Select(s => s.Label).Take(4);
+            statusLabel = $"{filled} / {MotorcycleViewAngleCatalog.Count} · Thiếu " + string.Join(", ", missing);
+        }
 
         return new MediaStudioStateDto(
             bike.Id,
@@ -461,15 +464,7 @@ public sealed class MotorcycleMediaStudioService(
             string.IsNullOrWhiteSpace(bike.HeroImageUrl) ? null : new MediaSlotDto(bike.HeroImageUrl!, null, null, null, null),
             gallery,
             colors,
-            new SpinStudioDto(
-                frames,
-                ExpectedSpinFrames,
-                frames.Count,
-                missing,
-                spinComplete,
-                spinComplete ? $"{frames.Count} / {ExpectedSpinFrames} · Ready" :
-                    frames.Count == 0 ? "Chưa có khung 360" :
-                    $"{frames.Count} / {ExpectedSpinFrames} · Missing " + string.Join(", ", missing.Take(6).Select(i => (i + 1).ToString("D3")))),
+            new AngleStudioDto(slots, filled, MotorcycleViewAngleCatalog.Count, anglesComplete, statusLabel),
             health,
             publish);
     }
@@ -478,10 +473,11 @@ public sealed class MotorcycleMediaStudioService(
         Motorcycle bike,
         List<GalleryItemDto> gallery,
         List<ColorCardDto> colors,
-        List<SpinFrameDto> frames,
-        IReadOnlyList<int> missing,
-        bool spinComplete)
+        int filled,
+        bool complete,
+        bool unused)
     {
+        var anglesOk = complete || unused;
         var items = new List<MediaHealthItemDto>
         {
             Item("thumbnail", "Thumbnail", !string.IsNullOrWhiteSpace(bike.ThumbnailUrl), "Có", "Thiếu"),
@@ -489,24 +485,24 @@ public sealed class MotorcycleMediaStudioService(
             Item("gallery", "Gallery", gallery.Count >= 3, $"{gallery.Count} ảnh", gallery.Count == 0 ? "Trống" : $"{gallery.Count} ảnh — nên ≥ 3"),
             Item("colors", "Colors", colors.Count >= 1 && colors.All(c => !string.IsNullOrWhiteSpace(c.ImageUrl)),
                 $"{colors.Count} màu", colors.Count == 0 ? "Chưa có màu" : "Thiếu ảnh màu"),
-            Item("spin", "360", spinComplete || frames.Count == 0,
-                frames.Count == 0 ? "Chưa dùng" : spinComplete ? $"{frames.Count} frames ✓" : $"{frames.Count}/36 thiếu {missing.Count}",
-                frames.Count == 0 ? "Tuỳ chọn" : "Chưa đủ khung"),
+            Item("angles", "6 góc", anglesOk,
+                unused ? "Chưa dùng" : complete ? $"{filled}/6 góc ✓" : $"{filled}/6 góc",
+                unused ? "Tuỳ chọn" : "Chưa đủ góc"),
             Item("alt", "Alt text", gallery.Count == 0 || gallery.All(g => !string.IsNullOrWhiteSpace(g.AltText)),
                 "Đủ chú thích", $"{gallery.Count(g => string.IsNullOrWhiteSpace(g.AltText))} ảnh thiếu alt")
         };
 
         var weights = new Dictionary<string, int>
         {
-            ["thumbnail"] = 25, ["hero"] = 10, ["gallery"] = 25, ["colors"] = 20, ["spin"] = 10, ["alt"] = 10
+            ["thumbnail"] = 25, ["hero"] = 10, ["gallery"] = 25, ["colors"] = 20, ["angles"] = 10, ["alt"] = 10
         };
         var score = 0;
         foreach (var item in items)
         {
             if (item.Status is "ok" or "optional")
                 score += weights.GetValueOrDefault(item.Key);
-            else if (item.Key == "spin" && frames.Count == 0)
-                score += weights["spin"]; // optional when unused
+            else if (item.Key == "angles" && unused)
+                score += weights["angles"];
             else if (item.Key == "hero" && item.Status == "warn")
                 score += 5;
         }
@@ -514,23 +510,22 @@ public sealed class MotorcycleMediaStudioService(
         return new MediaHealthDto(Math.Clamp(score, 0, 100), items);
 
         static MediaHealthItemDto Item(string key, string label, bool ok, string okDetail, string badDetail) =>
-            new(key, label, ok ? "ok" : key is "hero" or "spin" or "alt" ? "warn" : "bad", ok ? okDetail : badDetail);
+            new(key, label, ok ? "ok" : key is "hero" or "angles" or "alt" ? "warn" : "bad", ok ? okDetail : badDetail);
     }
 
     private static PublishReadinessDto BuildPublish(
         Motorcycle bike,
         List<GalleryItemDto> gallery,
         List<ColorCardDto> colors,
-        List<SpinFrameDto> frames)
+        int filled)
     {
         var missing = new List<string>();
         if (string.IsNullOrWhiteSpace(bike.ThumbnailUrl)) missing.Add("Thumbnail");
         if (gallery.Count == 0) missing.Add("Gallery (ít nhất 1 ảnh)");
         if (bike.BasePrice <= 0) missing.Add("Giá (BasePrice)");
         if (colors.Count == 0) missing.Add("Ít nhất một màu");
-        // Category always set via enum
-        if (frames.Count > 0 && frames.Count < ExpectedSpinFrames)
-            missing.Add($"360 chưa đủ ({frames.Count}/{ExpectedSpinFrames})");
+        if (filled > 0 && filled < MotorcycleViewAngleCatalog.Count)
+            missing.Add($"Góc xem chưa đủ ({filled}/{MotorcycleViewAngleCatalog.Count})");
 
         var ready = missing.Count == 0;
         return new PublishReadinessDto(
@@ -585,7 +580,7 @@ public sealed class MotorcycleMediaStudioService(
         MediaSlot.Hero => $"motorcycles/{id:N}/hero",
         MediaSlot.Gallery => $"motorcycles/{id:N}/gallery",
         MediaSlot.Color => $"motorcycles/{id:N}/colors",
-        MediaSlot.Spin => $"motorcycles/{id:N}/360",
+        MediaSlot.Angles => $"motorcycles/{id:N}/angles",
         _ => $"motorcycles/{id:N}"
     };
 
@@ -600,13 +595,6 @@ public sealed class MotorcycleMediaStudioService(
 
     private static Task<string> HashAsync(MediaFileUpload file, CancellationToken ct) =>
         Task.FromResult($"name:{file.FileName.ToLowerInvariant()}|len:{file.Length}");
-
-    private static IReadOnlyList<int> FindMissing(IEnumerable<int> indices)
-    {
-        var set = indices.ToHashSet();
-        if (set.Count == 0) return [];
-        return Enumerable.Range(0, ExpectedSpinFrames).Where(i => !set.Contains(i)).ToList();
-    }
 
     private static string? NormalizeHex(string? hex)
     {
@@ -627,13 +615,18 @@ public sealed class MotorcycleMediaStudioService(
         || lower.EndsWith("/hero.jpg") || lower.EndsWith("/hero.png") || lower.EndsWith("/hero.webp")
         || fileName.Equals("hero.jpg", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsAngleFolderPath(string lower) =>
+        lower.Contains("/angles/") || lower.StartsWith("angles/")
+        || lower.Contains("/360/") || lower.StartsWith("360/")
+        || lower.Contains("/spin/") || lower.StartsWith("spin/");
+
     private static bool TryColorFolder(string lower, out string colorName)
     {
         colorName = "";
         var m = Regex.Match(lower, @"colors/([^/]+)/");
         if (!m.Success) return false;
         colorName = m.Groups[1].Value;
-        return !string.IsNullOrWhiteSpace(colorName) && colorName is not ("gallery" or "360" or "spin");
+        return !string.IsNullOrWhiteSpace(colorName) && colorName is not ("gallery" or "360" or "spin" or "angles");
     }
 
     private static string GuessHex(string name) => name.ToLowerInvariant() switch

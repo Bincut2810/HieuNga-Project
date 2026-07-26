@@ -16,6 +16,8 @@ public record MotorcycleListItemDto(
 
 public record MotorcycleSpecItemDto(string Icon, string Label, string Value);
 
+public record MotorcycleAngleImageDto(string Angle, string Label, string Url);
+
 public record MotorcycleDetailDto(
     Guid Id,
     string Name,
@@ -36,7 +38,7 @@ public record MotorcycleDetailDto(
     IReadOnlyList<MotorcycleSpecItemDto> Specifications,
     IReadOnlyList<MotorcycleFeatureDto> Features,
     IReadOnlyList<MotorcycleTechnologyDto> Technologies,
-    IReadOnlyList<string> SpinFrameUrls,
+    IReadOnlyList<MotorcycleAngleImageDto> AngleImages,
     SeoMetadataDto Seo);
 
 public record MotorcycleVariantDto(Guid Id, string Name, decimal Price, int StockQuantity, bool IsAvailable);

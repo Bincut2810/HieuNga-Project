@@ -1,19 +1,51 @@
 @model HieuNga.Web.Pages.Admin.PromotionInputModel
-<div><label asp-for="Title" class="block text-sm font-medium mb-1">Tiêu đề *</label><input asp-for="Title" class="w-full border rounded-lg px-3 py-2 text-sm" /><span asp-validation-for="Title" class="text-red-600 text-xs"></span></div>
-<div><label asp-for="Slug" class="block text-sm font-medium mb-1">Slug</label><input asp-for="Slug" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div><label asp-for="Summary" class="block text-sm font-medium mb-1">Tóm tắt</label><textarea asp-for="Summary" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
-<div><label asp-for="Content" class="block text-sm font-medium mb-1">Nội dung</label><textarea asp-for="Content" rows="6" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div><label asp-for="Type" class="block text-sm font-medium mb-1">Loại</label><select asp-for="Type" asp-items="Html.GetEnumSelectList<PromotionType>()" class="w-full border rounded-lg px-3 py-2 text-sm"></select></div>
-    <div><label asp-for="MotorcycleId" class="block text-sm font-medium mb-1">Xe liên quan</label><select asp-for="MotorcycleId" asp-items="@(ViewData["MotorcycleOptions"] as SelectList)"><option value="">—</option></select></div>
+<div class="admin-form-stack">
+    <div>
+        <label asp-for="Title" class="admin-label">Tiêu đề *</label>
+        <input asp-for="Title" class="admin-input" />
+        <span asp-validation-for="Title" class="admin-validation"></span>
+    </div>
+    <div>
+        <label asp-for="Slug" class="admin-label">Slug</label>
+        <input asp-for="Slug" class="admin-input" />
+    </div>
+    <div>
+        <label asp-for="Summary" class="admin-label">Tóm tắt</label>
+        <textarea asp-for="Summary" rows="2" class="admin-textarea"></textarea>
+    </div>
+    <div>
+        <label asp-for="Content" class="admin-label">Nội dung</label>
+        <textarea asp-for="Content" rows="6" class="admin-textarea"></textarea>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="Type" class="admin-label">Loại</label>
+            <select asp-for="Type" asp-items="Html.GetEnumSelectList<PromotionType>()" class="admin-select"></select>
+        </div>
+        <div>
+            <label asp-for="MotorcycleId" class="admin-label">Xe liên quan</label>
+            <select asp-for="MotorcycleId" asp-items="@(ViewData["MotorcycleOptions"] as SelectList)" class="admin-select">
+                <option value="">—</option>
+            </select>
+        </div>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="StartDate" class="admin-label">Bắt đầu</label>
+            <input asp-for="StartDate" type="date" class="admin-input" />
+        </div>
+        <div>
+            <label asp-for="EndDate" class="admin-label">Kết thúc</label>
+            <input asp-for="EndDate" type="date" class="admin-input" />
+        </div>
+    </div>
+    <div>
+        <label asp-for="ImageUrl" class="admin-label">Ảnh URL</label>
+        <input asp-for="ImageUrl" class="admin-input" />
+    </div>
+    <div class="admin-grid-2">
+        <label class="admin-check"><input asp-for="IsActive" type="checkbox" /> Kích hoạt</label>
+        <label class="admin-check"><input asp-for="IsFeatured" type="checkbox" /> Nổi bật</label>
+    </div>
+    <partial name="Admin/Shared/_SeoFields" model="Model" />
 </div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div><label asp-for="StartDate" class="block text-sm font-medium mb-1">Bắt đầu</label><input asp-for="StartDate" type="date" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-    <div><label asp-for="EndDate" class="block text-sm font-medium mb-1">Kết thúc</label><input asp-for="EndDate" type="date" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-</div>
-<div><label asp-for="ImageUrl" class="block text-sm font-medium mb-1">Ảnh URL</label><input asp-for="ImageUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div class="flex gap-4">
-    <label class="flex items-center gap-2 text-sm"><input asp-for="IsActive" type="checkbox" /> Kích hoạt</label>
-    <label class="flex items-center gap-2 text-sm"><input asp-for="IsFeatured" type="checkbox" /> Nổi bật</label>
-</div>
-<partial name="Admin/Shared/_SeoFields" model="Model" />

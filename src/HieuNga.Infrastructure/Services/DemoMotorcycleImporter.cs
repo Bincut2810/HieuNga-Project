@@ -306,7 +306,7 @@ public sealed class DemoMotorcycleImporter(
         var vision = Path.Combine(AssetsRootPath, "Vision");
         Directory.CreateDirectory(shared);
         Directory.CreateDirectory(Path.Combine(shared, "gallery"));
-        Directory.CreateDirectory(Path.Combine(shared, "360"));
+        Directory.CreateDirectory(Path.Combine(shared, "angles"));
         Directory.CreateDirectory(Path.Combine(shared, "colors"));
         Directory.CreateDirectory(Path.Combine(shared, "features"));
         Directory.CreateDirectory(Path.Combine(shared, "technology"));
@@ -331,21 +331,20 @@ public sealed class DemoMotorcycleImporter(
         CopyIfMissing(Path.Combine("technology", "tech-01.jpg"));
         CopyIfMissing(Path.Combine("technology", "tech-02.jpg"));
 
-        // Build 36-frame 360 sequence by duplicating a source placeholder
-        var spinSource =
-            ResolveExistingFile(shared, "thumbnail.jpg")
-            ?? ResolveExistingFile(vision, "thumbnail.jpg")
-            ?? ListImageFiles(Path.Combine(vision, "360")).FirstOrDefault()
-            ?? ListImageFiles(Path.Combine(shared, "gallery")).FirstOrDefault();
-
-        if (spinSource is not null)
+        // Optional six-angle placeholders — only when ≥6 distinct source files exist (no frame duplication).
+        var angleSource = ListImageFiles(Path.Combine(vision, "angles"))
+            .Concat(ListImageFiles(Path.Combine(vision, "360")))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (angleSource.Count >= MotorcycleViewAngleCatalog.Count)
         {
-            var spinDir = Path.Combine(shared, "360");
-            for (var i = 1; i <= 36; i++)
+            var angleDir = Path.Combine(shared, "angles");
+            for (var i = 0; i < MotorcycleViewAngleCatalog.Count; i++)
             {
-                var dest = Path.Combine(spinDir, $"{i:D3}.jpg");
+                var key = MotorcycleViewAngleCatalog.All[i].Key;
+                var dest = Path.Combine(angleDir, $"{key}.jpg");
                 if (!File.Exists(dest))
-                    File.Copy(spinSource, dest, overwrite: false);
+                    File.Copy(angleSource[i], dest, overwrite: false);
             }
         }
 
@@ -354,7 +353,7 @@ public sealed class DemoMotorcycleImporter(
         if (!File.Exists(readme))
         {
             File.WriteAllText(readme,
-                "# Shared demo placeholders\n\nUsed by Seed Full Catalog. Replace files in place; keep names. Not Honda product photos.\n");
+                "# Shared demo placeholders\n\nUsed by Seed Full Catalog. Replace files in place; keep names. Not Honda product photos.\nOptional angles/: front.jpg … front-right.jpg (6 named angles).\n");
         }
 
         return shared;
@@ -396,23 +395,29 @@ public sealed class DemoMotorcycleImporter(
             bundle.Colors.Add((name, hex, url ?? bundle.ThumbnailUrl));
         }
 
-        var spinFiles = ListImageFiles(Path.Combine(sharedDir, "360"));
-        string? spinUrl = null;
-        if (spinFiles.Count > 0)
-        {
-            spinUrl = await UploadFileAsync(spinFiles[0], folder + "/360", ct, warnings);
-            if (spinUrl is not null) bundle.UploadedCount++;
-        }
-        spinUrl ??= bundle.ThumbnailUrl;
+        // Prefer skip angles when only one shared image; only seed when ≥ 6 distinct files.
+        var angleFiles = ListImageFiles(Path.Combine(sharedDir, "angles"));
+        if (angleFiles.Count == 0)
+            angleFiles = ListImageFiles(Path.Combine(sharedDir, "360"));
 
-        if (spinUrl is not null)
+        if (angleFiles.Count >= MotorcycleViewAngleCatalog.Count)
         {
-            for (var i = 0; i < 36; i++)
-                bundle.SpinUrls.Add(spinUrl);
+            for (var i = 0; i < MotorcycleViewAngleCatalog.Count; i++)
+            {
+                var url = await UploadFileAsync(angleFiles[i], folder + "/angles", ct, warnings);
+                if (url is null) continue;
+                bundle.SpinUrls.Add(url);
+                bundle.UploadedCount++;
+            }
+            if (bundle.SpinUrls.Count < MotorcycleViewAngleCatalog.Count)
+            {
+                bundle.SpinUrls.Clear();
+                warnings.Add("Bỏ qua góc xem shared — không upload đủ 6 ảnh distinct.");
+            }
         }
-        else
+        else if (angleFiles.Count == 1)
         {
-            warnings.Add("Không tạo được chuỗi 360 placeholder.");
+            warnings.Add("Bỏ qua góc xem shared (chỉ 1 ảnh — không nhân bản placeholder).");
         }
 
         bundle.FeatureUrl = await Up(Path.Combine("features", "feature-01.jpg")) ?? bundle.ThumbnailUrl;
@@ -487,13 +492,13 @@ public sealed class DemoMotorcycleImporter(
             });
         }
 
-        for (var i = 0; i < shared.SpinUrls.Count; i++)
+        for (var i = 0; i < shared.SpinUrls.Count && i < MotorcycleViewAngleCatalog.Count; i++)
         {
             bike.SpinFrames.Add(new MotorcycleSpinFrame
             {
                 MotorcycleId = bike.Id,
                 ImageUrl = shared.SpinUrls[i],
-                FrameIndex = i + 1
+                Angle = MotorcycleViewAngleCatalog.All[i].Angle
             });
         }
 
@@ -752,49 +757,75 @@ public sealed class DemoMotorcycleImporter(
     {
         var dir = Path.Combine(packageDir, meta.Assets.SpinFolder);
         var files = ListImageFiles(dir);
+        if (files.Count == 0)
+        {
+            var anglesDir = Path.Combine(packageDir, "angles");
+            if (!string.Equals(dir, anglesDir, StringComparison.OrdinalIgnoreCase))
+                files = ListImageFiles(anglesDir);
+        }
+
+        var used = new HashSet<MotorcycleViewAngle>();
         var count = 0;
+
         foreach (var file in files)
         {
-            var frame = TryParseFrameIndex(Path.GetFileNameWithoutExtension(file));
-            var url = await UploadFileAsync(file, $"demo/{idFolder}/360", ct, warnings);
-            if (url is null) continue;
+            if (!MotorcycleViewAngleCatalog.TryParseKey(Path.GetFileName(file), out var angle))
+                continue;
+            if (!used.Add(angle)) continue;
+
+            var url = await UploadFileAsync(file, $"demo/{idFolder}/angles", ct, warnings);
+            if (url is null)
+            {
+                used.Remove(angle);
+                continue;
+            }
+
             bike.SpinFrames.Add(new MotorcycleSpinFrame
             {
                 MotorcycleId = bike.Id,
                 ImageUrl = url,
-                FrameIndex = frame ?? count
+                Angle = angle
             });
             count++;
+            if (count >= MotorcycleViewAngleCatalog.Count) break;
         }
 
-        // Fake 360: duplicate first available image into 36 frames when package has no real spin set
-        if (count < 2)
+        // Unlabelled files: map first remaining files to unused catalog angles in order
+        if (count < MotorcycleViewAngleCatalog.Count)
         {
-            var fallback =
-                bike.ThumbnailUrl
-                ?? bike.MediaAssets.OrderBy(a => a.SortOrder).Select(a => a.Url).FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(fallback))
-            {
-                if (bike.SpinFrames.Count > 0)
-                {
-                    db.MotorcycleSpinFrames.RemoveRange(bike.SpinFrames);
-                    bike.SpinFrames.Clear();
-                }
-                for (var i = 1; i <= 36; i++)
-                {
-                    bike.SpinFrames.Add(new MotorcycleSpinFrame
-                    {
-                        MotorcycleId = bike.Id,
-                        ImageUrl = fallback,
-                        FrameIndex = i
-                    });
-                }
-                warnings.Add("360 dùng ảnh placeholder lặp 36 khung (chưa có bộ frame thật).");
-                return 0;
-            }
+            var remaining = MotorcycleViewAngleCatalog.All.Where(e => !used.Contains(e.Angle)).ToList();
+            var unparsed = files
+                .Where(f => !MotorcycleViewAngleCatalog.TryParseKey(Path.GetFileName(f), out _))
+                .Take(remaining.Count)
+                .ToList();
 
-            warnings.Add("360 cần ≥ 2 khung hình để viewer hoạt động.");
+            for (var i = 0; i < unparsed.Count; i++)
+            {
+                var url = await UploadFileAsync(unparsed[i], $"demo/{idFolder}/angles", ct, warnings);
+                if (url is null) continue;
+                bike.SpinFrames.Add(new MotorcycleSpinFrame
+                {
+                    MotorcycleId = bike.Id,
+                    ImageUrl = url,
+                    Angle = remaining[i].Angle
+                });
+                count++;
+            }
         }
+
+        // Prefer skip when only a single image would be duplicated into placeholders
+        if (count == 1 && files.Count == 1)
+        {
+            db.MotorcycleSpinFrames.RemoveRange(bike.SpinFrames);
+            bike.SpinFrames.Clear();
+            warnings.Add("Bỏ qua góc xem (chỉ 1 ảnh — không nhân bản placeholder).");
+            return 0;
+        }
+
+        if (count == 0)
+            warnings.Add("Không có góc xem trong package (tuỳ chọn).");
+        else if (count < MotorcycleViewAngleCatalog.Count)
+            warnings.Add($"Góc xem chưa đủ ({count}/{MotorcycleViewAngleCatalog.Count}).");
 
         return count;
     }
@@ -940,13 +971,6 @@ public sealed class DemoMotorcycleImporter(
             ".svg" => "image/svg+xml",
             _ => "image/jpeg"
         };
-
-    private static int? TryParseFrameIndex(string name)
-    {
-        var match = Regex.Match(name, @"(\d+)(?!.*\d)");
-        if (!match.Success) return null;
-        return int.TryParse(match.Groups[1].Value, out var n) ? n : null;
-    }
 
     private static string Slugify(string value)
     {

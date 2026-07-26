@@ -1,26 +1,43 @@
 @model HieuNga.Web.Pages.Admin.BranchInputModel
-<div>
-    <label asp-for="Name" class="block text-sm font-medium mb-1">Tên *</label>
-    <input asp-for="Name" class="w-full border rounded-lg px-3 py-2 text-sm" />
-    <span asp-validation-for="Name" class="text-red-600 text-xs"></span>
-</div>
-<div>
-    <label asp-for="Slug" class="block text-sm font-medium mb-1">Slug</label>
-    <input asp-for="Slug" class="w-full border rounded-lg px-3 py-2 text-sm" />
-</div>
-<div>
-    <label asp-for="Address" class="block text-sm font-medium mb-1">Địa chỉ *</label>
-    <input asp-for="Address" class="w-full border rounded-lg px-3 py-2 text-sm" />
-    <span asp-validation-for="Address" class="text-red-600 text-xs"></span>
-</div>
-<div class="grid md:grid-cols-2 gap-3">
-    <div><label asp-for="Phone" class="block text-sm font-medium mb-1">Điện thoại</label><input asp-for="Phone" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-    <div><label asp-for="Hotline" class="block text-sm font-medium mb-1">Hotline</label><input asp-for="Hotline" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-</div>
-<div><label asp-for="Email" class="block text-sm font-medium mb-1">Email</label><input asp-for="Email" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div><label asp-for="OpeningHours" class="block text-sm font-medium mb-1">Giờ mở cửa</label><input asp-for="OpeningHours" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div><label asp-for="MapEmbedUrl" class="block text-sm font-medium mb-1">Map embed URL</label><input asp-for="MapEmbedUrl" class="w-full border rounded-lg px-3 py-2 text-sm" /></div>
-<div class="flex gap-4">
-    <label class="flex items-center gap-2 text-sm"><input asp-for="IsHeadOffice" type="checkbox" /> Trụ sở chính</label>
-    <label class="flex items-center gap-2 text-sm"><input asp-for="IsActive" type="checkbox" /> Kích hoạt</label>
+<div class="admin-form-stack">
+    <div>
+        <label asp-for="Name" class="admin-label">Tên *</label>
+        <input asp-for="Name" class="admin-input" />
+        <span asp-validation-for="Name" class="admin-validation"></span>
+    </div>
+    <div>
+        <label asp-for="Slug" class="admin-label">Slug</label>
+        <input asp-for="Slug" class="admin-input" />
+    </div>
+    <div>
+        <label asp-for="Address" class="admin-label">Địa chỉ *</label>
+        <input asp-for="Address" class="admin-input" />
+        <span asp-validation-for="Address" class="admin-validation"></span>
+    </div>
+    <div class="admin-grid-2">
+        <div>
+            <label asp-for="Phone" class="admin-label">Điện thoại</label>
+            <input asp-for="Phone" class="admin-input" />
+        </div>
+        <div>
+            <label asp-for="Hotline" class="admin-label">Hotline</label>
+            <input asp-for="Hotline" class="admin-input" />
+        </div>
+    </div>
+    <div>
+        <label asp-for="Email" class="admin-label">Email</label>
+        <input asp-for="Email" class="admin-input" />
+    </div>
+    <div>
+        <label asp-for="OpeningHours" class="admin-label">Giờ mở cửa</label>
+        <input asp-for="OpeningHours" class="admin-input" />
+    </div>
+    <div>
+        <label asp-for="MapEmbedUrl" class="admin-label">Map embed URL</label>
+        <input asp-for="MapEmbedUrl" class="admin-input" />
+    </div>
+    <div class="admin-grid-2">
+        <label class="admin-check"><input asp-for="IsHeadOffice" type="checkbox" /> Trụ sở chính</label>
+        <label class="admin-check"><input asp-for="IsActive" type="checkbox" /> Kích hoạt</label>
+    </div>
 </div>

@@ -6,7 +6,7 @@ public enum MediaSlot
     Hero,
     Gallery,
     Color,
-    Spin
+    Angles
 }
 
 public sealed record MediaStudioStateDto(
@@ -19,7 +19,7 @@ public sealed record MediaStudioStateDto(
     MediaSlotDto? Hero,
     IReadOnlyList<GalleryItemDto> Gallery,
     IReadOnlyList<ColorCardDto> Colors,
-    SpinStudioDto Spin,
+    AngleStudioDto Angles,
     MediaHealthDto Health,
     PublishReadinessDto Publish);
 
@@ -47,15 +47,19 @@ public sealed record ColorCardDto(
     string? ImageUrl,
     int SortOrder,
     int GalleryCount,
-    int SpinCount);
+    int AngleFilledCount);
 
-public sealed record SpinFrameDto(Guid Id, string Url, int FrameIndex, string Label);
+public sealed record AngleSlotDto(
+    string Key,
+    string Label,
+    int Angle,
+    Guid? Id,
+    string? Url);
 
-public sealed record SpinStudioDto(
-    IReadOnlyList<SpinFrameDto> Frames,
-    int ExpectedFrames,
-    int PresentCount,
-    IReadOnlyList<int> MissingIndices,
+public sealed record AngleStudioDto(
+    IReadOnlyList<AngleSlotDto> Slots,
+    int FilledCount,
+    int Total,
     bool IsComplete,
     string StatusLabel);
 
@@ -79,6 +83,6 @@ public sealed record SmartImportSummaryDto(
     int Hero,
     int Gallery,
     int Colors,
-    int SpinFrames,
+    int Angles,
     IReadOnlyList<string> Warnings,
     MediaStudioStateDto? State);

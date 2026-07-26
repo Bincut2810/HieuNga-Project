@@ -1,14 +1,15 @@
 @page "/admin/xe/xoa/{id:guid}"
+@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.Xe.XoaModel
 
-<h1 class="text-2xl font-bold">Xóa xe</h1>
-<p class="text-gray-500 text-sm mt-2"><a href="/admin/xe" class="hover:text-honda-red">← Quay lại</a></p>
+<partial name="Admin/Shared/_AdminPageHeader"
+         model='new AdminPageHeaderModel("Xóa xe", "Xác nhận xóa xe khỏi danh sách quản trị.")' />
 
-<div class="mt-8 bg-white border rounded-2xl p-8 max-w-lg">
-    <p class="text-gray-700">Bạn có chắc muốn xóa xe <strong>@Model.Name</strong>? Hành động này có thể hoàn tác trong database.</p>
-    <form method="post" class="mt-6 flex gap-3">
+<div class="admin-card admin-card-padded" style="max-width: 32rem;">
+    <p>Bạn có chắc muốn xóa xe <strong>@Model.Name</strong>? Hành động này có thể hoàn tác trong database.</p>
+    <form method="post" class="admin-form-actions" style="border-top: none; margin-top: 1.25rem; padding-top: 0;">
         @Html.AntiForgeryToken()
-        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold">Xác nhận xóa</button>
-        <a href="/admin/xe/sua/@Model.Id" class="border px-4 py-2 rounded-lg text-sm font-medium">Hủy</a>
+        <button type="submit" class="admin-btn admin-btn-danger">Xác nhận xóa</button>
+        <a href="/admin/xe/editor/@Model.Id" class="admin-btn admin-btn-secondary">Hủy</a>
     </form>
 </div>

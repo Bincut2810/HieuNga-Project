@@ -15,11 +15,13 @@ Vision/
   metadata.json
   thumbnail.jpg
   gallery/01.jpg … 04.jpg
-  360/001.jpg … 008.jpg   (≥ 2 frames for public 360 viewer)
+  angles/front.jpg … front-right.jpg   (≥ 2 angles for public viewer)
   colors/black.jpg, white.jpg, red.jpg
   features/feature-01.jpg, feature-02.jpg
   technology/tech-01.jpg, tech-02.jpg
 ```
+
+Legacy `360/` folders with named angle files are still accepted.
 
 ## Import
 

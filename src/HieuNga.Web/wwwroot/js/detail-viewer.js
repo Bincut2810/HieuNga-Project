@@ -1,5 +1,5 @@
 /**
- * Motorcycle detail V2 — color/gallery lightbox, 360 viewer, features, specs nav, sticky CTA.
+ * Motorcycle detail V2 — color/gallery lightbox, six-angle viewer, features, specs nav, sticky CTA.
  * Detail installment UI lives in ~/js/finance-calculator.js (layout module).
  */
 (function () {
@@ -147,116 +147,86 @@
       }
     }));
 
-    Alpine.data('detailSpin360', (frames) => ({
-      frames: Array.isArray(frames) ? frames : [],
+    Alpine.data('detailAngleViewer', (items) => ({
+      angles: Array.isArray(items) ? items.filter((x) => x && x.url) : [],
       index: 0,
       dragging: false,
       startX: 0,
       lastIndex: 0,
       loading: true,
-      loadRatio: 0,
       showHint: true,
       hintTimer: null,
-      playing: false,
-      playTimer: null,
-      autoRotate: false,
 
       init() {
         if (!this.ready) {
           this.loading = false;
           return;
         }
-        const firstBatch = this.frames.slice(0, Math.min(12, this.frames.length));
-        preloadImages(firstBatch, (ratio) => {
-          this.loadRatio = ratio;
-          if (ratio >= 1) this.loading = false;
-        }).then(() => {
+        const urls = this.angles.map((a) => a.url);
+        preloadImages(urls.slice(0, 2)).then(() => {
           this.loading = false;
-          this.hintTimer = setTimeout(() => { this.showHint = false; }, 3600);
+          this.hintTimer = setTimeout(() => { this.showHint = false; }, 3200);
         });
-
         const io =
           typeof IntersectionObserver !== 'undefined'
             ? new IntersectionObserver(
                 (entries) => {
                   if (entries.some((e) => e.isIntersecting)) {
-                    preloadImages(this.frames, (ratio) => { this.loadRatio = ratio; });
+                    preloadImages(urls);
                     io.disconnect();
                   }
                 },
-                { rootMargin: '240px' }
+                { rootMargin: '200px' }
               )
             : null;
         this.$nextTick(() => {
           const el = this.$refs.stage || this.$el;
           if (io && el) io.observe(el);
-          else preloadImages(this.frames);
-        });
-
-        window.addEventListener('detail-color-changed', () => {
-          /* color media may not include 360; keep frames */
+          else preloadImages(urls);
         });
       },
       get src() {
-        return this.frames[this.index] || '';
+        return (this.angles[this.index] && this.angles[this.index].url) || '';
+      },
+      get label() {
+        const a = this.angles[this.index];
+        return a ? (a.label || a.angle || '') : '';
       },
       get ready() {
-        return this.frames.length >= 2;
+        return this.angles.length >= 2;
       },
-      get frameLabel() {
-        return (this.index + 1) + ' / ' + this.frames.length;
+      go(i) {
+        if (i < 0 || i >= this.angles.length) return;
+        this.index = i;
+        this.showHint = false;
+      },
+      next() {
+        if (!this.ready) return;
+        this.index = (this.index + 1) % this.angles.length;
+      },
+      prev() {
+        if (!this.ready) return;
+        this.index = (this.index - 1 + this.angles.length) % this.angles.length;
       },
       onPointerDown(e) {
         if (!this.ready || this.loading) return;
-        this.pause();
         this.dragging = true;
         this.showHint = false;
-        this.startX = e.clientX ?? (e.touches && e.touches[0]?.clientX) || 0;
+        this.startX = e.clientX ?? (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
         this.lastIndex = this.index;
       },
       onPointerMove(e) {
         if (!this.dragging || !this.ready) return;
-        const x = e.clientX ?? (e.touches && e.touches[0]?.clientX) || 0;
+        const x = e.clientX ?? (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
         const dx = x - this.startX;
-        const step = Math.max(8, Math.floor(240 / this.frames.length));
+        const step = 56;
         const delta = Math.round(dx / step);
-        let next = (this.lastIndex - delta) % this.frames.length;
-        if (next < 0) next += this.frames.length;
+        let next = (this.lastIndex - delta) % this.angles.length;
+        if (next < 0) next += this.angles.length;
         this.index = next;
       },
       onPointerUp() {
         this.dragging = false;
-        if (this.autoRotate) this.play();
-      },
-      play() {
-        if (!this.ready || prefersReducedMotion()) return;
-        this.playing = true;
-        this.showHint = false;
-        clearInterval(this.playTimer);
-        this.playTimer = setInterval(() => {
-          this.index = (this.index + 1) % this.frames.length;
-        }, 80);
-      },
-      pause() {
-        this.playing = false;
-        clearInterval(this.playTimer);
-        this.playTimer = null;
-      },
-      togglePlay() {
-        if (this.playing) this.pause();
-        else this.play();
-      },
-      toggleAutoRotate() {
-        this.autoRotate = !this.autoRotate;
-        if (this.autoRotate) this.play();
-        else this.pause();
-      },
-      reset() {
-        this.pause();
-        this.index = 0;
-        this.showHint = true;
-        clearTimeout(this.hintTimer);
-        this.hintTimer = setTimeout(() => { this.showHint = false; }, 2800);
       },
       toggleFullscreen() {
         const el = this.$refs.stage;

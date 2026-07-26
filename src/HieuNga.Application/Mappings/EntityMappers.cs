@@ -1,12 +1,8 @@
 using System.Text.Json;
-
 using HieuNga.Application.DTOs;
-
+using HieuNga.Domain;
 using HieuNga.Domain.Common;
-
 using HieuNga.Domain.Entities;
-
-
 
 namespace HieuNga.Application.Mappings;
 
@@ -100,10 +96,25 @@ public static class EntityMappers
             (m.Technologies ?? []).Where(t => !t.IsDeleted).OrderBy(t => t.SortOrder)
                 .Select(t => new MotorcycleTechnologyDto(t.Id, t.Title, t.Description, t.ImageUrl, t.SortOrder)).ToList(),
 
-            (m.SpinFrames ?? []).Where(s => !s.IsDeleted).OrderBy(s => s.FrameIndex).Select(s => s.ImageUrl).ToList(),
+            MapAngleImages(m),
 
             m.ToSeo());
 
+    }
+
+
+
+    private static IReadOnlyList<MotorcycleAngleImageDto> MapAngleImages(Motorcycle m)
+    {
+        var byAngle = (m.SpinFrames ?? [])
+            .Where(s => !s.IsDeleted)
+            .GroupBy(s => s.Angle)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).First());
+
+        return MotorcycleViewAngleCatalog.All
+            .Where(e => byAngle.ContainsKey(e.Angle))
+            .Select(e => new MotorcycleAngleImageDto(e.Key, e.LabelVi, byAngle[e.Angle].ImageUrl))
+            .ToList();
     }
 
 

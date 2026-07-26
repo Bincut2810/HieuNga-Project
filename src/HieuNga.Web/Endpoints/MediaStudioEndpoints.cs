@@ -1,4 +1,5 @@
 using HieuNga.Application.Media;
+using HieuNga.Domain;
 using HieuNga.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -63,20 +64,22 @@ public static class MediaStudioEndpoints
         group.MapDelete("/colors/{colorId:guid}", async (Guid motorcycleId, Guid colorId, IMotorcycleMediaStudioService media, CancellationToken ct) =>
             Results.Json(await media.DeleteColorAsync(motorcycleId, colorId, ct)));
 
-        group.MapPost("/spin", async (Guid motorcycleId, [FromForm] List<IFormFile> files, IMotorcycleMediaStudioService media, CancellationToken ct) =>
+        group.MapPost("/angles/{angleKey}", async (Guid motorcycleId, string angleKey, IFormFile file, IMotorcycleMediaStudioService media, CancellationToken ct) =>
         {
-            var uploads = await MediaFileUploadAdapter.FromFormFilesAsync(files ?? [], ct);
-            return Results.Json(await media.UploadSpinAsync(motorcycleId, uploads, ct));
+            if (!MotorcycleViewAngleCatalog.TryParseKey(angleKey, out var angle))
+                return Results.Json(new MediaMutationResult(false, $"Góc xem không hợp lệ: {angleKey}", null));
+            return Results.Json(await media.SetAngleAsync(motorcycleId, angle, await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct), ct));
         });
 
-        group.MapPost("/spin/reorder", async (Guid motorcycleId, [FromBody] OrderBody body, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.ReorderSpinAsync(motorcycleId, body.Ids ?? [], ct)));
+        group.MapDelete("/angles/{angleKey}", async (Guid motorcycleId, string angleKey, IMotorcycleMediaStudioService media, CancellationToken ct) =>
+        {
+            if (!MotorcycleViewAngleCatalog.TryParseKey(angleKey, out var angle))
+                return Results.Json(new MediaMutationResult(false, $"Góc xem không hợp lệ: {angleKey}", null));
+            return Results.Json(await media.ClearAngleAsync(motorcycleId, angle, ct));
+        });
 
-        group.MapPost("/spin/delete", async (Guid motorcycleId, [FromBody] IdsBody body, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.DeleteSpinAsync(motorcycleId, body.Ids ?? [], ct)));
-
-        group.MapDelete("/spin", async (Guid motorcycleId, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.ClearSpinAsync(motorcycleId, ct)));
+        group.MapDelete("/angles", async (Guid motorcycleId, IMotorcycleMediaStudioService media, CancellationToken ct) =>
+            Results.Json(await media.ClearAllAnglesAsync(motorcycleId, ct)));
 
         group.MapPost("/import", async (Guid motorcycleId, HttpRequest request, IMotorcycleMediaStudioService media, CancellationToken ct) =>
         {
@@ -88,11 +91,9 @@ public static class MediaStudioEndpoints
                 var rel = form[$"path:{f.Name}"].FirstOrDefault()
                     ?? form[$"path_{f.FileName}"].FirstOrDefault()
                     ?? f.FileName;
-                // Prefer webkit-style name field if provided as paths[] parallel
                 uploads.Add(await MediaFileUploadAdapter.FromFormFileAsync(f, rel, ct));
             }
 
-            // Also accept paths[] matching files order
             var paths = form["paths"].ToList();
             if (paths.Count == uploads.Count)
             {

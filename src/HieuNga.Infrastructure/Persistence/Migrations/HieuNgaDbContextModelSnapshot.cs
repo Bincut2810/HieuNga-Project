@@ -851,7 +851,7 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("FrameIndex")
+                    b.Property<int>("Angle")
                         .HasColumnType("integer");
 
                     b.Property<string>("ImageUrl")
@@ -870,7 +870,7 @@ namespace HieuNga.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MotorcycleId", "FrameIndex");
+                    b.HasIndex("MotorcycleId", "Angle");
 
                     b.ToTable("motorcycle_spin_frames", (string)null);
                 });

@@ -37,7 +37,26 @@ public class IndexModel(IRepository<Motorcycle> repo, IUnitOfWork uow, HieuNgaDb
         MotorcycleCategory Category,
         decimal BasePrice,
         bool IsPublished,
-        DateTime? UpdatedAt);
+        DateTime? UpdatedAt,
+        string? ThumbnailUrl,
+        int GalleryCount,
+        int AngleCount,
+        int ColorCount)
+    {
+        /// <summary>UI-only media completeness score (thumbnail + gallery + angles + colors).</summary>
+        public int MediaPercent
+        {
+            get
+            {
+                var score = 0;
+                if (!string.IsNullOrWhiteSpace(ThumbnailUrl)) score += 25;
+                if (GalleryCount >= 1) score += 25;
+                if (AngleCount >= 2) score += 25;
+                if (ColorCount >= 1) score += 25;
+                return score;
+            }
+        }
+    }
 
     public async Task OnGetAsync(CancellationToken ct)
     {
@@ -99,7 +118,18 @@ public class IndexModel(IRepository<Motorcycle> repo, IUnitOfWork uow, HieuNgaDb
             q = q.Where(m => !m.IsPublished);
 
         return await q.OrderBy(m => m.SortOrder).ThenBy(m => m.Name)
-            .Select(m => new Row(m.Id, m.Name, m.Slug, m.Category, m.BasePrice, m.IsPublished, m.UpdatedAt))
+            .Select(m => new Row(
+                m.Id,
+                m.Name,
+                m.Slug,
+                m.Category,
+                m.BasePrice,
+                m.IsPublished,
+                m.UpdatedAt,
+                m.ThumbnailUrl,
+                m.MediaAssets.Count(a => !a.IsDeleted),
+                m.SpinFrames.Count(s => !s.IsDeleted),
+                m.Colors.Count(c => !c.IsDeleted)))
             .ToListAsync(ct);
     }
 }
