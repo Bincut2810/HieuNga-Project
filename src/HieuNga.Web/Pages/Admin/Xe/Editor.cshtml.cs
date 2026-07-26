@@ -204,6 +204,8 @@ public class EditorModel(
         bike.SortOrder = Input.SortOrder;
         await motorcycleRepo.UpdateAsync(bike, ct);
         await uow.SaveChangesAsync(ct);
+        if (bike.IsPublished)
+            await MotorcycleFinancePrefs.EnsureDefaultsAsync(db, bike.Id, ct);
         this.SetSuccess("Đã cập nhật trạng thái publish.");
         return RedirectToPage(new { id = Id, tab = "publish" });
     }

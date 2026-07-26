@@ -110,6 +110,19 @@ try
     using var scope = app.Services.CreateScope();
     await DbInitializer.InitializeAsync(scope.ServiceProvider);
     logger.LogInformation("Database initialization completed.");
+
+    var db = scope.ServiceProvider.GetRequiredService<HieuNga.Infrastructure.Persistence.HieuNgaDbContext>();
+    var missingAfterEnsure = await HieuNga.Web.Services.MotorcycleFinancePrefs.EnsureDefaultsForPublishedAsync(db, logger);
+    var audit = await HieuNga.Web.Services.MotorcycleFinancePrefs.AuditPublishedAsync(db);
+    if (missingAfterEnsure.Count > 0)
+        logger.LogWarning("Finance prefs still missing after ensure: {Slugs}", string.Join(", ", missingAfterEnsure));
+    if (audit.MissingPriceSlugs.Count > 0)
+        logger.LogWarning("Published bikes without effective price: {Slugs}", string.Join(", ", audit.MissingPriceSlugs));
+    if (audit.CalculatorDisabledSlugs.Count > 0)
+        logger.LogWarning("Published bikes with CalculatorEnabled=false: {Slugs}", string.Join(", ", audit.CalculatorDisabledSlugs));
+    logger.LogInformation(
+        "Finance audit: published={Published}, missingPrefs={MissingPrefs}, missingPrice={MissingPrice}, calcOff={CalcOff}",
+        audit.PublishedCount, audit.MissingPrefsSlugs.Count, audit.MissingPriceSlugs.Count, audit.CalculatorDisabledSlugs.Count);
 }
 catch (Exception ex)
 {

@@ -20,9 +20,12 @@ public class ChiTietModel(
     public IReadOnlyList<FinanceBankDto> FinanceBanks { get; private set; } = [];
     public bool HasFinanceBanks => FinanceBanks.Count > 0;
     public bool ShowInstallmentCalculator { get; private set; } = true;
+    public decimal EffectivePrice { get; private set; }
     public decimal DefaultDownPayment { get; private set; }
     public int DefaultTermMonths { get; private set; } = 12;
     public string? DefaultBankId { get; private set; }
+    public string DefaultBankName { get; private set; } = MotorcycleFinancePrefs.FallbackBankName;
+    public decimal DefaultMonthlyRate { get; private set; } = MotorcycleFinancePrefs.FallbackMonthlyRate;
     public bool IsAvailable { get; private set; } = true;
     public string AvailabilityLabel { get; private set; } = "Còn hàng";
     public string? FuelConsumption { get; private set; }
@@ -37,31 +40,45 @@ public class ChiTietModel(
         FuelConsumption = FindSpecValue(Motorcycle.Specifications, "tiêu hao", "mức tiêu thụ", "l/100", "km/lít", "km/l");
         Warranty = FindSpecValue(Motorcycle.Specifications, "bảo hành", "warranty");
 
-        FinanceBanks = await financeConfig.GetActiveBanksAsync(ct);
+        // Self-heal: every published detail view gets finance prefs if missing
+        await MotorcycleFinancePrefs.EnsureDefaultsAsync(db, Motorcycle.Id, ct);
         var prefs = await MotorcycleFinancePrefs.LoadAsync(db, Motorcycle.Id, ct);
-        var hasPrice = Motorcycle.BasePrice > 0
-                       || Motorcycle.Variants.Any(v => v.Price > 0);
-        ShowInstallmentCalculator = prefs.CalculatorEnabled && hasPrice && FinanceBanks.Count > 0;
+
+        EffectivePrice = MotorcycleFinancePrefs.ResolveEffectivePrice(
+            Motorcycle.BasePrice,
+            Motorcycle.Variants.Select(v => v.Price));
+
+        FinanceBanks = await financeConfig.GetActiveBanksAsync(ct);
+
+        // Show finance whenever the bike has a selling price and calculator is enabled.
+        // Banks are optional — JS + FallbackMonthlyRate keep the calculator usable.
+        ShowInstallmentCalculator = prefs.CalculatorEnabled && EffectivePrice > 0;
 
         Related = await motorcycleService.GetRelatedAsync(Motorcycle.Id, ct);
 
-        var price = Motorcycle.Variants.FirstOrDefault(v => v.Price > 0)?.Price
-                    ?? Motorcycle.Variants.FirstOrDefault()?.Price
-                    ?? Motorcycle.BasePrice;
-        var downPct = prefs.DefaultDownPaymentPercent > 0 ? prefs.DefaultDownPaymentPercent : 20m;
-        DefaultTermMonths = prefs.DefaultTermMonths > 0 ? prefs.DefaultTermMonths : 12;
-        DefaultDownPayment = Math.Round(price * (downPct / 100m) / 500_000m) * 500_000m;
+        var downPct = prefs.DefaultDownPaymentPercent;
+        DefaultTermMonths = prefs.DefaultTermMonths;
+        DefaultDownPayment = EffectivePrice > 0
+            ? Math.Round(EffectivePrice * (downPct / 100m) / 500_000m) * 500_000m
+            : 0m;
 
         FinanceBankDto? defaultBank = null;
         if (!string.IsNullOrEmpty(prefs.DefaultBankId))
             defaultBank = FinanceBanks.FirstOrDefault(b => b.Id == prefs.DefaultBankId);
         defaultBank ??= await financeConfig.GetDefaultBankAsync(ct);
-        DefaultBankId = defaultBank?.Id;
 
-        if (defaultBank is not null && ShowInstallmentCalculator)
+        DefaultBankId = defaultBank?.Id;
+        DefaultBankName = defaultBank?.Name ?? MotorcycleFinancePrefs.FallbackBankName;
+        DefaultMonthlyRate = defaultBank?.MonthlyRate ?? MotorcycleFinancePrefs.FallbackMonthlyRate;
+
+        if (ShowInstallmentCalculator)
         {
             InitialFinance = installmentService.Calculate(
-                price, DefaultDownPayment, DefaultTermMonths, defaultBank.MonthlyRate, bankName: defaultBank.Name);
+                EffectivePrice,
+                DefaultDownPayment,
+                DefaultTermMonths,
+                DefaultMonthlyRate,
+                bankName: DefaultBankName);
         }
 
         ViewData["HideDefaultMobileCta"] = true;
@@ -72,7 +89,12 @@ public class ChiTietModel(
     public IActionResult OnGetCalculateFinancing(
         decimal vehiclePrice, decimal downPayment, int termMonths, decimal? monthlyRate, string? bankName)
     {
-        var result = installmentService.Calculate(vehiclePrice, downPayment, termMonths, monthlyRate, bankName: bankName);
+        var result = installmentService.Calculate(
+            vehiclePrice,
+            downPayment,
+            termMonths,
+            monthlyRate ?? MotorcycleFinancePrefs.FallbackMonthlyRate,
+            bankName: bankName ?? MotorcycleFinancePrefs.FallbackBankName);
         return Partial("Shared/_DetailFinancingResult", result);
     }
 

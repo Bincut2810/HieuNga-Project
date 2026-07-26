@@ -8,11 +8,16 @@
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
     var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? "https://zalo.me/" : site.ZaloUrl;
-    var activePrice = m.Variants.FirstOrDefault()?.Price ?? m.BasePrice;
+    var activePrice = Model.EffectivePrice > 0
+        ? Model.EffectivePrice
+        : (m.Variants.FirstOrDefault(v => v.Price > 0)?.Price ?? m.BasePrice);
     var defaultDown = Model.DefaultDownPayment > 0
         ? Model.DefaultDownPayment
-        : Math.Round(activePrice * 0.2m / 500_000) * 500_000;
-    var monthlyEstimate = Model.InitialFinance?.MonthlyPayment ?? (activePrice - defaultDown) / Math.Max(1, Model.DefaultTermMonths);
+        : (activePrice > 0 ? Math.Round(activePrice * 0.2m / 500_000) * 500_000 : 0m);
+    var monthlyEstimate = Model.InitialFinance?.MonthlyPayment
+        ?? (activePrice > 0
+            ? Math.Round((activePrice - defaultDown) / Math.Max(1, Model.DefaultTermMonths) + (activePrice - defaultDown) * Model.DefaultMonthlyRate, 0)
+            : 0m);
     var relatedBikes = Model.Related.Take(6).ToList();
     var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
     var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}";
@@ -36,16 +41,8 @@
         hex = c.HexCode,
         imageUrl = string.IsNullOrWhiteSpace(c.ImageUrl) ? heroImage : c.ImageUrl
     }).ToList();
-    var financeBoot = new
-    {
-        bikeName = m.Name,
-        motorcycleId = m.Id,
-        basePrice = (double)m.BasePrice,
-        down = (double)defaultDown,
-        months = Model.DefaultTermMonths,
-        bank = Model.DefaultBankId,
-        variants = m.Variants.Select(v => new { id = v.Id.ToString().ToLowerInvariant(), name = v.Name, price = (double)v.Price, available = v.IsAvailable }),
-        banks = Model.FinanceBanks.Select(b => new
+    var financeBanksBoot = Model.FinanceBanks.Count > 0
+        ? Model.FinanceBanks.Select(b => new
         {
             id = b.Id,
             name = b.Name,
@@ -55,7 +52,31 @@
             rateLabel = b.RateLabel,
             trust = b.Trust,
             color = b.Color
-        })
+        }).Cast<object>().ToList()
+        : new List<object>
+        {
+            new
+            {
+                id = "hdb",
+                name = "HD Bank",
+                initials = "HDB",
+                monthlyRate = (double)Model.DefaultMonthlyRate,
+                ratePercent = (double)(Model.DefaultMonthlyRate * 100m),
+                rateLabel = "0,79%/tháng",
+                trust = "Đối tác trả góp",
+                color = "#C8102E"
+            }
+        };
+    var financeBoot = new
+    {
+        bikeName = m.Name,
+        motorcycleId = m.Id,
+        basePrice = (double)activePrice,
+        down = (double)defaultDown,
+        months = Model.DefaultTermMonths,
+        bank = Model.DefaultBankId ?? "hdb",
+        variants = m.Variants.Select(v => new { id = v.Id.ToString().ToLowerInvariant(), name = v.Name, price = (double)v.Price, available = v.IsAvailable }),
+        banks = financeBanksBoot
     };
     var financeBootJson = JsonSerializer.Serialize(financeBoot);
     var colorBootJson = JsonSerializer.Serialize(new

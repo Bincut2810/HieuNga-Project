@@ -359,6 +359,7 @@
     });
   }
 
+  /** Boot finance after full load AND HTMX boost/history. */
   function bootDetailPageModules(root) {
     const scope = root || document;
     const financeCfg = scope.querySelector('#motorcycle-finance-config');
@@ -367,25 +368,29 @@
     const tasks = [];
     if (financeCfg) tasks.push(loadScriptOnce('/js/detail-finance.js'));
     if (needsViewer) tasks.push(loadScriptOnce('/js/detail-viewer.js'));
-    if (!tasks.length) return;
 
-    Promise.all(tasks)
-      .then(() => {
-        if (financeCfg && typeof window.bootMotorcycleFinance === 'function') {
-          try {
-            window.bootMotorcycleFinance(JSON.parse(financeCfg.textContent || '{}'));
-          } catch (err) {
-            console.warn('Finance init:', err);
-          }
+    const runBoot = () => {
+      if (financeCfg && typeof window.bootMotorcycleFinance === 'function') {
+        try {
+          window.bootMotorcycleFinance(JSON.parse(financeCfg.textContent || '{}'));
+        } catch (err) {
+          console.warn('Finance init:', err);
         }
-        if (needsViewer && typeof window.registerMotorcycleDetailUi === 'function') {
-          try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
-        }
-        if (needsViewer && typeof Alpine !== 'undefined' && typeof Alpine.initTree === 'function') {
-          try { Alpine.initTree(scope); } catch (err) { console.warn('Alpine initTree:', err); }
-        }
-      })
-      .catch((err) => console.warn('Detail module load:', err));
+      }
+      if (needsViewer && typeof window.registerMotorcycleDetailUi === 'function') {
+        try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
+      }
+      if (needsViewer && typeof Alpine !== 'undefined' && typeof Alpine.initTree === 'function') {
+        try { Alpine.initTree(scope); } catch (err) { console.warn('Alpine initTree:', err); }
+      }
+    };
+
+    if (!tasks.length) {
+      runBoot();
+      return;
+    }
+
+    Promise.all(tasks).then(runBoot).catch((err) => console.warn('Detail module load:', err));
   }
 
   document.body.addEventListener('htmx:afterSwap', (e) => {
