@@ -21,7 +21,7 @@ public class ChiTietModel(IServiceCatalogService serviceCatalog) : PageModel
         RelatedServices = await serviceCatalog.GetRelatedAsync(slug, 3, ct);
         PricingDisclaimer = serviceCatalog.PricingDisclaimer;
         this.SetSeo(
-            Service.Seo,
+            null,
             $"{Service.Name} | Dịch vụ Xe Máy Hiếu Nga",
             Service.ShortDescription);
 

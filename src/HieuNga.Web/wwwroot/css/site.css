@@ -738,12 +738,6 @@ textarea.lead-input {
 }
 .skeleton-card .sk-line.short { width: 40%; }
 .skeleton-card .sk-line.medium { width: 70%; }
-.service-card-compact .service-icon {
-  transition: background-color var(--motion-base) var(--ease-premium);
-}
-.service-card-compact:hover .service-icon {
-  background-color: rgba(228, 5, 33, 0.12);
-}
 
 .nav-link {
   position: relative;

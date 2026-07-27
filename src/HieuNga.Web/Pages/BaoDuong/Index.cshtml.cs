@@ -11,7 +11,6 @@ public class IndexModel(
     IBranchService branchService,
     IServiceCatalogService serviceCatalog) : PageModel
 {
-    public IReadOnlyList<ServiceItemListDto> Services { get; private set; } = [];
     public IReadOnlyList<string> BookingServiceOptions { get; private set; } = [];
     public string PricingDisclaimer { get; private set; } = "";
     public IReadOnlyList<BranchDto> Branches { get; private set; } = [];
@@ -60,7 +59,6 @@ public class IndexModel(
 
     private async Task LoadCatalogAsync(CancellationToken ct)
     {
-        Services = await serviceCatalog.GetExperienceServicesAsync(12, ct);
         BookingServiceOptions = await serviceCatalog.GetBookingServiceNamesAsync(ct);
         PricingDisclaimer = serviceCatalog.PricingDisclaimer;
         if (BookingServiceOptions.Count > 0 && !BookingServiceOptions.Contains(ServiceType))

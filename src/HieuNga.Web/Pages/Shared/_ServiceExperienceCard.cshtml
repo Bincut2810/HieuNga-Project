@@ -1,14 +1,14 @@
 @model HieuNga.Application.DTOs.ServiceItemListDto
 @{
-    var thumb = Model.ThumbnailUrl;
-    var summary = Model.ShortDescription ?? Model.Category;
+    var thumb = Model.ImageUrl;
+    var summary = Model.ShortDescription ?? "";
 }
 <a href="/dich-vu/@Model.Slug" class="svc-exp-card group reveal card-elevate">
     <div class="svc-exp-media img-wrap">
         @if (!string.IsNullOrWhiteSpace(thumb))
         {
             <img src="@thumb"
-                 alt=""
+                 alt="@Model.Name"
                  class="img-media svc-exp-img"
                  loading="lazy"
                  decoding="async"
@@ -18,7 +18,7 @@
         else
         {
             <div class="svc-exp-img svc-exp-placeholder" aria-hidden="true">
-                <span>@Model.Name.Substring(0, 1)</span>
+                <span>@(Model.Name.Length > 0 ? Model.Name.Substring(0, 1) : "?")</span>
             </div>
         }
         <div class="svc-exp-shade" aria-hidden="true"></div>
@@ -26,7 +26,10 @@
     </div>
     <div class="svc-exp-body">
         <h3 class="svc-exp-title">@Model.Name</h3>
-        <p class="svc-exp-summary">@summary</p>
+        @if (!string.IsNullOrWhiteSpace(summary))
+        {
+            <p class="svc-exp-summary">@summary</p>
+        }
         <span class="svc-exp-cta">Xem chi tiết
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </span>

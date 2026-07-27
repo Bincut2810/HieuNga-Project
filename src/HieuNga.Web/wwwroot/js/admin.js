@@ -55,28 +55,7 @@
     }
   }
 
-  function initUploadLabels() {
-    document.querySelectorAll('.admin-upload-input').forEach(function (input) {
-      input.addEventListener('change', function () {
-        var zone = input.closest('.admin-upload-dropzone');
-        if (!zone) return;
-        var title = zone.querySelector('.admin-upload-dropzone-title');
-        if (!title) return;
-        var count = input.files ? input.files.length : 0;
-        if (count === 0) {
-          title.textContent = zone.getAttribute('data-default-title') || 'Chọn ảnh';
-          return;
-        }
-        if (!zone.getAttribute('data-default-title')) {
-          zone.setAttribute('data-default-title', title.textContent);
-        }
-        title.textContent = count === 1 ? input.files[0].name : count + ' tệp đã chọn';
-      });
-    });
-  }
-
   document.addEventListener('DOMContentLoaded', function () {
     initSidebar();
-    initUploadLabels();
   });
 })();

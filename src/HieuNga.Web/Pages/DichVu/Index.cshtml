@@ -4,7 +4,7 @@
 @{
     var site = SiteSettingsViewData.Get(ViewData);
     var heroImg = Model.Services
-        .Select(s => s.ThumbnailUrl)
+        .Select(s => s.ImageUrl)
         .FirstOrDefault(u => !string.IsNullOrWhiteSpace(u));
 }
 
@@ -39,7 +39,7 @@
             <div>
                 <p class="section-eyebrow">Danh mục</p>
                 <h2 id="svc-list-heading" class="section-title">Trải nghiệm dịch vụ</h2>
-                <p class="section-subtitle">Sáu nhóm dịch vụ HEAD — chạm vào từng thẻ để xem chi tiết</p>
+                <p class="section-subtitle">Chạm vào từng thẻ để xem chi tiết và đặt lịch</p>
             </div>
             <a href="/bao-duong#booking" class="btn-primary touch-press shrink-0">Đặt lịch ngay</a>
         </div>

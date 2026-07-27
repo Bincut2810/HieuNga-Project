@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddSingleton<IImageStorageService, ImageStorageRouter>();
         services.AddScoped<IMotorcycleMediaStudioService, MotorcycleMediaStudioService>();
         services.AddScoped<IBannerCmsService, BannerCmsService>();
+        services.AddScoped<IServiceCmsService, ServiceCmsService>();
 
         return services;
     }

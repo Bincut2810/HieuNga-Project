@@ -35,17 +35,6 @@ public record AdminEmptyStateModel(
     string? ActionUrl = null,
     string? ActionText = null);
 
-/// <summary>Shared file upload field for Admin forms (Phase 1 foundation).</summary>
-public record AdminUploadFieldModel(
-    string InputName,
-    string Label,
-    string Accept = "image/jpeg,image/png,image/webp,image/gif,image/svg+xml",
-    bool Multiple = false,
-    string? Hint = null,
-    string? PreviewUrl = null,
-    bool Enabled = true,
-    string? DisabledMessage = null);
-
 /// <summary>Simple list row for Content modules (promotions, news, branches).</summary>
 public record AdminListItemModel(
     string Title,

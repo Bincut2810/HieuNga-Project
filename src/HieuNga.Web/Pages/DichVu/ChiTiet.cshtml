@@ -6,10 +6,8 @@
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
     var bookUrl = $"/bao-duong?service={Uri.EscapeDataString(s.Slug)}#booking";
-    var hero = s.HeroImageUrl ?? s.ThumbnailUrl;
-    var gallery = s.Gallery.Count > 0
-        ? s.Gallery
-        : (string.IsNullOrWhiteSpace(s.ThumbnailUrl) ? Array.Empty<string>() : new[] { s.ThumbnailUrl! });
+    var images = s.Images ?? Array.Empty<string>();
+    var hero = images.FirstOrDefault();
 }
 
 <article class="svc-detail">
@@ -18,7 +16,7 @@
             @if (!string.IsNullOrWhiteSpace(hero))
             {
                 <img src="@hero"
-                     alt=""
+                     alt="@s.Name"
                      class="img-media svc-detail-hero-img is-loaded"
                      width="1800"
                      height="1000"
@@ -35,9 +33,11 @@
                 <span class="mx-2" aria-hidden="true">/</span>
                 <span class="text-white">@s.Name</span>
             </nav>
-            <p class="section-eyebrow text-white/80">@s.Category</p>
             <h1 class="svc-detail-title">@s.Name</h1>
-            <p class="svc-detail-lead">@s.ShortDescription</p>
+            @if (!string.IsNullOrWhiteSpace(s.ShortDescription))
+            {
+                <p class="svc-detail-lead">@s.ShortDescription</p>
+            }
             <div class="svc-detail-hero-actions">
                 <a href="@bookUrl" class="btn-primary touch-press">Đặt lịch dịch vụ</a>
                 <a href="@telHref" hx-boost="false" class="btn-secondary touch-press svc-hero-ghost">Gọi @site.Hotline</a>
@@ -46,78 +46,13 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 space-y-16 md:space-y-20">
-        <section class="reveal" aria-labelledby="svc-intro-heading">
-            <p class="section-eyebrow">Giới thiệu</p>
-            <h2 id="svc-intro-heading" class="section-title">Về dịch vụ này</h2>
-            <div class="svc-prose mt-6">
-                @if (!string.IsNullOrWhiteSpace(s.DetailDescription))
-                {
-                    <p>@s.DetailDescription</p>
-                }
-                else
-                {
-                    <p>@s.ShortDescription</p>
-                }
-            </div>
-        </section>
-
-        @if (s.Includes.Count > 0)
-        {
-            <section class="reveal" aria-labelledby="svc-benefits-heading">
-                <p class="section-eyebrow">Lợi ích</p>
-                <h2 id="svc-benefits-heading" class="section-title">Vì sao chọn dịch vụ này</h2>
-                <ul class="svc-benefit-grid mt-8" data-stagger>
-                    @foreach (var b in s.Includes)
-                    {
-                        <li class="svc-benefit-card reveal">
-                            <span class="svc-benefit-mark" aria-hidden="true">✓</span>
-                            <span>@b</span>
-                        </li>
-                    }
-                </ul>
-            </section>
-        }
-
-        @if (s.WhenToUse.Count > 0)
-        {
-            <section class="reveal svc-panel" aria-labelledby="svc-when-heading">
-                <p class="section-eyebrow">Thời điểm phù hợp</p>
-                <h2 id="svc-when-heading" class="section-title">Khi nào nên sử dụng?</h2>
-                <ul class="svc-bullet-list mt-6">
-                    @foreach (var w in s.WhenToUse)
-                    {
-                        <li>@w</li>
-                    }
-                </ul>
-            </section>
-        }
-
-        @if (s.ProcessSteps.Count > 0)
-        {
-            <section class="reveal" aria-labelledby="svc-process-heading">
-                <p class="section-eyebrow">Quy trình</p>
-                <h2 id="svc-process-heading" class="section-title">Quy trình làm việc</h2>
-                <ol class="svc-process mt-8" data-stagger>
-                    @{ var step = 1; }
-                    @foreach (var p in s.ProcessSteps)
-                    {
-                        <li class="svc-process-step reveal">
-                            <span class="svc-process-num">@step.ToString("00")</span>
-                            <p>@p</p>
-                        </li>
-                        step++;
-                    }
-                </ol>
-            </section>
-        }
-
-        @if (gallery.Count > 0)
+        @if (images.Count > 1)
         {
             <section class="reveal" aria-labelledby="svc-gallery-heading">
                 <p class="section-eyebrow">Hình ảnh</p>
-                <h2 id="svc-gallery-heading" class="section-title">Không gian &amp; công việc</h2>
+                <h2 id="svc-gallery-heading" class="section-title">@s.Name</h2>
                 <div class="svc-gallery mt-8" data-stagger>
-                    @foreach (var img in gallery.Take(6))
+                    @foreach (var img in images)
                     {
                         <figure class="svc-gallery-item img-wrap reveal">
                             <img src="@img"
@@ -133,26 +68,9 @@
             </section>
         }
 
-        @if (s.Faqs.Count > 0)
-        {
-            <section class="reveal" aria-labelledby="svc-faq-heading">
-                <p class="section-eyebrow">FAQ</p>
-                <h2 id="svc-faq-heading" class="section-title">Câu hỏi thường gặp</h2>
-                <div class="svc-faq mt-8">
-                    @foreach (var faq in s.Faqs)
-                    {
-                        <details class="svc-faq-item">
-                            <summary>@faq.Question</summary>
-                            <p>@faq.Answer</p>
-                        </details>
-                    }
-                </div>
-            </section>
-        }
-
         <section class="svc-detail-cta reveal" aria-labelledby="svc-cta-heading">
             <h2 id="svc-cta-heading" class="text-xl md:text-2xl font-bold text-honda-dark">Đặt lịch @s.Name</h2>
-            <p class="mt-2 text-sm text-gray-500 max-w-xl">Báo giá rõ ràng sau khi kiểm tra. Giờ làm việc: @site.OpeningHours</p>
+            <p class="mt-2 text-sm text-gray-500 max-w-xl">Giờ làm việc: @site.OpeningHours</p>
             @if (!string.IsNullOrWhiteSpace(Model.PricingDisclaimer))
             {
                 <p class="mt-2 text-xs text-gray-400 max-w-xl">@Model.PricingDisclaimer</p>

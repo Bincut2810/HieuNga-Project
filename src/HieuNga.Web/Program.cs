@@ -100,6 +100,7 @@ app.MapGet("/health", async (HieuNgaDbContext db, IHostEnvironment env, Cancella
 });
 app.MapMediaStudioApi();
 app.MapBannerApi();
+app.MapServiceApi();
 app.MapRazorPages();
 
 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");

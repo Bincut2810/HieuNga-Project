@@ -243,30 +243,7 @@
     onParallaxScroll();
   }
 
-  /* ─── Bảo dưỡng booking preselect from ?service=slug (client fallback) ─── */
-  const SERVICE_SLUG_MAP = {
-    'sua-chua-thay-the-phu-tung': 'Sửa chữa & thay thế phụ tùng',
-    'bao-hanh-bao-duong': 'Bảo hành & bảo dưỡng',
-    'dau-nhot-chinh-hang': 'Dầu nhớt chính hãng',
-    'sua-chua-luu-dong': 'Sửa chữa lưu động',
-    'bao-hiem-xe-may': 'Bảo hiểm xe máy',
-    'tan-trang-cham-soc-xe': 'Tân trang & chăm sóc xe',
-    'bao-duong-dinh-ky': 'Bảo hành & bảo dưỡng',
-    'thay-nhot-may': 'Dầu nhớt chính hãng',
-    'thay-nhot-hop-so-xe-ga': 'Dầu nhớt chính hãng',
-    'sua-chua-tong-quat': 'Sửa chữa & thay thế phụ tùng',
-    'thay-phu-tung-chinh-hang': 'Sửa chữa & thay thế phụ tùng',
-  };
-
-  function initBookingFromQuery() {
-    const slug = new URLSearchParams(window.location.search).get('service');
-    if (!slug) return;
-    const form = document.getElementById('booking');
-    if (!form) return;
-    const name = SERVICE_SLUG_MAP[slug];
-    const serviceSelect = form.querySelector('[name="ServiceType"]');
-    if (serviceSelect && name) serviceSelect.value = name;
-  }
+  /* Booking preselect is handled server-side via ?service=slug */
 
   /* ─── Main page initializer (idempotent) ─── */
   function initPage(root) {
@@ -277,7 +254,6 @@
     collectParallax(scope);
     initCounters(scope);
     updateNavActive();
-    initBookingFromQuery();
     tickParallax();
 
     if (!scope.querySelector || !scope.querySelector('.detail-page')) {
@@ -414,25 +390,6 @@
     },
     { passive: true }
   );
-
-  /* ─── Bảo dưỡng service booking preselect (delegated) ─── */
-  document.addEventListener('click', (e) => {
-    const link = e.target.closest('[data-book-service]');
-    if (!link) return;
-
-    const form = document.getElementById('booking');
-    if (!form) return;
-
-    const serviceSelect = form.querySelector('[name="ServiceType"]');
-    const notesField = form.querySelector('[name="Notes"]');
-    const option = link.dataset.bookService;
-    const detail = link.dataset.serviceDetail;
-
-    if (serviceSelect && option) serviceSelect.value = option;
-    if (notesField && detail && !notesField.value.trim()) {
-      notesField.value = 'Quan tâm dịch vụ: ' + detail;
-    }
-  });
 
   /* ─── Same-page hash anchors (no HTMX request) ─── */
   document.addEventListener('click', (e) => {

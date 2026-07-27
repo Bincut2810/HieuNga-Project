@@ -1,39 +1,20 @@
 namespace HieuNga.Application.DTOs;
 
-public record ServiceCategoryDto(Guid Id, string Name, string Slug);
-
 public record ServiceItemListDto(
+    Guid Id,
     string Slug,
     string Name,
-    string Category,
-    string IconKey,
-    string EstimatedPrice,
-    string? EstimatedDuration,
-    string? ThumbnailUrl = null,
-    string? ShortDescription = null,
-    bool IsFeatured = false);
-
-public record ServiceFaqDto(string Question, string Answer);
+    string? ShortDescription,
+    string? ImageUrl,
+    int DisplayOrder);
 
 public record ServiceItemDetailDto(
     Guid Id,
     string Slug,
     string Name,
-    string Category,
-    string IconKey,
-    string ShortDescription,
-    string? DetailDescription,
-    IReadOnlyList<string> Includes,
-    IReadOnlyList<string> WhenToUse,
-    IReadOnlyList<string> ProcessSteps,
-    IReadOnlyList<string> Gallery,
-    IReadOnlyList<ServiceFaqDto> Faqs,
-    string? ThumbnailUrl,
-    string? HeroImageUrl,
-    string EstimatedPrice,
-    string? EstimatedDuration,
-    string? PriceNote,
-    SeoMetadataDto? Seo);
+    string? ShortDescription,
+    IReadOnlyList<string> Images,
+    int DisplayOrder);
 
 public record FinanceBankDto(
     string Id,
