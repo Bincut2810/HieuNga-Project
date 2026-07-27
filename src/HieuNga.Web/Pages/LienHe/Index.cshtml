@@ -7,13 +7,10 @@
     ViewData["CtaXeId"] = Model.SelectedMotorcycle?.Id.ToString();
     ViewData["CtaService"] = Model.ServiceSlug;
     ViewData["CtaSource"] = Model.LeadSource;
-    ViewData["CtaShow"] = "consult,call,zalo,testride,finance,messenger";
+    ViewData["CtaShow"] = "consult,call,zalo,testride,messenger";
     ViewData["CtaLayout"] = "row";
     ViewData["CtaConsultLabel"] = Model.SubmitLabel;
     ViewData["VehicleChangeUrl"] = $"/xe?from=lien-he&intent={Uri.EscapeDataString(Model.Intent)}";
-    ViewData["VehicleFinanceUrl"] = Model.SelectedMotorcycle is null
-        ? "/tra-gop?source=contact"
-        : $"/tra-gop?xe={Uri.EscapeDataString(Model.SelectedMotorcycle.Slug)}&source=contact";
     ViewData["BranchBookUrl"] = Model.Intent == "bao-duong"
         ? "/bao-duong#booking"
         : (Model.SelectedMotorcycle is null

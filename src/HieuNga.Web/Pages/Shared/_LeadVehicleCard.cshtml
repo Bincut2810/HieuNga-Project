@@ -5,8 +5,6 @@
     if (bike is null) { return; }
     var imageUrl = bike.ThumbnailUrl;
     var changeUrl = ViewData["VehicleChangeUrl"] as string ?? "/xe";
-    var financeUrl = ViewData["VehicleFinanceUrl"] as string
-        ?? $"/tra-gop?xe={Uri.EscapeDataString(bike.Slug)}&source=contact";
 }
 <article class="lead-vehicle-card">
     <div class="lead-vehicle-media img-wrap">
@@ -19,9 +17,7 @@
         <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">@bike.Category.ToDisplayName()</span>
         <h3 class="text-lg font-bold text-honda-dark mt-1">@bike.Name</h3>
         <p class="text-honda-red font-bold text-xl mt-2">@bike.BasePrice.ToVnd()</p>
-        <p class="text-xs text-gray-500 mt-0.5">Trả góp từ @bike.BasePrice.ToEstimatedMonthly()/tháng</p>
         <div class="mt-4 flex flex-wrap gap-2">
-            <a href="@financeUrl" class="btn-secondary text-sm py-2 px-3 touch-press">Tính trả góp</a>
             <a href="@changeUrl" class="detail-ghost-btn text-sm py-2 px-3 touch-press">Đổi xe khác</a>
             <a href="/xe/@bike.Slug" class="text-sm font-semibold text-honda-red hover:underline self-center">Xem chi tiết →</a>
         </div>

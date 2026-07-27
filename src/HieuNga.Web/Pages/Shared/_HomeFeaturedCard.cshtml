@@ -60,13 +60,11 @@
             }
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <p class="text-honda-red font-bold text-2xl tracking-tight">@Model.BasePrice.ToVnd()</p>
-                <p class="text-xs text-gray-500 mt-0.5">Trả góp từ <span class="font-semibold text-honda-dark">@Model.BasePrice.ToEstimatedMonthly()</span>/tháng</p>
             </div>
         </a>
     </div>
     <div class="px-5 md:px-6 pb-5 md:pb-6 flex flex-wrap gap-2">
         <a href="/xe/@Model.Slug" class="btn-primary flex-1 min-w-[7rem] py-2.5 text-sm justify-center touch-press">Xem chi tiết</a>
-        <a href="/tra-gop" class="btn-secondary flex-1 min-w-[7rem] py-2.5 text-sm justify-center touch-press">Tính góp</a>
         <a href="/lien-he?intent=mua-xe&amp;xe=@Uri.EscapeDataString(Model.Slug)&amp;source=homepage" class="inline-flex flex-1 min-w-[7rem] items-center justify-center px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-lg hover:border-honda-red hover:text-honda-red transition touch-press focus-ring">Tư vấn</a>
     </div>
 </article>

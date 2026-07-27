@@ -153,14 +153,10 @@
 
                     <div class="detail-cta-stack">
                         <a href="@consultUrl" class="btn-primary touch-press detail-ripple w-full py-3.5 text-center justify-center">Tư vấn mua xe</a>
-                        <div class="grid grid-cols-2 gap-2.5">
+                        <div class="grid @(finance.CalculatorEnabled ? "grid-cols-2" : "grid-cols-1") gap-2.5">
                             @if (finance.CalculatorEnabled)
                             {
                                 <a href="#financing" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Tính trả góp</a>
-                            }
-                            else
-                            {
-                                <a href="/tra-gop" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Tính trả góp</a>
                             }
                             <a href="@viewBikeUrl" class="btn-secondary touch-press py-3 text-center justify-center text-sm">Đặt lịch xem xe</a>
                         </div>
@@ -356,7 +352,7 @@
                         ("Nhắc bảo dưỡng", "Lịch bảo dưỡng định kỳ theo km tại xưởng HEAD."),
                         ("Tóm tắt trả góp", finance.CalculatorEnabled
                             ? $"Ước tính từ ~{((long)monthlyEstimate):N0} ₫/tháng — tính chi tiết bên dưới."
-                            : "Tính trả góp nhanh trên trang Tra góp."),
+                            : "Liên hệ showroom để được tư vấn trả góp."),
                         ("Hỗ trợ đại lý", "Thủ tục giấy tờ, đăng ký nhanh tại showroom."),
                         ("Hỗ trợ bảo hiểm", "Tư vấn gói bảo hiểm phù hợp khi nhận xe.")
                     };
@@ -371,7 +367,10 @@
             </div>
             <div class="mt-8 flex flex-wrap gap-2.5">
                 <a href="@consultUrl" class="btn-primary touch-press">Tư vấn mua xe</a>
-                <a href="@(finance.CalculatorEnabled ? "#financing" : "/tra-gop")" class="btn-secondary touch-press">Tính trả góp</a>
+                @if (finance.CalculatorEnabled)
+                {
+                    <a href="#financing" class="btn-secondary touch-press">Tính trả góp</a>
+                }
                 <a href="@viewBikeUrl" class="detail-ghost-btn touch-press">Đặt lịch xem xe</a>
             </div>
 
@@ -453,9 +452,12 @@
         <a href="@consultUrl" class="detail-sticky-item touch-press">
             <span class="detail-sticky-label">Tư vấn</span>
         </a>
-        <a href="@(finance.CalculatorEnabled ? "#financing" : "/tra-gop")" class="detail-sticky-item detail-sticky-primary touch-press">
-            <span class="detail-sticky-label">Trả góp</span>
-        </a>
+        @if (finance.CalculatorEnabled)
+        {
+            <a href="#financing" class="detail-sticky-item detail-sticky-primary touch-press">
+                <span class="detail-sticky-label">Trả góp</span>
+            </a>
+        }
     </div>
 </div>
 

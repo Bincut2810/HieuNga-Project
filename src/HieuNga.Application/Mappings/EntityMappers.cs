@@ -99,14 +99,10 @@ public static class EntityMappers
         b.Title,
         b.Subtitle,
         b.ImageUrl,
-        b.MobileImageUrl,
-        b.CtaText,
-        b.CtaUrl,
-        b.SecondaryCtaText,
-        b.SecondaryCtaUrl,
-        b.Badge,
-        Math.Clamp(b.OverlayStrength, 0, 100),
-        b.TextAlignment);
+        b.PrimaryButtonText,
+        b.PrimaryButtonUrl,
+        b.SortOrder,
+        b.IsActive);
 
 
 

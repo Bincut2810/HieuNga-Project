@@ -4,9 +4,6 @@
 @{
     var site = SiteSettingsViewData.Get(ViewData);
     ViewData["VehicleChangeUrl"] = "/xe?from=dat-lich";
-    ViewData["VehicleFinanceUrl"] = Model.SelectedMotorcycle is null
-        ? "/tra-gop?source=test-ride"
-        : $"/tra-gop?xe={Uri.EscapeDataString(Model.SelectedMotorcycle.Slug)}&source=test-ride";
 }
 
 <section class="lead-page">

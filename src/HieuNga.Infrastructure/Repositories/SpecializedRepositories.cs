@@ -36,16 +36,12 @@ public class BranchRepository(HieuNgaDbContext context) : Repository<Branch>(con
 
 public class BannerRepository(HieuNgaDbContext context) : Repository<Banner>(context), IBannerRepository
 {
-    public async Task<IReadOnlyList<Banner>> GetByPositionAsync(BannerPosition position, CancellationToken ct = default)
-    {
-        var now = DateTime.UtcNow;
-        return await context.Banners.AsNoTracking()
-            .Where(b => b.IsActive && b.Position == position
-                && (b.StartDate == null || b.StartDate <= now)
-                && (b.EndDate == null || b.EndDate >= now))
+    public async Task<IReadOnlyList<Banner>> GetHomepageBannersAsync(int max = 5, CancellationToken ct = default) =>
+        await context.Banners.AsNoTracking()
+            .Where(b => b.IsActive && !b.IsDeleted)
             .OrderBy(b => b.SortOrder)
+            .Take(max)
             .ToListAsync(ct);
-    }
 }
 
 public class BlogRepository(HieuNgaDbContext context) : IBlogRepository

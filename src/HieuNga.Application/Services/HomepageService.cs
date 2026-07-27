@@ -2,7 +2,6 @@ using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Application.Mappings;
 using HieuNga.Domain;
-using HieuNga.Domain.Enums;
 using HieuNga.Domain.Interfaces;
 
 namespace HieuNga.Application.Services;
@@ -19,7 +18,7 @@ public class HomepageService(
 {
     public async Task<HomepageDto> GetHomepageDataAsync(CancellationToken ct = default)
     {
-        var banners = await bannerRepo.GetByPositionAsync(BannerPosition.Hero, ct);
+        var banners = await bannerRepo.GetHomepageBannersAsync(5, ct);
         var motorcycles = await motorcycleRepo.GetFeaturedAsync(6, ct);
         var promotions = await promotionRepo.GetActiveAsync(6, ct);
         var branches = await branchRepo.GetActiveAsync(ct);

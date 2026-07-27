@@ -15,14 +15,14 @@
 
     if (path.StartsWith("/xe/") && path.Length > 4)
     {
-        primaryHref = "#financing";
-        primaryLabel = "Trả góp";
+        primaryHref = "/xe";
+        primaryLabel = "Xem xe";
         secondaryHref = $"/lien-he?intent=mua-xe&source=detail";
         // Prefer slug from path for intent
         var slug = path["/xe/".Length..];
         if (!string.IsNullOrWhiteSpace(slug) && !slug.Contains('/'))
             secondaryHref = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(slug)}&source=detail";
-        secondaryLabel = "Tư vấn";
+        secondaryLabel = "Liên hệ tư vấn";
     }
     else if (path == "/xe" || path.StartsWith("/xe?"))
     {
@@ -42,15 +42,8 @@
     {
         primaryHref = "/lien-he?intent=khuyen-mai&source=promotion";
         primaryLabel = "Nhận ưu đãi";
-        secondaryHref = "/tra-gop?source=promotion";
-        secondaryLabel = "Trả góp";
-    }
-    else if (path.StartsWith("/tra-gop"))
-    {
-        primaryHref = "#inquiry";
-        primaryLabel = "Đăng ký";
-        secondaryHref = "/lien-he?intent=tra-gop&source=finance";
-        secondaryLabel = "Tư vấn";
+        secondaryHref = "/xe?from=promotion";
+        secondaryLabel = "Khám phá xe";
     }
     else if (path.StartsWith("/tin-tuc"))
     {

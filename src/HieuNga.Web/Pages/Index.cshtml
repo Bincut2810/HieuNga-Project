@@ -13,11 +13,6 @@
     var hotlineTel = new string(hotline.Where(char.IsDigit).ToArray());
     if (string.IsNullOrEmpty(hotlineTel)) hotlineTel = new string(site.Hotline.Where(char.IsDigit).ToArray());
     var zaloUrl = string.IsNullOrWhiteSpace(site.ZaloUrl) ? "https://zalo.me/" : site.ZaloUrl;
-    var banks = d.FinanceBanks.Take(4).ToList();
-    var defaultRate = banks.FirstOrDefault()?.RateLabel ?? "0,79%/tháng";
-    var samplePrice = featuredBikes.FirstOrDefault()?.BasePrice ?? 42_000_000m;
-    var down30 = Math.Round(samplePrice * 0.30m, 0);
-    var down40 = Math.Round(samplePrice * 0.40m, 0);
     var newsPosts = d.LatestPosts.ToList();
     var featuredPost = newsPosts.FirstOrDefault();
     var sidePosts = newsPosts.Skip(1).Take(3).ToList();
@@ -30,10 +25,6 @@
     {
         var first = d.HeroBanners[0];
         <link rel="preload" as="image" href="@first.ImageUrl" fetchpriority="high" />
-        if (!string.IsNullOrWhiteSpace(first.MobileImageUrl))
-        {
-            <link rel="preload" as="image" href="@first.MobileImageUrl" media="(max-width: 767px)" fetchpriority="high" />
-        }
     }
 }
 
@@ -50,12 +41,6 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8a1 1 0 001-1v-3m4-6h2l3 4v5a1 1 0 01-1 1h-1"/></svg>
                     </span>
                     <span class="home-quick-label">Mua xe</span>
-                </a>
-                <a href="/tra-gop" class="home-quick-card touch-press">
-                    <span class="home-quick-icon" aria-hidden="true">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </span>
-                    <span class="home-quick-label">Trả góp</span>
                 </a>
                 <a href="/dich-vu" class="home-quick-card touch-press">
                     <span class="home-quick-icon" aria-hidden="true">
@@ -154,7 +139,6 @@
                     var whyItems = new (string Icon, string Title, string Desc)[]
                     {
                         ("shield", "Bảo hành chính hãng", "Xe Honda mới với bảo hành theo tiêu chuẩn Honda Việt Nam."),
-                        ("finance", "Trả góp linh hoạt", "Hỗ trợ nhiều ngân hàng — ước tính trước khi đến showroom."),
                         ("wrench", "Bảo dưỡng HEAD", "Xưởng dịch vụ chuẩn quy trình, kỹ thuật viên chuyên môn."),
                         ("parts", "Phụ tùng chính hãng", "Linh kiện & nhớt Honda — báo giá minh bạch."),
                         ("insurance", "Hỗ trợ bảo hiểm", "Tư vấn gói bảo hiểm phù hợp khi nhận xe."),
@@ -172,9 +156,6 @@
                             {
                                 case "shield":
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M12 3l8 3v6c0 5-3.5 8.5-8 9.5C7.5 20.5 4 17 4 12V6l8-3z"/></svg>
-                                    break;
-                                case "finance":
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     break;
                                 case "wrench":
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -197,70 +178,6 @@
                         <p class="home-why-desc">@item.Desc</p>
                     </div>
                 }
-            </div>
-        </div>
-    </section>
-
-    @* ─── PHASE 5: Finance Highlight ─── *@
-    <section class="page-section reveal reveal-left" aria-labelledby="home-finance-heading">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="home-finance">
-                <div class="home-finance-copy">
-                    <p class="section-eyebrow text-white/70">Tài chính</p>
-                    <h2 id="home-finance-heading" class="text-2xl md:text-3xl font-bold text-white tracking-tight">Trả góp rõ ràng, lãi suất từ @defaultRate</h2>
-                    <p class="mt-3 text-sm text-white/75 max-w-lg leading-relaxed">
-                        Ước tính trả trước và khoản tháng trước khi đến showroom. Công thức tính giữ nguyên trên trang trả góp.
-                    </p>
-                    <div class="home-finance-examples">
-                        <div class="home-finance-example">
-                            <span class="home-finance-example-label">Trả trước ~30%</span>
-                            <span class="home-finance-example-value">@down30.ToVnd()</span>
-                        </div>
-                        <div class="home-finance-example">
-                            <span class="home-finance-example-label">Trả trước ~40%</span>
-                            <span class="home-finance-example-value">@down40.ToVnd()</span>
-                        </div>
-                        <div class="home-finance-example">
-                            <span class="home-finance-example-label">Ước tính / tháng</span>
-                            <span class="home-finance-example-value">từ @samplePrice.ToEstimatedMonthly()</span>
-                        </div>
-                    </div>
-                    <a href="/tra-gop" class="home-finance-cta touch-press">Mở máy tính trả góp</a>
-                </div>
-                <div class="home-finance-banks" aria-label="Ngân hàng đối tác">
-                    @if (banks.Any())
-                    {
-                        @foreach (var bank in banks)
-                        {
-                            <div class="home-finance-bank">
-                                @if (!string.IsNullOrWhiteSpace(bank.LogoUrl))
-                                {
-                                    <span class="home-finance-bank-logo home-finance-bank-logo--img" aria-hidden="true" style="--bank-color:@bank.Color">
-                                        <img src="@bank.LogoUrl" alt="" width="44" height="44" loading="lazy" decoding="async" />
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="home-finance-bank-logo" aria-hidden="true" style="--bank-color:@bank.Color">@bank.Initials</span>
-                                }
-                                <div class="home-finance-bank-meta">
-                                    <span class="home-finance-bank-name">@bank.Name</span>
-                                    <span class="home-finance-bank-rate">@bank.RateLabel</span>
-                                    @if (!string.IsNullOrWhiteSpace(bank.Trust))
-                                    {
-                                        <span class="home-finance-bank-trust">@bank.Trust</span>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="home-finance-bank"><span class="home-finance-bank-logo" aria-hidden="true">HD</span><div class="home-finance-bank-meta"><span class="home-finance-bank-name">HD Bank</span><span class="home-finance-bank-rate">0,79%/tháng</span></div></div>
-                        <div class="home-finance-bank"><span class="home-finance-bank-logo" aria-hidden="true">MB</span><div class="home-finance-bank-meta"><span class="home-finance-bank-name">MB Bank</span><span class="home-finance-bank-rate">0,79%/tháng</span></div></div>
-                        <div class="home-finance-bank"><span class="home-finance-bank-logo" aria-hidden="true">JA</span><div class="home-finance-bank-meta"><span class="home-finance-bank-name">JACCS</span><span class="home-finance-bank-rate">0,79%/tháng</span></div></div>
-                    }
-                </div>
             </div>
         </div>
     </section>

@@ -22,15 +22,12 @@
     const dotsWrap = hero.querySelector('[data-hero-dots]');
     const prevBtn = hero.querySelector('[data-hero-prev]');
     const nextBtn = hero.querySelector('[data-hero-next]');
-    const progress = hero.querySelector('[data-hero-progress]');
     const live = hero.querySelector('[data-hero-live]');
     const intervalMs = Math.max(4000, parseInt(hero.dataset.interval || '6000', 10) || 6000);
     const reduceMotion = prefersReducedMotion();
     let index = 0;
     let timer = null;
     let paused = false;
-    let progressRaf = null;
-    let progressStart = 0;
 
     slides.forEach((slide, i) => {
       if (dotsWrap) {
@@ -46,33 +43,6 @@
         dotsWrap.appendChild(dot);
       }
     });
-
-    function setProgress(pct) {
-      if (!progress) return;
-      progress.style.transform = 'scaleX(' + Math.max(0, Math.min(1, pct)) + ')';
-    }
-
-    function stopProgress() {
-      if (progressRaf) cancelAnimationFrame(progressRaf);
-      progressRaf = null;
-    }
-
-    function runProgress() {
-      stopProgress();
-      if (reduceMotion || paused || !progress || document.hidden) {
-        setProgress(0);
-        return;
-      }
-      progressStart = performance.now();
-      setProgress(0);
-      function frame(now) {
-        if (paused || document.hidden) return;
-        const t = (now - progressStart) / intervalMs;
-        setProgress(t);
-        if (t < 1) progressRaf = requestAnimationFrame(frame);
-      }
-      progressRaf = requestAnimationFrame(frame);
-    }
 
     function announce() {
       if (live) live.textContent = 'Banner ' + (index + 1) + ' / ' + slides.length;
@@ -95,7 +65,6 @@
       }
       announce();
       if (user) restart();
-      else runProgress();
     }
 
     function tick() {
@@ -105,17 +74,14 @@
     function stopTimer() {
       clearInterval(timer);
       timer = null;
-      stopProgress();
     }
 
     function restart() {
       stopTimer();
       if (reduceMotion) {
-        setProgress(0);
         return;
       }
       if (paused || document.hidden) return;
-      runProgress();
       timer = setInterval(tick, intervalMs);
     }
 
@@ -124,7 +90,6 @@
 
     hero.addEventListener('mouseenter', () => {
       paused = true;
-      stopProgress();
     });
     hero.addEventListener('mouseleave', () => {
       paused = false;
@@ -132,7 +97,6 @@
     });
     hero.addEventListener('focusin', () => {
       paused = true;
-      stopProgress();
     });
     hero.addEventListener('focusout', (e) => {
       if (!hero.contains(e.relatedTarget)) {

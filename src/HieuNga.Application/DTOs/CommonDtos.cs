@@ -14,14 +14,10 @@ public record BannerDto(
     string Title,
     string? Subtitle,
     string ImageUrl,
-    string? MobileImageUrl,
-    string? CtaText,
-    string? CtaUrl,
-    string? SecondaryCtaText = null,
-    string? SecondaryCtaUrl = null,
-    string? Badge = null,
-    int OverlayStrength = 65,
-    BannerTextAlignment TextAlignment = BannerTextAlignment.Left);
+    string? PrimaryButtonText,
+    string? PrimaryButtonUrl,
+    int DisplayOrder,
+    bool Enabled);
 
 public record PromotionDto(
     Guid Id,
