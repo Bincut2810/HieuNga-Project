@@ -2,7 +2,7 @@
 @using HieuNga.Domain
 @{
     var hasThumb = !string.IsNullOrWhiteSpace(Model.Input.ThumbnailUrl);
-    var hasGallery = Model.Gallery.Count >= 3;
+    var hasColorImage = Model.Colors.Any(c => !string.IsNullOrWhiteSpace(c.ImageUrl));
     var filledAngles = Model.SpinFrames
         .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl))
         .Select(s => s.Angle)
@@ -10,7 +10,7 @@
         .Count();
     var hasSixAngles = filledAngles >= MotorcycleViewAngleCatalog.Count;
     var hasPrice = Model.Input.BasePrice > 0 || Model.Variants.Any(v => v.Price > 0);
-    var ready = hasThumb && hasGallery && hasSixAngles && hasPrice;
+    var ready = hasThumb && hasColorImage && hasPrice;
     string ItemClass(bool ok) => "admin-checklist-item" + (ok ? " is-done" : "");
 }
 
@@ -18,8 +18,8 @@
     <h2 class="admin-checklist-title">Trước khi đăng</h2>
     <ul class="admin-checklist-list">
         <li class="@ItemClass(hasThumb)"><span class="admin-checklist-dot"></span> Có ảnh đại diện</li>
-        <li class="@ItemClass(hasGallery)"><span class="admin-checklist-dot"></span> Có ít nhất 3 ảnh giới thiệu</li>
-        <li class="@ItemClass(hasSixAngles)"><span class="admin-checklist-dot"></span> Có đủ 6 góc xe</li>
+        <li class="@ItemClass(hasColorImage)"><span class="admin-checklist-dot"></span> Có ít nhất 1 màu có ảnh</li>
+        <li class="@ItemClass(hasSixAngles)"><span class="admin-checklist-dot"></span> 6 góc xe @(hasSixAngles ? "" : $"(tuỳ chọn · {filledAngles}/6)")</li>
         <li class="@ItemClass(hasPrice)"><span class="admin-checklist-dot"></span> Có giá bán</li>
     </ul>
     @if (ready)

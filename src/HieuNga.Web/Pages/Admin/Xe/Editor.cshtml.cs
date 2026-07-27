@@ -70,13 +70,9 @@ public class EditorModel(
 
     public IReadOnlyList<VariantRow> Variants { get; private set; } = [];
     public IReadOnlyList<MotorcycleColor> Colors { get; private set; } = [];
-    public IReadOnlyList<MediaAsset> Gallery { get; private set; } = [];
     public IReadOnlyList<MotorcycleFeature> Features { get; private set; } = [];
     public IReadOnlyList<MotorcycleTechnology> Technologies { get; private set; } = [];
     public IReadOnlyList<MotorcycleSpinFrame> SpinFrames { get; private set; } = [];
-
-    /// <summary>CMS Media Studio hero URL (not editable on the general form).</summary>
-    public string? HeroImageUrl { get; private set; }
 
     public SelectList CategoryOptions => new(
         MotorcycleCategoryLabels.All.Select(c => new { Value = (int)c.Value, Text = c.Label }),
@@ -421,7 +417,6 @@ public class EditorModel(
         var source = await db.Motorcycles
             .Include(m => m.Variants)
             .Include(m => m.Colors)
-            .Include(m => m.MediaAssets)
             .Include(m => m.Features)
             .Include(m => m.Technologies)
             .Include(m => m.SpinFrames)
@@ -482,19 +477,6 @@ public class EditorModel(
                 HexCode = c.HexCode,
                 ImageUrl = c.ImageUrl,
                 SortOrder = c.SortOrder
-            });
-        }
-        foreach (var g in source.MediaAssets.Where(x => !x.IsDeleted))
-        {
-            db.MediaAssets.Add(new MediaAsset
-            {
-                MotorcycleId = clone.Id,
-                FileName = g.FileName,
-                Url = g.Url,
-                AltText = g.AltText,
-                Type = g.Type,
-                FileSizeBytes = g.FileSizeBytes,
-                SortOrder = g.SortOrder
             });
         }
         foreach (var f in source.Features.Where(x => !x.IsDeleted))
@@ -593,7 +575,7 @@ public class EditorModel(
             };
             await motorcycleRepo.AddAsync(entity, ct);
             await uow.SaveChangesAsync(ct);
-            this.SetSuccess("Đã tạo Draft. Tiếp tục thêm gallery, màu và góc xem.");
+            this.SetSuccess("Đã tạo Draft. Tiếp tục thêm ảnh đại diện, màu và góc xem.");
             return RedirectToPage(new { id = entity.Id, tab = "media" });
         }
 
@@ -672,7 +654,6 @@ public class EditorModel(
         Id = bike.Id;
         MotorcycleName = bike.Name;
         PublicSlug = bike.Slug;
-        HeroImageUrl = bike.HeroImageUrl;
         Input = Map(bike);
         PublishStatus = bike.IsPublished ? "published" : "draft";
         SpecsLines = ParseSpecsToLines(bike.TechnicalSpecsJson);
@@ -689,9 +670,6 @@ public class EditorModel(
             .ToListAsync(ct);
         Colors = await db.MotorcycleColors.AsNoTracking()
             .Where(c => c.MotorcycleId == id && !c.IsDeleted).OrderBy(c => c.SortOrder).ToListAsync(ct);
-        Gallery = await db.MediaAssets.AsNoTracking()
-            .Where(m => m.MotorcycleId == id && !m.IsDeleted && m.Type == MediaType.Image)
-            .OrderBy(m => m.SortOrder).ToListAsync(ct);
         Features = await db.MotorcycleFeatures.AsNoTracking()
             .Where(f => f.MotorcycleId == id && !f.IsDeleted).OrderBy(f => f.SortOrder).ToListAsync(ct);
         Technologies = await db.MotorcycleTechnologies.AsNoTracking()

@@ -1,16 +1,17 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using HieuNga.Application.DTOs;
+using HieuNga.Application.Media;
 
 namespace HieuNga.Web.ViewModels;
 
 /// <summary>
-/// Sole media presentation model for the public motorcycle detail page.
-/// Built once from <see cref="MotorcycleDetailDto"/> — Razor must not remap images.
+/// Sole media presentation model for public motorcycle detail.
+/// Hero = selected color image → first color image → thumbnail → default.svg
 /// </summary>
 public sealed class MotorcycleDetailMediaViewModel
 {
-    public const string PlaceholderImage = "/images/motorcycles/default.svg";
+    public const string PlaceholderImage = MotorcycleMediaRules.PlaceholderImage;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -19,14 +20,14 @@ public sealed class MotorcycleDetailMediaViewModel
     };
 
     public required string Name { get; init; }
+    public required string Thumbnail { get; init; }
+    /// <summary>Initial hero for SSR (first color with image, else thumbnail, else placeholder).</summary>
     public required string HeroImage { get; init; }
-    public required IReadOnlyList<string> Gallery { get; init; }
     public required IReadOnlyList<MotorcycleAngleImageDto> Angles { get; init; }
     public required IReadOnlyList<MediaColorItem> Colors { get; init; }
     public required string DefaultImage { get; init; }
     public required string MediaJson { get; init; }
 
-    public bool HasGallery => Gallery.Count > 0;
     public bool HasAngles => Angles.Count > 0;
     public bool ShowAngleViewer => Angles.Count >= 2;
     public bool HasColors => Colors.Count > 0;
@@ -35,11 +36,6 @@ public sealed class MotorcycleDetailMediaViewModel
 
     public static MotorcycleDetailMediaViewModel FromDto(MotorcycleDetailDto dto)
     {
-        var gallery = dto.GalleryUrls
-            .Where(u => !string.IsNullOrWhiteSpace(u))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
         var angles = dto.AngleImages
             .Where(a => !string.IsNullOrWhiteSpace(a.Url))
             .ToList();
@@ -52,15 +48,16 @@ public sealed class MotorcycleDetailMediaViewModel
                 string.IsNullOrWhiteSpace(c.ImageUrl) ? null : c.ImageUrl))
             .ToList();
 
-        // CMS hero/thumb only — no gallery invent. Placeholder when Admin left both empty.
-        var hero = FirstNonEmpty(dto.HeroImageUrl, dto.ThumbnailUrl) ?? PlaceholderImage;
+        var thumbnail = string.IsNullOrWhiteSpace(dto.ThumbnailUrl)
+            ? PlaceholderImage
+            : dto.ThumbnailUrl!;
+        var hero = MotorcycleMediaRules.ResolveHero(dto.Colors, dto.ThumbnailUrl);
 
         var payload = new
         {
-            hero,
-            gallery,
-            angles = angles.Select(a => new { a.Angle, a.Label, a.Url }),
+            thumbnail,
             colors = colors.Select(c => new { c.Id, c.Name, hex = c.Hex, imageUrl = c.ImageUrl }),
+            angles = angles.Select(a => new { a.Angle, a.Label, a.Url }),
             name = dto.Name,
             storageKey = $"hn-color-{dto.Id}"
         };
@@ -68,21 +65,12 @@ public sealed class MotorcycleDetailMediaViewModel
         return new MotorcycleDetailMediaViewModel
         {
             Name = dto.Name,
+            Thumbnail = thumbnail,
             HeroImage = hero,
-            Gallery = gallery,
             Angles = angles,
             Colors = colors,
             DefaultImage = PlaceholderImage,
             MediaJson = JsonSerializer.Serialize(payload, JsonOptions)
         };
-    }
-
-    private static string? FirstNonEmpty(params string?[] values)
-    {
-        foreach (var v in values)
-        {
-            if (!string.IsNullOrWhiteSpace(v)) return v;
-        }
-        return null;
     }
 }

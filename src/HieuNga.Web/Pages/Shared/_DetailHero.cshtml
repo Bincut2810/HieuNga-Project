@@ -23,30 +23,33 @@
             <span class="detail-badge detail-badge-cat">@categoryLabel</span>
         }
     </div>
-    <button type="button"
-            class="detail-zoom-btn touch-press"
-            data-media-open-lightbox
-            aria-label="Xem ảnh toàn màn hình">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
-        <span>Phóng to</span>
-    </button>
 </div>
 
-@if (media.HasGallery)
+@if (media.HasColors)
 {
-    <div class="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" role="list" aria-label="Thư viện ảnh" data-media-gallery>
-        @for (var i = 0; i < media.Gallery.Count; i++)
-        {
-            var url = media.Gallery[i];
-            <button type="button"
-                    class="touch-press shrink-0 w-[4.5rem] h-14 rounded-xl overflow-hidden border-2 transition bg-gray-50 detail-thumb border-transparent opacity-80 hover:opacity-100"
-                    data-media-gallery-item
-                    data-index="@i"
-                    data-url="@url"
-                    role="listitem"
-                    aria-label="Ảnh @(i + 1)">
-                <img src="@url" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="144" height="112" />
-            </button>
-        }
+    <div class="detail-color-bar mt-4" role="listbox" aria-label="Chọn màu xe" data-media-colors>
+        <p class="text-sm text-gray-500 mb-2">
+            Màu:
+            <span class="font-semibold text-honda-dark" data-media-color-name>@media.Colors[0].Name</span>
+        </p>
+        <div class="flex flex-wrap gap-2.5">
+            @for (var i = 0; i < media.Colors.Count; i++)
+            {
+                var c = media.Colors[i];
+                <button type="button"
+                        class="detail-color-dot touch-press @(i == 0 ? "is-selected" : "")"
+                        data-media-color-item
+                        data-id="@c.Id"
+                        data-name="@c.Name"
+                        data-image="@(c.ImageUrl ?? "")"
+                        role="option"
+                        aria-selected="@(i == 0 ? "true" : "false")"
+                        aria-label="@c.Name"
+                        title="@c.Name"
+                        style="--swatch:@c.Hex">
+                    <span class="detail-color-dot-fill" aria-hidden="true"></span>
+                </button>
+            }
+        </div>
     </div>
 }

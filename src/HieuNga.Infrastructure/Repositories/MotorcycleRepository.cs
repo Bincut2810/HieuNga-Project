@@ -13,7 +13,6 @@ public class MotorcycleRepository(HieuNgaDbContext context)
         await context.Motorcycles
             .Include(m => m.Variants)
             .Include(m => m.Colors)
-            .Include(m => m.MediaAssets)
             .Include(m => m.Features)
             .Include(m => m.Technologies)
             .Include(m => m.SpinFrames)
@@ -24,7 +23,6 @@ public class MotorcycleRepository(HieuNgaDbContext context)
     {
         var featured = await context.Motorcycles
             .AsNoTracking()
-            .Include(m => m.MediaAssets)
             .Include(m => m.Variants)
             .Where(m => m.IsFeatured && m.IsPublished && !m.IsDeleted)
             .OrderBy(m => m.SortOrder)
@@ -37,7 +35,6 @@ public class MotorcycleRepository(HieuNgaDbContext context)
         // Fallback: latest published — keeps homepage conversion section alive
         return await context.Motorcycles
             .AsNoTracking()
-            .Include(m => m.MediaAssets)
             .Include(m => m.Variants)
             .Where(m => m.IsPublished && !m.IsDeleted)
             .OrderBy(m => m.SortOrder)
@@ -53,7 +50,6 @@ public class MotorcycleRepository(HieuNgaDbContext context)
         CancellationToken ct = default)
     {
         var q = context.Motorcycles.AsNoTracking()
-            .Include(m => m.MediaAssets)
             .Include(m => m.Variants)
             .Where(m => m.IsPublished && !m.IsDeleted);
 

@@ -141,7 +141,6 @@ public sealed class DemoMotorcycleImporter(
             var bike = await db.Motorcycles
                 .Include(m => m.Variants)
                 .Include(m => m.Colors)
-                .Include(m => m.MediaAssets)
                 .Include(m => m.Features)
                 .Include(m => m.Technologies)
                 .Include(m => m.SpinFrames)
@@ -180,7 +179,6 @@ public sealed class DemoMotorcycleImporter(
             if (!string.IsNullOrWhiteSpace(bike.ThumbnailUrl) && string.IsNullOrWhiteSpace(bike.OgImageUrl))
                 bike.OgImageUrl = bike.ThumbnailUrl;
 
-            uploaded += await ImportGalleryAsync(bike, packageDir, meta, idFolder, ct, warnings);
             uploaded += await ImportColorsAsync(bike, packageDir, meta, idFolder, ct, warnings);
             uploaded += await ImportSpinAsync(bike, packageDir, meta, idFolder, ct, warnings);
             uploaded += await ImportFeaturesAsync(bike, packageDir, meta, idFolder, ct, warnings);
@@ -292,7 +290,6 @@ public sealed class DemoMotorcycleImporter(
     private sealed class SharedMediaBundle
     {
         public string? ThumbnailUrl { get; set; }
-        public List<string> GalleryUrls { get; } = [];
         public List<(string Name, string Hex, string? Url)> Colors { get; } = [];
         public List<string> SpinUrls { get; } = [];
         public string? FeatureUrl { get; set; }
@@ -305,7 +302,6 @@ public sealed class DemoMotorcycleImporter(
         var shared = Path.Combine(AssetsRootPath, DemoCatalogDefinitions.SharedAssetsFolder);
         var vision = Path.Combine(AssetsRootPath, "Vision");
         Directory.CreateDirectory(shared);
-        Directory.CreateDirectory(Path.Combine(shared, "gallery"));
         Directory.CreateDirectory(Path.Combine(shared, "angles"));
         Directory.CreateDirectory(Path.Combine(shared, "colors"));
         Directory.CreateDirectory(Path.Combine(shared, "features"));
@@ -322,8 +318,6 @@ public sealed class DemoMotorcycleImporter(
         }
 
         CopyIfMissing("thumbnail.jpg");
-        for (var i = 1; i <= 4; i++)
-            CopyIfMissing(Path.Combine("gallery", $"{i:D2}.jpg"));
         foreach (var c in new[] { "black.jpg", "white.jpg", "red.jpg" })
             CopyIfMissing(Path.Combine("colors", c));
         CopyIfMissing(Path.Combine("features", "feature-01.jpg"));
@@ -376,14 +370,6 @@ public sealed class DemoMotorcycleImporter(
 
         bundle.ThumbnailUrl = await Up("thumbnail.jpg");
 
-        foreach (var file in ListImageFiles(Path.Combine(sharedDir, "gallery")))
-        {
-            var url = await UploadFileAsync(file, folder + "/gallery", ct, warnings);
-            if (url is null) continue;
-            bundle.GalleryUrls.Add(url);
-            bundle.UploadedCount++;
-        }
-
         foreach (var (file, name, hex) in new[]
                  {
                      ("black.jpg", "Đen", "#1A1A1A"),
@@ -423,12 +409,6 @@ public sealed class DemoMotorcycleImporter(
         bundle.FeatureUrl = await Up(Path.Combine("features", "feature-01.jpg")) ?? bundle.ThumbnailUrl;
         bundle.TechUrl = await Up(Path.Combine("technology", "tech-01.jpg")) ?? bundle.ThumbnailUrl;
 
-        if (bundle.GalleryUrls.Count == 0 && bundle.ThumbnailUrl is not null)
-        {
-            for (var i = 0; i < 4; i++)
-                bundle.GalleryUrls.Add(bundle.ThumbnailUrl);
-        }
-
         return bundle;
     }
 
@@ -442,7 +422,6 @@ public sealed class DemoMotorcycleImporter(
         var bike = await db.Motorcycles
             .Include(m => m.Variants)
             .Include(m => m.Colors)
-            .Include(m => m.MediaAssets)
             .Include(m => m.Features)
             .Include(m => m.Technologies)
             .Include(m => m.SpinFrames)
@@ -465,20 +444,6 @@ public sealed class DemoMotorcycleImporter(
         await db.SaveChangesAsync(ct);
 
         var order = 0;
-        foreach (var url in shared.GalleryUrls)
-        {
-            bike.MediaAssets.Add(new MediaAsset
-            {
-                MotorcycleId = bike.Id,
-                FileName = $"gallery-{order + 1:D2}.jpg",
-                Url = url,
-                AltText = bike.Name,
-                Type = MediaType.Image,
-                SortOrder = order++
-            });
-        }
-
-        order = 0;
         foreach (var color in shared.Colors)
         {
             var metaColor = meta.Colors.ElementAtOrDefault(order);
@@ -621,11 +586,6 @@ public sealed class DemoMotorcycleImporter(
             db.MotorcycleColors.RemoveRange(bike.Colors);
             bike.Colors.Clear();
         }
-        if (bike.MediaAssets.Count > 0)
-        {
-            db.MediaAssets.RemoveRange(bike.MediaAssets);
-            bike.MediaAssets.Clear();
-        }
         if (bike.Features.Count > 0)
         {
             db.MotorcycleFeatures.RemoveRange(bike.Features);
@@ -673,34 +633,6 @@ public sealed class DemoMotorcycleImporter(
                 Sku = v.Sku
             });
         }
-    }
-
-    private async Task<int> ImportGalleryAsync(
-        Motorcycle bike, string packageDir, DemoMotorcycleMetadata meta, string idFolder,
-        CancellationToken ct, List<string> warnings)
-    {
-        var dir = Path.Combine(packageDir, meta.Assets.GalleryFolder);
-        var files = ListImageFiles(dir);
-        var count = 0;
-        var order = 0;
-        foreach (var file in files)
-        {
-            var url = await UploadFileAsync(file, $"demo/{idFolder}/gallery", ct, warnings);
-            if (url is null) continue;
-            bike.MediaAssets.Add(new MediaAsset
-            {
-                MotorcycleId = bike.Id,
-                FileName = Path.GetFileName(file),
-                Url = url,
-                AltText = bike.Name,
-                Type = MediaType.Image,
-                SortOrder = order++
-            });
-            count++;
-        }
-        if (files.Count == 0)
-            warnings.Add("Thư mục gallery trống — dùng placeholder hoặc thêm ảnh sau.");
-        return count;
     }
 
     private async Task<int> ImportColorsAsync(

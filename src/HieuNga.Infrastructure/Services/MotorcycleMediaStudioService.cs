@@ -29,22 +29,16 @@ public sealed class MotorcycleMediaStudioService(
 
     public async Task<MediaMutationResult> SetSlotAsync(Guid motorcycleId, MediaSlot slot, MediaFileUpload file, CancellationToken ct = default)
     {
-        if (slot is not (MediaSlot.Thumbnail or MediaSlot.Hero))
+        if (slot != MediaSlot.Thumbnail)
             return Fail("Slot không hợp lệ.");
 
         var bike = await db.Motorcycles.FirstOrDefaultAsync(m => m.Id == motorcycleId && !m.IsDeleted, ct);
         if (bike is null) return Fail("Không tìm thấy xe.");
 
-        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, slot), ct);
+        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Thumbnail), ct);
         if (!uploaded.Ok) return Fail(uploaded.Error!);
 
-        if (slot == MediaSlot.Thumbnail)
-        {
-            bike.ThumbnailUrl = uploaded.Url;
-            // Ảnh đại diện drives list + detail hero — no separate Hero UI.
-            bike.HeroImageUrl = uploaded.Url;
-        }
-        else bike.HeroImageUrl = uploaded.Url;
+        bike.ThumbnailUrl = uploaded.Url;
         bike.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return await OkAsync(motorcycleId, "Đã lưu ảnh.", ct);
@@ -52,125 +46,16 @@ public sealed class MotorcycleMediaStudioService(
 
     public async Task<MediaMutationResult> ClearSlotAsync(Guid motorcycleId, MediaSlot slot, CancellationToken ct = default)
     {
+        if (slot != MediaSlot.Thumbnail)
+            return Fail("Slot không hợp lệ.");
+
         var bike = await db.Motorcycles.FirstOrDefaultAsync(m => m.Id == motorcycleId && !m.IsDeleted, ct);
         if (bike is null) return Fail("Không tìm thấy xe.");
-        if (slot == MediaSlot.Thumbnail)
-        {
-            bike.ThumbnailUrl = null;
-            bike.HeroImageUrl = null;
-        }
-        else if (slot == MediaSlot.Hero) bike.HeroImageUrl = null;
-        else return Fail("Slot không hợp lệ.");
+
+        bike.ThumbnailUrl = null;
         bike.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return await OkAsync(motorcycleId, "Đã xóa ảnh.", ct);
-    }
-
-    public async Task<MediaMutationResult> AddGalleryAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> files, CancellationToken ct = default)
-    {
-        if (!await BikeExistsAsync(motorcycleId, ct)) return Fail("Không tìm thấy xe.");
-        if (files.Count == 0) return Fail("Chọn ít nhất một ảnh.");
-
-        var maxSort = await db.MediaAssets.Where(m => m.MotorcycleId == motorcycleId && !m.IsDeleted)
-            .Select(m => (int?)m.SortOrder).MaxAsync(ct) ?? -1;
-        var sort = maxSort + 1;
-        var hashes = await ExistingGalleryHashesAsync(motorcycleId, ct);
-        var added = 0;
-        var warnings = new List<string>();
-
-        foreach (var file in files)
-        {
-            var hash = await HashAsync(file, ct);
-            if (hashes.Contains(hash))
-            {
-                warnings.Add($"Bỏ qua trùng: {file.FileName}");
-                continue;
-            }
-
-            var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Gallery), ct);
-            if (!uploaded.Ok)
-            {
-                warnings.Add($"{file.FileName}: {uploaded.Error}");
-                continue;
-            }
-
-            db.MediaAssets.Add(new MediaAsset
-            {
-                MotorcycleId = motorcycleId,
-                FileName = file.FileName,
-                Url = uploaded.Url!,
-                Type = MediaType.Image,
-                SortOrder = sort++,
-                FileSizeBytes = uploaded.Bytes ?? file.Length,
-                Width = uploaded.Width,
-                Height = uploaded.Height
-            });
-            hashes.Add(hash);
-            added++;
-        }
-
-        if (added == 0)
-            return Fail(warnings.Count > 0 ? string.Join(" · ", warnings) : "Không tải được ảnh nào.");
-
-        await db.SaveChangesAsync(ct);
-        var msg = $"Đã thêm {added} ảnh.";
-        if (warnings.Count > 0) msg += " " + string.Join(" ", warnings.Take(3));
-        return await OkAsync(motorcycleId, msg, ct);
-    }
-
-    public async Task<MediaMutationResult> ReplaceGalleryAsync(Guid motorcycleId, Guid mediaId, MediaFileUpload file, CancellationToken ct = default)
-    {
-        var asset = await db.MediaAssets.FirstOrDefaultAsync(m => m.Id == mediaId && m.MotorcycleId == motorcycleId && !m.IsDeleted, ct);
-        if (asset is null) return Fail("Không tìm thấy ảnh.");
-        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Gallery), ct);
-        if (!uploaded.Ok) return Fail(uploaded.Error!);
-        asset.Url = uploaded.Url!;
-        asset.FileName = file.FileName;
-        asset.FileSizeBytes = uploaded.Bytes ?? file.Length;
-        asset.Width = uploaded.Width;
-        asset.Height = uploaded.Height;
-        asset.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, "Đã thay ảnh gallery.", ct);
-    }
-
-    public async Task<MediaMutationResult> UpdateGalleryCaptionAsync(Guid motorcycleId, Guid mediaId, string? caption, CancellationToken ct = default)
-    {
-        var asset = await db.MediaAssets.FirstOrDefaultAsync(m => m.Id == mediaId && m.MotorcycleId == motorcycleId && !m.IsDeleted, ct);
-        if (asset is null) return Fail("Không tìm thấy ảnh.");
-        asset.AltText = string.IsNullOrWhiteSpace(caption) ? null : caption.Trim();
-        asset.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, "Đã lưu chú thích.", ct);
-    }
-
-    public async Task<MediaMutationResult> ReorderGalleryAsync(Guid motorcycleId, IReadOnlyList<Guid> orderedIds, CancellationToken ct = default)
-    {
-        var assets = await db.MediaAssets.Where(m => m.MotorcycleId == motorcycleId && !m.IsDeleted).ToListAsync(ct);
-        for (var i = 0; i < orderedIds.Count; i++)
-        {
-            var asset = assets.FirstOrDefault(a => a.Id == orderedIds[i]);
-            if (asset is null) continue;
-            asset.SortOrder = i;
-            asset.UpdatedAt = DateTime.UtcNow;
-        }
-        await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, null, ct);
-    }
-
-    public async Task<MediaMutationResult> DeleteGalleryAsync(Guid motorcycleId, IReadOnlyList<Guid> mediaIds, CancellationToken ct = default)
-    {
-        if (mediaIds.Count == 0) return Fail("Chọn ít nhất một ảnh.");
-        var assets = await db.MediaAssets
-            .Where(m => m.MotorcycleId == motorcycleId && mediaIds.Contains(m.Id) && !m.IsDeleted)
-            .ToListAsync(ct);
-        foreach (var a in assets)
-        {
-            a.IsDeleted = true;
-            a.UpdatedAt = DateTime.UtcNow;
-        }
-        await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, $"Đã xóa {assets.Count} ảnh.", ct);
     }
 
     public async Task<MediaMutationResult> UpsertColorAsync(Guid motorcycleId, Guid? colorId, string name, string hex, MediaFileUpload? image, CancellationToken ct = default)
@@ -313,12 +198,14 @@ public sealed class MotorcycleMediaStudioService(
     public async Task<SmartImportSummaryDto> SmartImportAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> entries, CancellationToken ct = default)
     {
         if (!await BikeExistsAsync(motorcycleId, ct))
-            return new SmartImportSummaryDto(false, "Không tìm thấy xe.", 0, 0, 0, 0, 0, [], null);
+            return new SmartImportSummaryDto(false, "Không tìm thấy xe.", 0, 0, 0, [], null);
 
         var warnings = new List<string>();
-        var thumb = 0; var hero = 0; var gallery = 0; var colors = 0; var angles = 0;
+        var thumb = 0;
+        var colors = 0;
+        var angles = 0;
 
-        var galleryFiles = new List<MediaFileUpload>();
+        MediaFileUpload? pendingHero = null;
         var angleEntries = new List<(MotorcycleViewAngle Angle, MediaFileUpload File)>();
         var colorGroups = new Dictionary<string, List<MediaFileUpload>>(StringComparer.OrdinalIgnoreCase);
 
@@ -328,18 +215,22 @@ public sealed class MotorcycleMediaStudioService(
             var lower = path.ToLowerInvariant();
             var fileName = Path.GetFileName(path);
 
+            if (IsGalleryPath(lower))
+            {
+                warnings.Add($"Bỏ qua gallery: {path}");
+                continue;
+            }
+
             if (IsThumbPath(lower, fileName))
             {
                 var r = await SetSlotAsync(motorcycleId, MediaSlot.Thumbnail, entry, ct);
-                if (r.Success) thumb++; else warnings.Add(r.Message ?? fileName);
+                if (r.Success) thumb++;
+                else warnings.Add(r.Message ?? fileName);
             }
             else if (IsHeroPath(lower, fileName))
             {
-                var r = await SetSlotAsync(motorcycleId, MediaSlot.Hero, entry, ct);
-                if (r.Success) hero++; else warnings.Add(r.Message ?? fileName);
+                pendingHero = entry;
             }
-            else if (lower.Contains("/gallery/") || lower.StartsWith("gallery/"))
-                galleryFiles.Add(entry);
             else if (IsAngleFolderPath(lower) || MotorcycleViewAngleCatalog.TryParseKey(fileName, out _))
             {
                 if (!MotorcycleViewAngleCatalog.TryParseKey(fileName, out var angle)
@@ -367,12 +258,21 @@ public sealed class MotorcycleMediaStudioService(
                 warnings.Add($"Không nhận diện: {path}");
         }
 
-        if (galleryFiles.Count > 0)
+        if (thumb == 0 && pendingHero is not null)
         {
-            var r = await AddGalleryAsync(motorcycleId, galleryFiles, ct);
-            if (r.Success) gallery = galleryFiles.Count;
-            else warnings.Add(r.Message ?? "Gallery import failed");
+            var bike = await db.Motorcycles.AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == motorcycleId && !m.IsDeleted, ct);
+            if (bike is not null && string.IsNullOrWhiteSpace(bike.ThumbnailUrl))
+            {
+                var r = await SetSlotAsync(motorcycleId, MediaSlot.Thumbnail, pendingHero, ct);
+                if (r.Success) thumb++;
+                else warnings.Add(r.Message ?? pendingHero.FileName);
+            }
+            else
+                warnings.Add($"Bỏ qua hero.jpg (đã có ảnh đại diện).");
         }
+        else if (pendingHero is not null)
+            warnings.Add("Bỏ qua hero.jpg.");
 
         foreach (var (angle, file) in angleEntries)
         {
@@ -393,8 +293,8 @@ public sealed class MotorcycleMediaStudioService(
         var state = await GetStateAsync(motorcycleId, ct);
         return new SmartImportSummaryDto(
             true,
-            $"Đã import: thumb {thumb}, hero {hero}, gallery {gallery}, màu {colors}, góc {angles}.",
-            thumb, hero, gallery, colors, angles, warnings, state);
+            $"Đã import: thumb {thumb}, màu {colors}, góc {angles}.",
+            thumb, colors, angles, warnings, state);
     }
 
     public async Task<(bool Ok, string? Url, string? Error)> UploadOnlyAsync(MediaFileUpload file, string folder, CancellationToken ct = default)
@@ -407,10 +307,8 @@ public sealed class MotorcycleMediaStudioService(
 
     private async Task<Motorcycle?> LoadBikeAsync(Guid id, CancellationToken ct) =>
         await db.Motorcycles.AsNoTracking()
-            .Include(m => m.MediaAssets)
             .Include(m => m.Colors)
             .Include(m => m.SpinFrames)
-            .Include(m => m.Variants)
             .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted, ct);
 
     private Task<bool> BikeExistsAsync(Guid id, CancellationToken ct) =>
@@ -426,10 +324,6 @@ public sealed class MotorcycleMediaStudioService(
 
     private MediaStudioStateDto BuildState(Motorcycle bike)
     {
-        var gallery = bike.MediaAssets.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder)
-            .Select(a => new GalleryItemDto(a.Id, a.Url, a.FileName, a.AltText, a.SortOrder, a.Width, a.Height, a.FileSizeBytes))
-            .ToList();
-
         var byAngle = bike.SpinFrames.Where(f => !f.IsDeleted)
             .GroupBy(f => f.Angle)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).First());
@@ -444,18 +338,16 @@ public sealed class MotorcycleMediaStudioService(
 
         var filled = slots.Count(s => !string.IsNullOrWhiteSpace(s.Url));
         var complete = filled == MotorcycleViewAngleCatalog.Count;
-        var unused = filled == 0;
-        var anglesComplete = complete || unused;
 
         var colors = bike.Colors.Where(c => !c.IsDeleted).OrderBy(c => c.SortOrder)
-            .Select(c => new ColorCardDto(c.Id, c.Name, c.HexCode, c.ImageUrl, c.SortOrder, gallery.Count, filled))
+            .Select(c => new ColorCardDto(c.Id, c.Name, c.HexCode, c.ImageUrl, c.SortOrder))
             .ToList();
 
-        var health = BuildHealth(bike, gallery, colors, filled, complete, unused);
-        var publish = BuildPublish(bike, gallery, colors, filled);
+        var health = BuildHealth(bike, colors, filled, complete);
+        var publish = BuildPublish(bike, colors);
 
         string statusLabel;
-        if (unused) statusLabel = "Chưa có góc xem";
+        if (filled == 0) statusLabel = "Chưa có góc xem";
         else if (complete) statusLabel = $"Đủ {MotorcycleViewAngleCatalog.Count} góc";
         else
         {
@@ -470,57 +362,54 @@ public sealed class MotorcycleMediaStudioService(
             storage.SupportsUpload,
             storage.StorageDescription,
             string.IsNullOrWhiteSpace(bike.ThumbnailUrl) ? null : new MediaSlotDto(bike.ThumbnailUrl!, null, null, null, null),
-            string.IsNullOrWhiteSpace(bike.HeroImageUrl) ? null : new MediaSlotDto(bike.HeroImageUrl!, null, null, null, null),
-            gallery,
             colors,
-            new AngleStudioDto(slots, filled, MotorcycleViewAngleCatalog.Count, anglesComplete, statusLabel),
+            new AngleStudioDto(slots, filled, MotorcycleViewAngleCatalog.Count, complete, statusLabel),
             health,
             publish);
     }
 
     private static MediaHealthDto BuildHealth(
         Motorcycle bike,
-        List<GalleryItemDto> gallery,
         List<ColorCardDto> colors,
         int filled,
-        bool complete,
-        bool unused)
+        bool complete)
     {
-        _ = colors;
-        _ = unused;
         var hasThumb = !string.IsNullOrWhiteSpace(bike.ThumbnailUrl);
-        var hasGallery = gallery.Count >= 3;
-        var hasAngles = complete;
+        var colorWithImage = colors.Count(c => !string.IsNullOrWhiteSpace(c.ImageUrl));
+        var hasColor = colorWithImage > 0;
+
+        var angleStatus = complete ? "ok" : "warn";
+        var angleDetail = complete
+            ? "Đủ 6 góc"
+            : filled == 0
+                ? "Chưa có (tuỳ chọn)"
+                : $"{filled}/6 góc";
+
         var items = new List<MediaHealthItemDto>
         {
             new("thumbnail", "Ảnh đại diện", hasThumb ? "ok" : "bad", hasThumb ? "Có" : "Chưa có"),
-            new("gallery", "Ảnh giới thiệu", hasGallery ? "ok" : gallery.Count > 0 ? "warn" : "bad",
-                hasGallery ? $"{gallery.Count} ảnh" : gallery.Count == 0 ? "Chưa có" : $"{gallery.Count}/3 ảnh"),
-            new("angles", "6 góc xe", hasAngles ? "ok" : "bad",
-                hasAngles ? "Đủ 6 góc" : $"{filled}/6 góc")
+            new("colors", "Ít nhất 1 màu có ảnh", hasColor ? "ok" : "bad",
+                hasColor ? $"{colorWithImage} màu có ảnh" : "Chưa có"),
+            new("angles", "6 góc xe", angleStatus, angleDetail)
         };
 
+        // Ready blockers are thumb + color; angles are optional (warn only).
         var score = 0;
-        if (hasThumb) score += 34;
-        if (hasGallery) score += 33;
-        else if (gallery.Count > 0) score += 15;
-        if (hasAngles) score += 33;
+        if (hasThumb) score += 45;
+        if (hasColor) score += 45;
+        if (complete) score += 10;
+        else if (filled > 0) score += 5;
 
         return new MediaHealthDto(Math.Clamp(score, 0, 100), items);
     }
 
-    private static PublishReadinessDto BuildPublish(
-        Motorcycle bike,
-        List<GalleryItemDto> gallery,
-        List<ColorCardDto> colors,
-        int filled)
+    private static PublishReadinessDto BuildPublish(Motorcycle bike, List<ColorCardDto> colors)
     {
-        _ = colors;
         var missing = new List<string>();
-        if (string.IsNullOrWhiteSpace(bike.ThumbnailUrl)) missing.Add("Ảnh đại diện");
-        if (gallery.Count < 3) missing.Add(gallery.Count == 0 ? "Ảnh giới thiệu (ít nhất 3)" : $"Ảnh giới thiệu ({gallery.Count}/3)");
-        if (filled < MotorcycleViewAngleCatalog.Count)
-            missing.Add($"6 góc xe ({filled}/{MotorcycleViewAngleCatalog.Count})");
+        if (string.IsNullOrWhiteSpace(bike.ThumbnailUrl))
+            missing.Add("Ảnh đại diện");
+        if (!colors.Any(c => !string.IsNullOrWhiteSpace(c.ImageUrl)))
+            missing.Add("Ít nhất 1 màu có ảnh");
 
         var ready = missing.Count == 0;
         return new PublishReadinessDto(
@@ -572,24 +461,10 @@ public sealed class MotorcycleMediaStudioService(
     private static string Folder(Guid id, MediaSlot slot) => slot switch
     {
         MediaSlot.Thumbnail => $"motorcycles/{id:N}/thumb",
-        MediaSlot.Hero => $"motorcycles/{id:N}/hero",
-        MediaSlot.Gallery => $"motorcycles/{id:N}/gallery",
         MediaSlot.Color => $"motorcycles/{id:N}/colors",
         MediaSlot.Angles => $"motorcycles/{id:N}/angles",
         _ => $"motorcycles/{id:N}"
     };
-
-    private async Task<HashSet<string>> ExistingGalleryHashesAsync(Guid motorcycleId, CancellationToken ct)
-    {
-        var names = await db.MediaAssets.AsNoTracking()
-            .Where(m => m.MotorcycleId == motorcycleId && !m.IsDeleted)
-            .Select(m => m.FileName)
-            .ToListAsync(ct);
-        return names.Select(n => "name:" + n.ToLowerInvariant()).ToHashSet(StringComparer.Ordinal);
-    }
-
-    private static Task<string> HashAsync(MediaFileUpload file, CancellationToken ct) =>
-        Task.FromResult($"name:{file.FileName.ToLowerInvariant()}|len:{file.Length}");
 
     private static string? NormalizeHex(string? hex)
     {
@@ -601,14 +476,25 @@ public sealed class MotorcycleMediaStudioService(
 
     private static bool IsThumbPath(string lower, string fileName) =>
         lower is "thumbnail.jpg" or "thumbnail.jpeg" or "thumbnail.png" or "thumbnail.webp"
-        || lower.EndsWith("/thumbnail.jpg") || lower.EndsWith("/thumbnail.png") || lower.EndsWith("/thumbnail.webp")
-        || lower is "thumb.jpg" or "thumb.png"
-        || fileName.Equals("thumbnail.jpg", StringComparison.OrdinalIgnoreCase);
+        || lower.EndsWith("/thumbnail.jpg") || lower.EndsWith("/thumbnail.jpeg")
+        || lower.EndsWith("/thumbnail.png") || lower.EndsWith("/thumbnail.webp")
+        || lower is "thumb.jpg" or "thumb.png" or "thumb.jpeg" or "thumb.webp"
+        || fileName.Equals("thumbnail.jpg", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("thumbnail.jpeg", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("thumbnail.png", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("thumbnail.webp", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsHeroPath(string lower, string fileName) =>
         lower is "hero.jpg" or "hero.jpeg" or "hero.png" or "hero.webp"
-        || lower.EndsWith("/hero.jpg") || lower.EndsWith("/hero.png") || lower.EndsWith("/hero.webp")
-        || fileName.Equals("hero.jpg", StringComparison.OrdinalIgnoreCase);
+        || lower.EndsWith("/hero.jpg") || lower.EndsWith("/hero.jpeg")
+        || lower.EndsWith("/hero.png") || lower.EndsWith("/hero.webp")
+        || fileName.Equals("hero.jpg", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("hero.jpeg", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("hero.png", StringComparison.OrdinalIgnoreCase)
+        || fileName.Equals("hero.webp", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsGalleryPath(string lower) =>
+        lower.Contains("/gallery/") || lower.StartsWith("gallery/");
 
     private static bool IsAngleFolderPath(string lower) =>
         lower.Contains("/angles/") || lower.StartsWith("angles/")

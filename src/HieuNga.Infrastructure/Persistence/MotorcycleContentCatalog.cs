@@ -1,5 +1,3 @@
-using HieuNga.Domain.Enums;
-
 namespace HieuNga.Infrastructure.Persistence;
 
 public record MotorcycleColorSeed(string Name, string Hex, string? ImageUrl, int Sort);
@@ -12,7 +10,6 @@ public record MotorcycleContentProfile(
     string DescriptionHtml,
     string Transmission,
     string ThumbnailUrl,
-    IReadOnlyList<string> GalleryUrls,
     IReadOnlyList<string> Highlights,
     IReadOnlyList<MotorcycleSpecSeed> Specifications,
     IReadOnlyList<MotorcycleColorSeed> Colors,
@@ -51,13 +48,6 @@ public static class MotorcycleContentCatalog
         "Hộp số tự động",
         "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=1200&q=85",
         [
-            "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=1400&q=85",
-            "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1400&q=85",
-            "https://images.unsplash.com/photo-1568772585407-9361f9bf3a83?w=1400&q=85",
-            "https://images.unsplash.com/photo-1609630875171-989e756aecf8?w=1400&q=85",
-            "https://images.unsplash.com/photo-1625047509168-a7026f36de0c?w=1400&q=85"
-        ],
-        [
             "Động cơ eSP+ 110cc tiết kiệm nhiên liệu",
             "Cốp rộng 18 lít — đực mũ bảo hiểm",
             "Đèn LED toàn phần",
@@ -93,13 +83,6 @@ public static class MotorcycleContentCatalog
         "Hộp số tự động eSP+",
         "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=85",
         [
-            "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1400&q=85",
-            "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=1400&q=85",
-            "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1400&q=85",
-            "https://images.unsplash.com/photo-1568772585407-9361f9bf3a83?w=1400&q=85",
-            "https://images.unsplash.com/photo-1609630875171-989e756aecf8?w=1400&q=85"
-        ],
-        [
             "Động cơ eSP+ 160cc",
             "Smart Key tiện lợi",
             "Thiết kế tay ga cao cấp",
@@ -134,13 +117,6 @@ public static class MotorcycleContentCatalog
         "Hộp số cơ 6 cấp",
         "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1200&q=85",
         [
-            "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1400&q=85",
-            "https://images.unsplash.com/photo-1568772585407-9361f9bf3a83?w=1400&q=85",
-            "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1400&q=85",
-            "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=1400&q=85",
-            "https://images.unsplash.com/photo-1625047509168-a7026f36de0c?w=1400&q=85"
-        ],
-        [
             "Động cơ 150cc SOHC",
             "Kiểu dáng thể thao trẻ trung",
             "Hộp số 6 cấp",
@@ -174,13 +150,6 @@ public static class MotorcycleContentCatalog
         """,
         "Hộp số cơ 6 cấp",
         "https://images.unsplash.com/photo-1568772585407-9361f9bf3a83?w=1200&q=85",
-        [
-            "https://images.unsplash.com/photo-1568772585407-9361f9bf3a83?w=1400&q=85",
-            "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1400&q=85",
-            "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1400&q=85",
-            "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=1400&q=85",
-            "https://images.unsplash.com/photo-1609630875171-989e756aecf8?w=1400&q=85"
-        ],
         [
             "Thiết kế Neo Sports Café",
             "Động cơ PGM-FI 150cc",

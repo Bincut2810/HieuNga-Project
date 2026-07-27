@@ -1,13 +1,12 @@
 /**
- * Hình ảnh xe — simple dealership upload (Ảnh đại diện · Ảnh giới thiệu · 6 góc xe).
- * Drop = upload + save. Drag gallery = auto reorder. No Save for images.
+ * Hình ảnh xe V3 — Ảnh đại diện · Màu xe · 6 góc xe.
+ * Drop = upload + save. No Gallery. No Hero slot.
  */
 (function () {
   'use strict';
 
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
-
   function esc(s) {
     return String(s || '').replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -22,9 +21,7 @@
       this._ops = 0;
     }
 
-    async init() {
-      await this.reload();
-    }
+    async init() { await this.reload(); }
 
     async reload() {
       this.root.innerHTML = '<div class="ms-loading">Đang tải hình ảnh…</div>';
@@ -93,7 +90,7 @@
       const s = this.state;
       if (!s) return;
       const publish = s.publish || s.Publish;
-      const gallery = s.gallery || s.Gallery || [];
+      const colors = s.colors || s.Colors || [];
       const angles = s.angles || s.Angles;
       const thumb = s.thumbnail || s.Thumbnail;
       const ready = publish && (publish.ready ?? publish.Ready);
@@ -105,43 +102,35 @@
           <p data-ms-progress-label>Đang tải ảnh…</p>
         </div>
         <div class="ms-toast" data-ms-toast hidden></div>
-
         <header class="ms-header">
           <div>
             <h2 class="ms-title">Hình ảnh xe</h2>
-            <p class="ms-sub">Kéo ảnh vào khung — hệ thống tự lưu. Không cần bấm Lưu.</p>
+            <p class="ms-sub">Kéo ảnh vào khung — hệ thống tự lưu.</p>
           </div>
         </header>
-
-        <section class="ms-complete ${ready ? 'is-ready' : 'is-warn'}" aria-label="Hoàn thiện hình ảnh">
+        <section class="ms-complete ${ready ? 'is-ready' : 'is-warn'}">
           <strong>${ready ? '✓ Đủ hình để đăng' : 'Hoàn thiện hình ảnh'}</strong>
-          <ul>
-            ${missing.length
-              ? missing.map(m => `<li>${esc(m)}</li>`).join('')
-              : '<li>Ảnh đại diện · Ảnh giới thiệu · 6 góc xe</li>'}
-          </ul>
+          <ul>${missing.length ? missing.map(m => `<li>${esc(m)}</li>`).join('') : '<li>Ảnh đại diện · Màu xe · 6 góc (tuỳ chọn)</li>'}</ul>
         </section>
-
         ${this.renderAvatar(thumb)}
-        ${this.renderGallery(gallery)}
+        ${this.renderColors(colors)}
         ${this.renderAngles(angles)}
       `;
-
       this.bindAfterRender();
     }
 
     renderAvatar(data) {
       const url = data && (data.url || data.Url);
       return `
-        <section class="ms-card ms-slot" data-slot="thumbnail">
+        <section class="ms-card">
           <div class="ms-card-head">
             <h3>1. Ảnh đại diện</h3>
-            <p class="ms-hint">Một ảnh chính — hiện trên danh sách và trang chi tiết</p>
+            <p class="ms-hint">Một ảnh — hiện trên danh sách & trang chủ</p>
           </div>
-          <div class="ms-dropzone ms-dropzone-lg ${url ? 'has-image' : ''}" data-drop="thumbnail" tabindex="0" role="button" aria-label="Thêm ảnh đại diện">
+          <div class="ms-dropzone ms-dropzone-lg ${url ? 'has-image' : ''}" data-drop="thumbnail" tabindex="0">
             ${url
-              ? `<img src="${esc(url)}" alt="Ảnh đại diện" class="ms-slot-img" />`
-              : `<div class="ms-drop-empty"><strong>Kéo ảnh vào đây</strong><span>hoặc chạm để chọn từ máy</span></div>`}
+              ? `<img src="${esc(url)}" alt="" class="ms-slot-img" />`
+              : `<div class="ms-drop-empty"><strong>Kéo ảnh vào đây</strong><span>hoặc chạm để chọn</span></div>`}
             <input type="file" accept="image/*" hidden data-file="thumbnail" />
           </div>
           <div class="ms-actions">
@@ -151,32 +140,51 @@
         </section>`;
     }
 
-    renderGallery(gallery) {
+    renderColors(colors) {
       return `
         <section class="ms-card">
-          <div class="ms-card-head">
-            <h3>2. Ảnh giới thiệu <span class="ms-count">${gallery.length}</span></h3>
-            <p class="ms-hint">Kéo nhiều ảnh · tự tải · kéo để đổi thứ tự (tự lưu)</p>
-          </div>
-          <div class="ms-dropzone ms-dropzone-wide ms-dropzone-lg" data-drop="gallery" tabindex="0" role="button" aria-label="Thêm ảnh giới thiệu">
-            <div class="ms-drop-empty">
-              <strong>Kéo ảnh vào đây</strong>
-              <span>có thể chọn nhiều ảnh cùng lúc</span>
+          <div class="ms-card-head row">
+            <div>
+              <h3>2. Màu xe <span class="ms-count">${colors.length}</span></h3>
+              <p class="ms-hint">Mỗi màu một ảnh — ảnh này là ảnh chính trên trang chi tiết</p>
             </div>
-            <input type="file" accept="image/*" multiple hidden data-file="gallery" />
+            <button type="button" class="ms-btn primary" data-color-add>+ Thêm màu</button>
           </div>
-          ${gallery.length
-            ? `<div class="ms-gallery-grid" data-sortable="gallery">
-                ${gallery.map(g => {
-                  const id = g.id || g.Id;
-                  const url = g.url || g.Url;
-                  return `<article class="ms-g-card" draggable="true" data-id="${id}">
-                    <img src="${esc(url)}" alt="" />
-                    <button type="button" class="ms-g-del" data-g-del="${id}" aria-label="Xóa ảnh">×</button>
-                  </article>`;
-                }).join('')}
-              </div>`
-            : ''}
+          <div class="ms-color-grid">
+            ${colors.map(c => {
+              const id = c.id || c.Id;
+              const img = c.imageUrl || c.ImageUrl;
+              return `<article class="ms-color-card" data-color-id="${id}">
+                <div class="ms-color-swatch" style="background:${esc(c.hexCode || c.HexCode)}"></div>
+                ${img
+                  ? `<img src="${esc(img)}" alt="" />`
+                  : `<div class="ms-color-empty">Chưa có ảnh</div>`}
+                <div class="ms-color-body">
+                  <strong>${esc(c.name || c.Name)}</strong>
+                  <span>${esc(c.hexCode || c.HexCode)}</span>
+                </div>
+                <div class="ms-color-actions">
+                  <label class="ms-btn primary ms-btn-sm">
+                    ${img ? 'Đổi ảnh' : 'Thêm ảnh'}
+                    <input type="file" accept="image/*" hidden data-color-image="${id}" />
+                  </label>
+                  <button type="button" class="ms-btn danger ms-btn-sm" data-color-delete="${id}">Xóa</button>
+                </div>
+              </article>`;
+            }).join('') || '<p class="ms-hint">Chưa có màu — bấm Thêm màu.</p>'}
+          </div>
+          <dialog class="ms-dialog" data-color-dialog>
+            <form method="dialog" class="ms-dialog-form" data-color-form>
+              <h3>Thêm màu</h3>
+              <label>Tên màu<input name="name" required placeholder="Đen bóng" /></label>
+              <label>Mã màu<input name="hex" required placeholder="#111111" value="#111111" /></label>
+              <label>Ảnh màu<input type="file" name="image" accept="image/*" required /></label>
+              <div class="ms-actions">
+                <button type="submit" class="ms-btn primary">Lưu</button>
+                <button type="button" class="ms-btn" data-color-close>Đóng</button>
+              </div>
+            </form>
+          </dialog>
         </section>`;
     }
 
@@ -187,15 +195,15 @@
         <section class="ms-card">
           <div class="ms-card-head">
             <h3>3. 6 góc xe <span class="ms-count">${filled}/6</span></h3>
-            <p class="ms-hint">Mỗi ô một góc — kéo ảnh vào ô tương ứng</p>
+            <p class="ms-hint">Tuỳ chọn — kéo ảnh vào từng ô</p>
           </div>
           <div class="ms-angle-grid">
             ${slots.map(slot => {
               const key = slot.key || slot.Key;
               const url = slot.url || slot.Url;
               const lab = slot.label || slot.Label;
-              return `<article class="ms-angle-slot" data-angle-key="${esc(key)}">
-                <div class="ms-dropzone ms-angle-drop ${url ? 'has-image' : ''}" data-drop-angle="${esc(key)}" tabindex="0" role="button" aria-label="${esc(lab)}">
+              return `<article class="ms-angle-slot">
+                <div class="ms-dropzone ms-angle-drop ${url ? 'has-image' : ''}" data-drop-angle="${esc(key)}" tabindex="0">
                   ${url
                     ? `<img src="${esc(url)}" alt="${esc(lab)}" />`
                     : `<div class="ms-drop-empty"><strong>${esc(lab)}</strong><span>Kéo ảnh vào</span></div>`}
@@ -206,7 +214,7 @@
                   ${url ? `<button type="button" class="ms-btn danger" data-clear-angle="${esc(key)}">Xóa</button>` : ''}
                 </div>
               </article>`;
-            }).join('') || '<p class="ms-hint">Không tải được danh sách góc.</p>'}
+            }).join('')}
           </div>
         </section>`;
     }
@@ -214,8 +222,7 @@
     bindAfterRender() {
       qsa('[data-pick]', this.root).forEach(btn => {
         btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-pick');
-          const input = qs(`[data-file="${key}"]`, this.root);
+          const input = qs(`[data-file="${btn.getAttribute('data-pick')}"]`, this.root);
           if (input) input.click();
         });
       });
@@ -225,54 +232,72 @@
           const key = input.getAttribute('data-file');
           const files = Array.from(input.files || []);
           input.value = '';
-          if (!files.length) return;
-          if (key === 'thumbnail') this.uploadSlot('thumbnail', files[0]);
-          else if (key === 'gallery') this.uploadGallery(files);
+          if (key === 'thumbnail' && files[0]) this.uploadSlot(files[0]);
         });
       });
 
-      qsa('[data-drop]', this.root).forEach(zone => {
-        const slot = zone.getAttribute('data-drop');
+      qsa('[data-drop="thumbnail"]', this.root).forEach(zone => {
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drag'); });
         zone.addEventListener('dragleave', () => zone.classList.remove('is-drag'));
         zone.addEventListener('drop', (e) => {
           e.preventDefault();
           zone.classList.remove('is-drag');
-          const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.indexOf('image') === 0 || /\.(jpe?g|png|webp|gif|svg)$/i.test(f.name));
-          if (!files.length) return;
-          if (slot === 'thumbnail') this.uploadSlot('thumbnail', files[0]);
-          else if (slot === 'gallery') this.uploadGallery(files);
+          const file = (e.dataTransfer.files || [])[0];
+          if (file) this.uploadSlot(file);
         });
         zone.addEventListener('click', (e) => {
           if (e.target.closest('button,input')) return;
-          const input = qs(`[data-file="${slot}"]`, this.root);
+          const input = qs('[data-file="thumbnail"]', this.root);
           if (input) input.click();
         });
       });
 
-      qsa('[data-clear]', this.root).forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (!confirm('Xóa ảnh đại diện?')) return;
-          this.clearSlot(btn.getAttribute('data-clear'));
-        });
+      qs('[data-clear="thumbnail"]', this.root)?.addEventListener('click', () => {
+        if (!confirm('Xóa ảnh đại diện?')) return;
+        this.mutate('/thumbnail', { method: 'DELETE', label: 'Đang xóa…' });
       });
 
-      qsa('[data-g-del]', this.root).forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const id = btn.getAttribute('data-g-del');
-          if (!id || !confirm('Xóa ảnh này?')) return;
-          await this.mutate('/gallery/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: [id] }),
-            label: 'Đang xóa…'
-          });
-        });
-      });
-
+      this.bindColors();
       this.bindAngles();
-      this.bindGallerySort();
+    }
+
+    bindColors() {
+      const dialog = qs('[data-color-dialog]', this.root);
+      const form = qs('[data-color-form]', this.root);
+      qs('[data-color-add]', this.root)?.addEventListener('click', () => {
+        form.reset();
+        dialog.showModal();
+      });
+      qs('[data-color-close]', this.root)?.addEventListener('click', () => dialog.close());
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData();
+        fd.append('name', form.name.value);
+        fd.append('hex', form.hex.value);
+        if (form.image.files[0]) fd.append('image', form.image.files[0]);
+        dialog.close();
+        await this.mutate('/colors', { method: 'POST', body: fd, label: 'Đang lưu màu…' });
+      });
+
+      qsa('[data-color-image]', this.root).forEach(input => {
+        input.addEventListener('change', async () => {
+          const id = input.getAttribute('data-color-image');
+          const file = (input.files || [])[0];
+          input.value = '';
+          if (!file || !id) return;
+          const fd = new FormData();
+          fd.append('file', file);
+          await this.mutate('/colors/' + id + '/image', { method: 'POST', body: fd, label: 'Đang tải ảnh màu…' });
+        });
+      });
+
+      qsa('[data-color-delete]', this.root).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-color-delete');
+          if (!id || !confirm('Xóa màu này?')) return;
+          await this.mutate('/colors/' + id, { method: 'DELETE', label: 'Đang xóa…' });
+        });
+      });
     }
 
     bindAngles() {
@@ -284,7 +309,6 @@
           if (file) this.uploadAngle(key, file);
         });
       });
-
       qsa('[data-drop-angle]', this.root).forEach(zone => {
         const key = zone.getAttribute('data-drop-angle');
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drag'); });
@@ -295,13 +319,11 @@
           const file = (e.dataTransfer.files || [])[0];
           if (file) this.uploadAngle(key, file);
         });
-        zone.addEventListener('click', (e) => {
-          if (e.target.closest('button')) return;
+        zone.addEventListener('click', () => {
           const input = qs(`[data-file-angle="${key}"]`, this.root);
           if (input) input.click();
         });
       });
-
       qsa('[data-clear-angle]', this.root).forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
@@ -312,47 +334,10 @@
       });
     }
 
-    bindGallerySort() {
-      const wrap = qs('[data-sortable="gallery"]', this.root);
-      if (!wrap) return;
-      let dragEl = null;
-      qsa('[draggable]', wrap).forEach(el => {
-        el.addEventListener('dragstart', () => { dragEl = el; el.classList.add('is-dragging'); });
-        el.addEventListener('dragend', async () => {
-          el.classList.remove('is-dragging');
-          dragEl = null;
-          const ids = qsa('[data-id]', wrap).map(n => n.getAttribute('data-id'));
-          await this.mutate('/gallery/reorder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids }),
-            label: 'Đang lưu thứ tự…'
-          });
-        });
-        el.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          if (!dragEl || dragEl === el) return;
-          const rect = el.getBoundingClientRect();
-          const before = e.clientX < rect.left + rect.width / 2;
-          wrap.insertBefore(dragEl, before ? el : el.nextSibling);
-        });
-      });
-    }
-
-    uploadSlot(slot, file) {
+    uploadSlot(file) {
       const fd = new FormData();
       fd.append('file', file);
-      return this.mutate('/' + slot, { method: 'POST', body: fd, label: 'Đang tải ảnh…' });
-    }
-
-    clearSlot(slot) {
-      return this.mutate('/' + slot, { method: 'DELETE', label: 'Đang xóa…' });
-    }
-
-    uploadGallery(files) {
-      const fd = new FormData();
-      files.forEach(f => fd.append('files', f));
-      return this.mutate('/gallery', { method: 'POST', body: fd, label: 'Đang tải ảnh…' });
+      return this.mutate('/thumbnail', { method: 'POST', body: fd, label: 'Đang tải ảnh…' });
     }
 
     uploadAngle(key, file) {

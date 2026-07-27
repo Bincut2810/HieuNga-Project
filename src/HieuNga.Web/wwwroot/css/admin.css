@@ -2038,6 +2038,28 @@ button.admin-btn-danger:hover {
 }
 .ms-toast.is-error { background:#991B1B; }
 .ms-toast[hidden] { display:none !important; }
+.ms-color-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));
+  gap:0.85rem; margin-top:0.9rem;
+}
+.ms-color-card { border:1px solid var(--admin-border); border-radius:0.85rem; overflow:hidden; background:#fff; }
+.ms-color-swatch { height:0.45rem; }
+.ms-color-card img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#F3F4F6; }
+.ms-color-empty {
+  aspect-ratio:4/3; display:grid; place-items:center; background:#F9FAFB;
+  color:var(--admin-text-muted); font-size:0.85rem; font-weight:600;
+}
+.ms-color-body { padding:0.55rem 0.7rem 0.35rem; }
+.ms-color-body strong { display:block; font-size:0.9rem; }
+.ms-color-body span { font-size:0.75rem; color:var(--admin-text-muted); }
+.ms-color-actions { display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.5rem 0.65rem 0.75rem; }
+.ms-btn-sm { padding:0.45rem 0.7rem; font-size:0.8rem; min-height:2.25rem; }
+.ms-card-head.row { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; flex-wrap:wrap; }
+.ms-dialog { border:none; border-radius:1rem; padding:0; max-width:26rem; width:calc(100% - 2rem); box-shadow:0 25px 50px rgba(0,0,0,.2); }
+.ms-dialog::backdrop { background:rgba(0,0,0,.35); }
+.ms-dialog-form { display:flex; flex-direction:column; gap:0.75rem; padding:1.1rem; }
+.ms-dialog-form label { display:flex; flex-direction:column; gap:0.3rem; font-size:0.8rem; font-weight:600; }
+.ms-dialog-form input { border:1px solid var(--admin-border); border-radius:0.5rem; padding:0.5rem 0.65rem; font-weight:500; }
 @media (max-width:768px) {
   .ms-title { font-size:1.35rem; }
   .ms-dropzone-lg { min-height:12rem; }

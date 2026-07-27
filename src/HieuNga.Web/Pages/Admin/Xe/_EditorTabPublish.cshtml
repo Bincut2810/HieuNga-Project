@@ -85,7 +85,7 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="Id" value="@Model.Id" />
         <h2 class="admin-form-section-title">Duplicate motorcycle</h2>
-        <p class="admin-hint" style="margin:0.5rem 0 1rem;">Tạo bản sao Draft (kèm variants, colors, gallery, features, tech, 6 góc xem).</p>
+        <p class="admin-hint" style="margin:0.5rem 0 1rem;">Tạo bản sao Draft (kèm variants, colors, features, tech, 6 góc xem).</p>
         <button type="submit" class="admin-btn-secondary" onclick="return confirm('Nhân bản xe này?')">Duplicate → Draft</button>
     </form>
 }

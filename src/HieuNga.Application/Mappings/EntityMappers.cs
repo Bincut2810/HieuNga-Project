@@ -17,96 +17,46 @@ public static class EntityMappers
 
 
     public static MotorcycleListItemDto ToListItem(this Motorcycle m)
-
     {
-
-        var mediaUrl = m.MediaAssets?.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder).FirstOrDefault()?.Url;
-        var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.ThumbnailUrl, mediaUrl);
-
+        var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.ThumbnailUrl);
         var (available, label) = ResolveAvailability(m);
         return new(m.Id, m.Name, m.Slug, m.ShortDescription, m.Category, m.BasePrice, thumb, m.IsFeatured, available, label);
-
     }
-
-
 
     private static (bool IsAvailable, string Label) ResolveAvailability(Motorcycle m)
-
     {
-
         var variants = m.Variants?.Where(v => !v.IsDeleted).ToList() ?? [];
-
         if (variants.Count == 0)
-
             return (true, "Còn hàng");
-
         if (variants.Any(v => v.IsAvailable))
-
             return (true, "Còn hàng");
-
         return (false, "Hết hàng");
-
     }
 
-
-
     public static MotorcycleDetailDto ToDetail(this Motorcycle m)
-
     {
-
-        // CMS Media Studio is the source of truth — no invented gallery/SVG padding.
-        var gallery = m.MediaAssets
-            .Where(a => !a.IsDeleted && MotorcycleImageCatalog.IsValidImageUrl(a.Url))
-            .OrderBy(a => a.SortOrder)
-            .Select(a => a.Url)
-            .Distinct()
-            .ToList();
-
-        var thumb = MotorcycleImageCatalog.IsValidImageUrl(m.ThumbnailUrl)
-            ? m.ThumbnailUrl
-            : gallery.FirstOrDefault();
-
-        var hero = MotorcycleImageCatalog.IsValidImageUrl(m.HeroImageUrl) ? m.HeroImageUrl : null;
+        // Thumbnail only for list; colors own detail hero images; angles from CMS.
+        var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.ThumbnailUrl);
 
         var highlights = ParseHighlights(m.HighlightsJson);
-
         var specifications = ParseSpecifications(m.TechnicalSpecsJson);
-
         if (specifications.Count == 0)
-
             specifications = BuildFallbackSpecifications(m);
 
-
-
         return new(
-
             m.Id, m.Name, m.Slug, m.ShortDescription, m.Description, m.Category, m.BasePrice,
-
             m.EngineCc, m.FuelType, m.Transmission, thumb,
-
-            hero,
-
             m.Variants.Where(v => !v.IsDeleted).Select(v => new MotorcycleVariantDto(v.Id, v.Name, v.Price, v.StockQuantity, v.IsAvailable)).ToList(),
-
             m.Colors.Where(c => !c.IsDeleted).OrderBy(c => c.SortOrder)
                 .Select(c => new MotorcycleColorDto(c.Id, c.Name, c.HexCode, CmsImageOrNull(c.ImageUrl))).ToList(),
-
-            gallery,
-
             highlights,
-
             specifications,
-
             (m.Features ?? []).Where(f => !f.IsDeleted).OrderBy(f => f.SortOrder)
                 .Select(f => new MotorcycleFeatureDto(f.Id, f.Title, f.Description, f.ImageUrl, f.SortOrder)).ToList(),
-
             (m.Technologies ?? []).Where(t => !t.IsDeleted).OrderBy(t => t.SortOrder)
                 .Select(t => new MotorcycleTechnologyDto(t.Id, t.Title, t.Description, t.ImageUrl, t.SortOrder)).ToList(),
-
             MapAngleImages(m),
-
             m.ToSeo());
-
     }
 
 

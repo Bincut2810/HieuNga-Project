@@ -121,15 +121,6 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
     }
 }
 
-public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
-{
-    public void Configure(EntityTypeBuilder<MediaAsset> builder)
-    {
-        builder.ToTable("media_assets");
-        builder.HasQueryFilter(x => !x.IsDeleted);
-    }
-}
-
 public class BannerConfiguration : IEntityTypeConfiguration<Banner>
 {
     public void Configure(EntityTypeBuilder<Banner> builder) => builder.ToTable("banners");

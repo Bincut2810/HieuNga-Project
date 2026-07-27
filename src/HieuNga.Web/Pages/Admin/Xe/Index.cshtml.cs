@@ -39,20 +39,19 @@ public class IndexModel(IRepository<Motorcycle> repo, IUnitOfWork uow, HieuNgaDb
         bool IsPublished,
         DateTime? UpdatedAt,
         string? ThumbnailUrl,
-        int GalleryCount,
         int AngleCount,
         int ColorCount)
     {
-        /// <summary>UI-only media completeness score (thumbnail + gallery + angles + colors).</summary>
+        /// <summary>UI-only media completeness (thumbnail + color images + angles).</summary>
         public int MediaPercent
         {
             get
             {
                 var score = 0;
-                if (!string.IsNullOrWhiteSpace(ThumbnailUrl)) score += 25;
-                if (GalleryCount >= 1) score += 25;
-                if (AngleCount >= 2) score += 25;
-                if (ColorCount >= 1) score += 25;
+                if (!string.IsNullOrWhiteSpace(ThumbnailUrl)) score += 40;
+                if (ColorCount >= 1) score += 40;
+                if (AngleCount >= 6) score += 20;
+                else if (AngleCount >= 2) score += 10;
                 return score;
             }
         }
@@ -127,9 +126,8 @@ public class IndexModel(IRepository<Motorcycle> repo, IUnitOfWork uow, HieuNgaDb
                 m.IsPublished,
                 m.UpdatedAt,
                 m.ThumbnailUrl,
-                m.MediaAssets.Count(a => !a.IsDeleted),
                 m.SpinFrames.Count(s => !s.IsDeleted),
-                m.Colors.Count(c => !c.IsDeleted)))
+                m.Colors.Count(c => !c.IsDeleted && c.ImageUrl != null && c.ImageUrl != "")))
             .ToListAsync(ct);
     }
 }

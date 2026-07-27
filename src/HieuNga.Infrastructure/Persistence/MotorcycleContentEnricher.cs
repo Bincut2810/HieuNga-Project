@@ -1,7 +1,6 @@
 using System.Text.Json;
 using HieuNga.Application.Mappings;
 using HieuNga.Domain.Entities;
-using HieuNga.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +17,6 @@ public static class MotorcycleContentEnricher
     public static async Task EnrichAsync(HieuNgaDbContext context, ILogger logger, CancellationToken ct = default)
     {
         var motorcycles = await context.Motorcycles
-            .Include(m => m.MediaAssets)
             .Include(m => m.Colors)
             .Include(m => m.Variants)
             .ToListAsync(ct);
@@ -47,40 +45,12 @@ public static class MotorcycleContentEnricher
             bike.TechnicalSpecsJson = JsonSerializer.Serialize(
                 profile.Specifications.Select(s => new { s.Icon, s.Label, s.Value }), JsonOptions);
 
-            SyncGallery(context, bike, MotorcycleImageCatalog.ResolveGalleryOrSeedFallback(bike.Slug, profile.GalleryUrls));
             SyncColors(context, bike, profile.Colors);
             SyncVariants(context, bike, profile.Variants);
         }
 
         await context.SaveChangesAsync(ct);
         logger.LogInformation("Motorcycle content enrichment completed.");
-    }
-
-    private static void SyncGallery(HieuNgaDbContext context, Motorcycle bike, IReadOnlyList<string> urls)
-    {
-        var validUrls = urls.Where(MotorcycleImageCatalog.IsValidImageUrl).ToList();
-        if (validUrls.Count == 0)
-            validUrls = MotorcycleImageCatalog.ResolveGalleryOrSeedFallback(bike.Slug, []).ToList();
-
-        var existing = bike.MediaAssets.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder).ToList();
-        if (existing.Count == validUrls.Count && existing.Select(a => a.Url).SequenceEqual(validUrls))
-            return;
-
-        foreach (var asset in existing)
-            asset.IsDeleted = true;
-
-        for (var i = 0; i < validUrls.Count; i++)
-        {
-            context.MediaAssets.Add(new MediaAsset
-            {
-                MotorcycleId = bike.Id,
-                FileName = $"{bike.Slug}-{i + 1}.jpg",
-                Url = validUrls[i],
-                AltText = $"{bike.Name} - góc {i + 1}",
-                Type = MediaType.Image,
-                SortOrder = i
-            });
-        }
     }
 
     private static void SyncColors(HieuNgaDbContext context, Motorcycle bike, IReadOnlyList<MotorcycleColorSeed> colors)

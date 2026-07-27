@@ -23,7 +23,6 @@ public class HieuNgaDbContext(DbContextOptions<HieuNgaDbContext> options)
     public DbSet<BlogCategory> BlogCategories => Set<BlogCategory>();
     public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
     public DbSet<Review> Reviews => Set<Review>();
-    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<Banner> Banners => Set<Banner>();
     public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
     public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();

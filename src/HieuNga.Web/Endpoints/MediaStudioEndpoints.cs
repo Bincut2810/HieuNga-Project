@@ -25,30 +25,6 @@ public static class MediaStudioEndpoints
         group.MapDelete("/thumbnail", async (Guid motorcycleId, IMotorcycleMediaStudioService media, CancellationToken ct) =>
             Results.Json(await media.ClearSlotAsync(motorcycleId, MediaSlot.Thumbnail, ct)));
 
-        group.MapPost("/hero", async (Guid motorcycleId, IFormFile file, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.SetSlotAsync(motorcycleId, MediaSlot.Hero, await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct), ct)));
-
-        group.MapDelete("/hero", async (Guid motorcycleId, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.ClearSlotAsync(motorcycleId, MediaSlot.Hero, ct)));
-
-        group.MapPost("/gallery", async (Guid motorcycleId, [FromForm] List<IFormFile> files, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-        {
-            var uploads = await MediaFileUploadAdapter.FromFormFilesAsync(files ?? [], ct);
-            return Results.Json(await media.AddGalleryAsync(motorcycleId, uploads, ct));
-        });
-
-        group.MapPost("/gallery/{mediaId:guid}/replace", async (Guid motorcycleId, Guid mediaId, IFormFile file, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.ReplaceGalleryAsync(motorcycleId, mediaId, await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct), ct)));
-
-        group.MapPost("/gallery/{mediaId:guid}/caption", async (Guid motorcycleId, Guid mediaId, [FromBody] CaptionBody body, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.UpdateGalleryCaptionAsync(motorcycleId, mediaId, body.Caption, ct)));
-
-        group.MapPost("/gallery/reorder", async (Guid motorcycleId, [FromBody] OrderBody body, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.ReorderGalleryAsync(motorcycleId, body.Ids ?? [], ct)));
-
-        group.MapPost("/gallery/delete", async (Guid motorcycleId, [FromBody] IdsBody body, IMotorcycleMediaStudioService media, CancellationToken ct) =>
-            Results.Json(await media.DeleteGalleryAsync(motorcycleId, body.Ids ?? [], ct)));
-
         group.MapPost("/colors", async (Guid motorcycleId, [FromForm] string name, [FromForm] string hex, IFormFile? image, Guid? colorId, IMotorcycleMediaStudioService media, CancellationToken ct) =>
         {
             MediaFileUpload? upload = image is { Length: > 0 } ? await MediaFileUploadAdapter.FromFormFileAsync(image, ct: ct) : null;
@@ -116,7 +92,5 @@ public static class MediaStudioEndpoints
         return app;
     }
 
-    public sealed record CaptionBody(string? Caption);
     public sealed record OrderBody(List<Guid>? Ids);
-    public sealed record IdsBody(List<Guid>? Ids);
 }

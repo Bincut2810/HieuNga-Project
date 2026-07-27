@@ -3,8 +3,6 @@ namespace HieuNga.Application.Media;
 public enum MediaSlot
 {
     Thumbnail,
-    Hero,
-    Gallery,
     Color,
     Angles
 }
@@ -16,8 +14,6 @@ public sealed record MediaStudioStateDto(
     bool SupportsUpload,
     string StorageNote,
     MediaSlotDto? Thumbnail,
-    MediaSlotDto? Hero,
-    IReadOnlyList<GalleryItemDto> Gallery,
     IReadOnlyList<ColorCardDto> Colors,
     AngleStudioDto Angles,
     MediaHealthDto Health,
@@ -30,24 +26,12 @@ public sealed record MediaSlotDto(
     long? Bytes,
     string? FileName);
 
-public sealed record GalleryItemDto(
-    Guid Id,
-    string Url,
-    string FileName,
-    string? AltText,
-    int SortOrder,
-    int? Width,
-    int? Height,
-    long? Bytes);
-
 public sealed record ColorCardDto(
     Guid Id,
     string Name,
     string HexCode,
     string? ImageUrl,
-    int SortOrder,
-    int GalleryCount,
-    int AngleFilledCount);
+    int SortOrder);
 
 public sealed record AngleSlotDto(
     string Key,
@@ -80,8 +64,6 @@ public sealed record SmartImportSummaryDto(
     bool Success,
     string? Message,
     int Thumbnail,
-    int Hero,
-    int Gallery,
     int Colors,
     int Angles,
     IReadOnlyList<string> Warnings,

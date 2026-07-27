@@ -1,11 +1,6 @@
-using HieuNga.Application.Mappings;
-
 namespace HieuNga.Application.Mappings;
 
-/// <summary>
-/// CMS image URL helpers for motorcycles.
-/// Public mapping must not invent Unsplash/demo assets — seed/enricher may still use slug SVGs.
-/// </summary>
+/// <summary>CMS image URL helpers for motorcycles. Listing uses Thumbnail only.</summary>
 public static class MotorcycleImageCatalog
 {
     /// <summary>Presentation broken-image recovery only — not a CMS substitute.</summary>
@@ -29,31 +24,9 @@ public static class MotorcycleImageCatalog
                || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>CMS thumbnail only — thumb, else first gallery asset. Null when Admin has no image.</summary>
-    public static string? ResolveThumbnail(string? thumbnailUrl, string? firstMediaUrl = null)
-    {
-        if (IsValidImageUrl(thumbnailUrl)) return thumbnailUrl!;
-        if (IsValidImageUrl(firstMediaUrl)) return firstMediaUrl!;
-        return null;
-    }
-
-    /// <summary>Valid CMS gallery URLs only — empty when none (no invent).</summary>
-    public static IReadOnlyList<string> ResolveGallery(IEnumerable<string?> urls)
-    {
-        return urls
-            .Where(IsValidImageUrl)
-            .Select(u => u!)
-            .Distinct()
-            .ToList();
-    }
-
-    /// <summary>Seed/enricher: pad empty gallery with slug SVG (not used by public ToDetail).</summary>
-    public static IReadOnlyList<string> ResolveGalleryOrSeedFallback(string slug, IEnumerable<string?> urls)
-    {
-        var list = ResolveGallery(urls);
-        if (list.Count > 0) return list;
-        return [GetFallbackThumbnail(slug)];
-    }
+    /// <summary>CMS thumbnail only. Null when Admin has no image.</summary>
+    public static string? ResolveThumbnail(string? thumbnailUrl) =>
+        IsValidImageUrl(thumbnailUrl) ? thumbnailUrl : null;
 
     public static readonly HashSet<string> DemoSlugs = new(StringComparer.OrdinalIgnoreCase)
     {
