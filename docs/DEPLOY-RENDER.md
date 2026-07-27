@@ -133,7 +133,6 @@ Thêm **từng dòng** sau:
 | `Site__ZaloUrl` | `https://zalo.me/02363849556` |
 | `Site__DefaultSeoTitle` | `Xe Máy Hiếu Nga \| Mua xe và dịch vụ xe máy` |
 | `Site__DefaultSeoDescription` | `Mua xe máy, tư vấn trả góp và đặt lịch sửa chữa, bảo dưỡng tại Đà Nẵng.` |
-| `SeedOptions__EnableDemoSeed` | `true` (demo lần đầu; đặt `false` sau khi ổn định) |
 | `SeedOptions__AdminSeedEnabled` | `true` (chỉ lần deploy đầu) |
 | `SeedOptions__AdminEmail` | email admin của bạn |
 | `SeedOptions__AdminPassword` | mật khẩu mạnh 12+ ký tự |

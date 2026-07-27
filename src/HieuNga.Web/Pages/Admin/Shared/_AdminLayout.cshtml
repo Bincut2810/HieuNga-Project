@@ -71,8 +71,7 @@
 
                 <div class="admin-nav-group @(GroupActive("/admin/xe") ? "is-active-group" : null)">
                     <p class="admin-nav-group-label">Inventory</p>
-                    <a href="/admin/xe" class="@NavClass("/admin/xe", "/admin/xe/import-demo")"><span class="admin-nav-icon">@Html.Raw(Icon("bike"))</span><span class="admin-nav-text">Motorcycles</span></a>
-                    <a href="/admin/xe/import-demo" class="@NavClass("/admin/xe/import-demo")"><span class="admin-nav-icon">@Html.Raw(Icon("import"))</span><span class="admin-nav-text">Import Demo</span></a>
+                    <a href="/admin/xe" class="@NavClass("/admin/xe")"><span class="admin-nav-icon">@Html.Raw(Icon("bike"))</span><span class="admin-nav-text">Motorcycles</span></a>
                 </div>
 
                 <div class="admin-nav-group @(GroupActive("/admin/dich-vu", "/admin/khach-hang/lich-hen", "/admin/khach-hang/bao-duong") ? "is-active-group" : null)">

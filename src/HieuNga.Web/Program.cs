@@ -39,7 +39,7 @@ builder.Services.AddResponseCompression();
 builder.Services.AddAntiforgery();
 builder.Services.Configure<FormOptions>(o =>
 {
-    o.MultipartBodyLengthLimit = 105_000_000; // ~100 MB folder import
+    o.MultipartBodyLengthLimit = 105_000_000; // ~100 MB media uploads
 });
 builder.Services.AddScoped<SiteSettingsPageFilter>();
 builder.Services.AddRazorPages(options =>
@@ -68,16 +68,6 @@ if (!app.Environment.IsDevelopment())
 app.UseResponseCompression();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-var demoAssetsPath = Path.Combine(app.Environment.ContentRootPath, "DemoAssets");
-if (Directory.Exists(demoAssetsPath))
-{
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(demoAssetsPath),
-        RequestPath = "/demo-assets"
-    });
-}
 
 app.UseRouting();
 app.UseAuthentication();

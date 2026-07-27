@@ -24,8 +24,7 @@
 
 ## Large / complex units
 
-- `ServiceFinanceSeed.cs` — seed + bank sync + branding migration in one static class.
-- `DbInitializer.cs` — migrate + multi-seed orchestration.
+- `DbInitializer.cs` — migrate + optional admin bootstrap only (Phase 6).
 - Admin `ContentModels.cs` / `BangGiaModels.cs` / `TraGopModels.cs` / `KhachHangModels.cs` — multi-PageModel files.
 
 ## Soft-delete inconsistency

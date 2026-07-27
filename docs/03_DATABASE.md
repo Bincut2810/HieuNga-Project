@@ -173,14 +173,12 @@ admins (ApplicationUser) — no FK into domain leads
 
 ## Seed / sync behavior (startup)
 
-`DbInitializer` + `ServiceFinanceSeed`:
+`DbInitializer` only:
 
 1. `MigrateAsync` with retry.
-2. Optional demo seed (`EnableDemoSeed` / Development).
-3. Admin user seed (gated in Production).
-4. Service catalog / banks if empty; **idempotent bank sync** for HD Bank / MB Bank / JACCS.
-5. Legacy branding migration for default site settings.
-6. Optional motorcycle content enricher (Development / flag).
+2. Optional admin user seed (gated in Production).
+
+No motorcycle, banner, inventory, or demo content inserts. CMS is the source of truth. See [PHASE6_STARTUP_SIMPLIFICATION.md](./PHASE6_STARTUP_SIMPLIFICATION.md).
 
 ## Gaps / domain notes
 

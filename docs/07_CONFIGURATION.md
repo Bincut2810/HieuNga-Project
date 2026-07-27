@@ -64,16 +64,18 @@ Provider (`Local`|`Cloudinary`), MaxFileSizeMb, Cloudinary credentials.
 
 ### SeedOptions (`SeedOptions`)
 
-AdminEmail, AdminPassword, AdminSeedEnabled, EnableDemoSeed, RunContentEnricher.
+AdminEmail, AdminPassword, AdminSeedEnabled.
 
 **Aliases:** `AdminSeed__Enabled|Email|Password` PostConfigured onto SeedOptions.
+
+Motorcycles and CMS content are never seeded at startup (Phase 6).
 
 ## Environment files
 
 | File | Intent |
 |------|--------|
 | `appsettings.json` | Safe defaults; empty connection string |
-| `appsettings.Development.json` | Local Postgres; demo/admin seed on; Local images |
+| `appsettings.Development.json` | Local Postgres; admin seed on; Local images |
 | `appsettings.Production.json` | Cloudinary provider; seed off; staging BaseUrl placeholder |
 
 ## Runtime environments

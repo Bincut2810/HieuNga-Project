@@ -1,9 +1,4 @@
-using HieuNga.Application.Catalog;
-using HieuNga.Application.Mappings;
-using HieuNga.Domain.Entities;
-using HieuNga.Domain.Enums;
 using HieuNga.Infrastructure.Identity;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +8,10 @@ using Microsoft.Extensions.Logging;
 
 namespace HieuNga.Infrastructure.Persistence;
 
+/// <summary>
+/// Production startup: apply EF migrations, then optionally ensure one admin account.
+/// Never inserts motorcycles, banners, demos, or CMS content.
+/// </summary>
 public static class DbInitializer
 {
     private const int MaxAttempts = 12;
@@ -35,46 +34,7 @@ public static class DbInitializer
             "Applying database migrations",
             logger);
 
-        var shouldDemoSeed = environment.IsDevelopment() || seedOptions.EnableDemoSeed;
-
-        if (!await context.Motorcycles.AnyAsync())
-        {
-            if (shouldDemoSeed)
-            {
-                logger.LogInformation("Seeding initial database...");
-                await SeedInitialAsync(context, scope.ServiceProvider, environment, seedOptions, logger);
-            }
-            else
-            {
-                logger.LogInformation(
-                    "Skipping demo motorcycle seed (set SeedOptions__EnableDemoSeed=true for one-time staging demo).");
-            }
-        }
-
         await SeedAdminUserAsync(scope.ServiceProvider, environment, seedOptions, logger);
-
-        await HieuNgaBranchSeed.EnsureAsync(context, logger);
-
-        if (shouldDemoSeed)
-            await SeedDemoContentAsync(context, logger);
-
-        await ServiceFinanceSeed.SeedAsync(context, logger);
-        await HieuNgaServiceExperienceSeed.EnsureAsync(context, logger);
-        await HieuNgaInventorySeed.EnsureAsync(context, logger);
-        if (shouldDemoSeed)
-            await HieuNgaHeroBannerSeed.EnsureAsync(context, logger);
-
-        // Content enricher overwrites motorcycle CMS fields — only in Development or when explicitly enabled.
-        var runEnricher = environment.IsDevelopment() || seedOptions.RunContentEnricher;
-        if (runEnricher)
-        {
-            await MotorcycleContentEnricher.EnrichAsync(context, logger);
-        }
-        else
-        {
-            logger.LogInformation(
-                "Skipping motorcycle content enrichment (set SeedOptions:RunContentEnricher=true or use Development to enable).");
-        }
     }
 
     private static async Task ExecuteWithRetryAsync(Func<Task> action, string description, ILogger logger)
@@ -103,91 +63,6 @@ public static class DbInitializer
                || message.Contains("Connection refused", StringComparison.OrdinalIgnoreCase)
                || message.Contains("Name or service not known", StringComparison.OrdinalIgnoreCase)
                || message.Contains("Exception while reading from stream", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static async Task SeedInitialAsync(
-        HieuNgaDbContext context,
-        IServiceProvider sp,
-        IHostEnvironment environment,
-        SeedOptions seedOptions,
-        ILogger logger)
-    {
-
-        foreach (var def in HieuNgaShowrooms.All)
-        {
-            context.Branches.Add(new Branch
-            {
-                Name = def.Name,
-                Slug = def.Slug,
-                Address = def.Address,
-                District = def.District,
-                City = def.City,
-                Phone = def.Phone,
-                Hotline = def.Phone,
-                Email = "contact@hondahieunga.vn",
-                MapEmbedUrl = def.MapEmbedUrl,
-                OpeningHours = def.OpeningHours,
-                IsHeadOffice = def.IsHeadOffice,
-                IsActive = true,
-                SortOrder = def.SortOrder
-            });
-        }
-
-        context.Banners.AddRange(
-            new Banner
-            {
-                Title = "Khám phá Honda tại Đà Nẵng",
-                Subtitle = "Showroom HEAD — xe chính hãng, tư vấn trả góp và lái thử.",
-                ImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1920&q=80",
-                MobileImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=900&q=80",
-                CtaText = "Xem xe đang bán",
-                CtaUrl = "/xe",
-                SecondaryCtaText = "Tính trả góp",
-                SecondaryCtaUrl = "/tra-gop",
-                Badge = "Xe Máy Hiếu Nga · HEAD Đà Nẵng",
-                OverlayStrength = 68,
-                TextAlignment = BannerTextAlignment.Left,
-                Position = BannerPosition.Hero,
-                SortOrder = 0,
-                IsActive = true
-            });
-
-        var motorcycles = new[]
-        {
-            CreateMotorcycle("Honda Vision 2025", "honda-vision-2025", MotorcycleCategory.Scooter, 35_900_000, 110, true, 0),
-            CreateMotorcycle("Honda SH 160i", "honda-sh-160i", MotorcycleCategory.Scooter, 78_500_000, 160, true, 1),
-            CreateMotorcycle("Honda Winner X", "honda-winner-x", MotorcycleCategory.ConTay, 46_500_000, 150, true, 2),
-            CreateMotorcycle("Honda CB150R", "honda-cb150r", MotorcycleCategory.ConTay, 52_000_000, 150, false, 3),
-        };
-        context.Motorcycles.AddRange(motorcycles);
-
-        context.Promotions.Add(new Promotion
-        {
-            Title = "Ưu đãi trả góp 0% lãi suất",
-            Slug = "tra-gop-0-lai-suat",
-            Summary = "Hỗ trợ trả góp linh hoạt, thủ tục nhanh chóng",
-            Type = PromotionType.Financing,
-            StartDate = DateTime.UtcNow.AddDays(-7),
-            EndDate = DateTime.UtcNow.AddMonths(3),
-            IsActive = true,
-            IsFeatured = true
-        });
-
-        context.Reviews.AddRange(
-            new Review { CustomerName = "Nguyễn Văn A", Rating = 5, Title = "Dịch vụ tuyệt vời", Content = "Nhân viên tư vấn nhiệt tình, giao xe đúng hẹn.", IsApproved = true, IsFeatured = true, Motorcycle = motorcycles[1] },
-            new Review { CustomerName = "Trần Thị B", Rating = 5, Content = "Showroom đẹp, xe chính hãng Honda.", IsApproved = true, IsFeatured = true, Motorcycle = motorcycles[0] }
-        );
-
-        context.SiteSettings.AddRange(
-            new SiteSetting { Key = "site.name", Value = BrandDefaults.SiteName, Group = "general" },
-            new SiteSetting { Key = "site.phone", Value = HieuNgaShowrooms.PrimaryPhone, Group = "contact" },
-            new SiteSetting { Key = "site.hotline", Value = HieuNgaShowrooms.PrimaryPhone, Group = "contact" },
-            new SiteSetting { Key = "site.address", Value = HieuNgaShowrooms.PrimaryAddress, Group = "contact" },
-            new SiteSetting { Key = "site.hours", Value = HieuNgaShowrooms.OpeningHours, Group = "contact" }
-        );
-
-        await context.SaveChangesAsync();
-        logger.LogInformation("Initial seed completed.");
     }
 
     private static async Task SeedAdminUserAsync(
@@ -245,141 +120,4 @@ public static class DbInitializer
             logger.LogWarning("Admin user seed failed for {Email}: {Errors}", email,
                 string.Join("; ", result.Errors.Select(e => e.Description)));
     }
-
-    private static async Task SeedDemoContentAsync(HieuNgaDbContext context, ILogger logger)
-    {
-        if (await context.Promotions.CountAsync() >= 3 && await context.BlogPosts.CountAsync() >= 3)
-            return;
-
-        logger.LogInformation("Seeding demo content...");
-
-        var motorcycles = await context.Motorcycles.ToListAsync();
-        var vision = motorcycles.FirstOrDefault(m => m.Slug == "honda-vision-2025");
-        var sh = motorcycles.FirstOrDefault(m => m.Slug == "honda-sh-160i");
-
-        if (await context.Promotions.CountAsync() < 3)
-        {
-            context.Promotions.AddRange(
-                new Promotion
-                {
-                    Title = "Giảm 2 triệu Honda Vision 2025",
-                    Slug = "giam-2-trieu-vision-2025",
-                    Summary = "Ưu đãi trực tiếp khi mua xe tại showroom HEAD Đà Nẵng",
-                    Content = "<p>Áp dụng cho khách hàng đặt cọc và nhận xe trong tháng. Số lượng có hạn.</p><ul><li>Tặng mũ bảo hiểm Honda</li><li>Miễn phí 3 lần bảo dưỡng đầu</li></ul>",
-                    Type = PromotionType.Discount,
-                    DiscountAmount = 2_000_000,
-                    StartDate = DateTime.UtcNow.AddDays(-14),
-                    EndDate = DateTime.UtcNow.AddMonths(2),
-                    IsActive = true,
-                    IsFeatured = true,
-                    MotorcycleId = vision?.Id,
-                    ImageUrl = "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=1200&q=80"
-                },
-                new Promotion
-                {
-                    Title = "Tặng phụ kiện trị giá 5 triệu — SH 160i",
-                    Slug = "tang-phu-kien-sh-160i",
-                    Summary = "Balo, áo mưa, khóa chống trộm cao cấp",
-                    Content = "<p>Combo phụ kiện chính hãng dành riêng khách mua SH 160i tại Hiếu Nga.</p>",
-                    Type = PromotionType.Gift,
-                    StartDate = DateTime.UtcNow.AddDays(-7),
-                    EndDate = DateTime.UtcNow.AddMonths(1),
-                    IsActive = true,
-                    MotorcycleId = sh?.Id,
-                    ImageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=80"
-                },
-                new Promotion
-                {
-                    Title = "Sự kiện ra mắt xe mới — Đăng ký lái thử",
-                    Slug = "su-kien-ra-mat-xe-moi",
-                    Summary = "Trải nghiệm dòng xe mới cùng kỹ thuật viên Honda",
-                    Content = "<p>Chương trình diễn ra cuối tuần tại showroom. Đăng ký trước để nhận quà lưu niệm.</p>",
-                    Type = PromotionType.Event,
-                    StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.AddDays(30),
-                    IsActive = true,
-                    ImageUrl = "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1200&q=80"
-                });
-        }
-
-        if (!await context.BlogCategories.AnyAsync())
-        {
-            var catNews = new BlogCategory { Name = "Tin tức", Slug = "tin-tuc", SortOrder = 0 };
-            var catTips = new BlogCategory { Name = "Mẹo hay", Slug = "meo-hay", SortOrder = 1 };
-            context.BlogCategories.AddRange(catNews, catTips);
-
-            context.BlogPosts.AddRange(
-                new BlogPost
-                {
-                    Title = "Honda Vision 2025 chính thức có mặt tại Hiếu Nga Đà Nẵng",
-                    Slug = "vision-2025-ra-mat-da-nang",
-                    Summary = "Thiết kế trẻ trung, tiết kiệm nhiên liệu, phù hợp di chuyển đô thị.",
-                    Content = "<p>Honda Vision 2025 tiếp tục khẳng định vị thế dòng xe tay ga bán chạy nhất phân khúc với động cơ eSP+, tiết kiệm nhiên liệu và bền bỉ.</p><h2>Điểm nổi bật</h2><ul><li>Đèn LED toàn phần</li><li>Cốp rộng 18 lít</li><li>Màu sắc trẻ trung</li></ul>",
-                    Category = catNews,
-                    AuthorName = BrandDefaults.SiteName,
-                    PublishedAt = DateTime.UtcNow.AddDays(-2),
-                    IsPublished = true,
-                    ThumbnailUrl = "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=900&q=80"
-                },
-                new BlogPost
-                {
-                    Title = "5 mẹo bảo dưỡng xe tay ga định kỳ tại HEAD",
-                    Slug = "5-meo-bao-duong-xe-tay-ga",
-                    Summary = "Giữ xe luôn mới, vận hành êm và an toàn với quy trình chuẩn Honda.",
-                    Content = "<p>Bảo dưỡng đúng hạn giúp kéo dài tuổi thọ động cơ và giữ giá trị xe khi nâng cấp.</p><ol><li>Thay nhớt đúng km</li><li>Kiểm tra phanh định kỳ</li><li>Vệ sinh lọc gió</li></ol>",
-                    Category = catTips,
-                    AuthorName = "Kỹ thuật HEAD",
-                    PublishedAt = DateTime.UtcNow.AddDays(-5),
-                    IsPublished = true,
-                    ThumbnailUrl = "https://images.unsplash.com/photo-1625047509168-a7026f36de0c?w=900&q=80"
-                },
-                new BlogPost
-                {
-                    Title = "So sánh Honda SH 160i và Winner X: chọn xe nào?",
-                    Slug = "so-sanh-sh-160i-winner-x",
-                    Summary = "Hai phân khúc khác nhau — tay ga cao cấp vs xe côn thể thao.",
-                    Content = "<p>SH 160i hướng tới sự tiện nghi đô thị, Winner X dành cho người yêu thích cảm giác lái thể thao.</p>",
-                    Category = catNews,
-                    AuthorName = "Tư vấn bán hàng",
-                    PublishedAt = DateTime.UtcNow.AddDays(-8),
-                    IsPublished = true,
-                    ThumbnailUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=900&q=80"
-                });
-        }
-
-        if (!await context.Banners.AnyAsync(b => b.Position == BannerPosition.Promotion))
-        {
-            context.Banners.Add(new Banner
-            {
-                Title = "Ưu đãi tháng này",
-                Subtitle = "Trả góp 0% — Lái thử miễn phí",
-                ImageUrl = "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80",
-                CtaText = "Xem khuyến mãi",
-                CtaUrl = "/khuyen-mai",
-                Position = BannerPosition.Promotion,
-                IsActive = true
-            });
-        }
-
-        await context.SaveChangesAsync();
-    }
-
-    private static Motorcycle CreateMotorcycle(string name, string slug, MotorcycleCategory cat, decimal price, int cc, bool featured, int sort) =>
-        new()
-        {
-            Name = name,
-            Slug = slug,
-            ShortDescription = $"Xe {name} chính hãng Honda",
-            Category = cat,
-            BasePrice = price,
-            EngineCc = cc,
-            FuelType = "Xăng",
-            IsFeatured = featured,
-            IsPublished = true,
-            SortOrder = sort,
-            ThumbnailUrl = MotorcycleImageCatalog.GetThumbnail(slug),
-            OgImageUrl = MotorcycleImageCatalog.GetGalleryPrimary(slug),
-            MetaTitle = $"{name} | {BrandDefaults.SiteName}",
-            MetaDescription = $"Mua {name} chính hãng tại {BrandDefaults.SiteNameWithCity}. Giá tốt, trả góp, lái thử miễn phí."
-        };
 }

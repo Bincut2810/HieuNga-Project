@@ -39,8 +39,6 @@ services:
         value: Xe Máy Hiếu Nga | Mua xe và dịch vụ xe máy
       - key: Site__DefaultSeoDescription
         value: Mua xe máy, tư vấn trả góp và đặt lịch sửa chữa, bảo dưỡng tại Đà Nẵng.
-      - key: SeedOptions__EnableDemoSeed
-        value: "true"
       - key: SeedOptions__AdminSeedEnabled
         value: "true"
       - key: SeedOptions__AdminEmail

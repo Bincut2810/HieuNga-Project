@@ -29,7 +29,6 @@ services:
       # Local Docker network only — same dev password as postgres service above
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=hieunga;Username=hieunga;Password=hieunga_dev_2025"
       Site__BaseUrl: "http://localhost:8080"
-      SeedOptions__EnableDemoSeed: "true"
       SeedOptions__AdminSeedEnabled: "true"
       SeedOptions__AdminEmail: "admin@hondahieunga.vn"
       SeedOptions__AdminPassword: "Admin@123456!"

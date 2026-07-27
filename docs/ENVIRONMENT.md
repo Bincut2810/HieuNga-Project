@@ -18,8 +18,6 @@ How to configure Honda Hiếu Nga locally and in production without committing s
 | `SeedOptions__AdminEmail` | Initial admin email | Dev default | **Required** for first admin |
 | `SeedOptions__AdminPassword` | Initial admin password | Dev default | **Required**, 12+ chars |
 | `SeedOptions__AdminSeedEnabled` | Allow admin creation | `true` in Development | `true` only on first deploy |
-| `SeedOptions__EnableDemoSeed` | Seed demo motorcycles/content | `true` in Development | `true` for one-time demo |
-| `SeedOptions__RunContentEnricher` | Overwrite motorcycle demo fields | `true` in Development | **`false`** (default) |
 | `ImageStorage__Provider` | `Local` or `Cloudinary` | `Local` | `Cloudinary` recommended |
 | `ImageStorage__MaxFileSizeMb` | Max upload size | `5` | `5` |
 | `ImageStorage__Cloudinary__*` | Cloudinary credentials | Empty | Set on hosting |
@@ -78,10 +76,8 @@ docker compose up --build
 4. For first deploy:
    - `SeedOptions__AdminSeedEnabled=true`
    - `SeedOptions__AdminEmail` + `SeedOptions__AdminPassword` (12+ characters)
-   - Optional: `SeedOptions__EnableDemoSeed=true` for demo motorcycles and content
 5. After admin login works, set `SeedOptions__AdminSeedEnabled=false`.
-6. Leave `SeedOptions__RunContentEnricher` unset or `false`.
-7. Configure image storage:
+6. Configure image storage:
    - `ImageStorage__Provider=Cloudinary` + Cloudinary env vars for persistent uploads
    - Without Cloudinary, use URL-based images in Admin (upload disabled with friendly message)
 
@@ -105,12 +101,9 @@ If production admin env vars are missing or `AdminSeedEnabled` is false, **no de
 On every startup:
 
 1. **Migrations** — `Database.MigrateAsync()` with retry (safe for staging).
-2. **Demo motorcycles/banners** — only when DB has no motorcycles **and** (`Development` **or** `EnableDemoSeed=true`).
-3. **Admin user** — separate step; see above.
-4. **Extra demo content** (promotions, blog) — only when `Development` **or** `EnableDemoSeed=true`.
-5. **Service catalog & banks** — only when respective tables are empty (does not overwrite CMS edits).
-6. **Site setting defaults** — only adds missing keys (does not overwrite).
-7. **Content enricher** — only in Development or when `RunContentEnricher=true`.
+2. **Admin user** — optional ops bootstrap; see above. Never creates motorcycles or CMS content.
+
+All motorcycles, banners, services, banks, and branches are created in Admin CMS. See [PHASE6_STARTUP_SIMPLIFICATION.md](./PHASE6_STARTUP_SIMPLIFICATION.md).
 
 ---
 

@@ -62,7 +62,6 @@ Use this checklist after deploying to Render (or similar) before sharing the dem
 - [ ] `Site__BaseUrl` = public HTTPS URL
 - [ ] `Site__Name` = `Xe Máy Hiếu Nga`
 - [ ] `SeedOptions__AdminSeedEnabled` = `false` (after first admin login)
-- [ ] `SeedOptions__RunContentEnricher` = `false` or unset
 - [ ] `ImageStorage__Provider` = `Cloudinary` (if using uploads)
 - [ ] Cloudinary credentials set (if using uploads)
 
@@ -73,7 +72,7 @@ Use this checklist after deploying to Render (or similar) before sharing the dem
 - App sleeps after ~15 minutes idle; first request is slow (cold start).
 - Local filesystem uploads are **not** persistent — use Cloudinary or URLs.
 - Render free PostgreSQL may expire after 90 days (check Render dashboard).
-- Demo seed runs once on empty DB when `EnableDemoSeed=true`; disable after review if you want a clean CMS.
+- Startup does not seed motorcycles; create inventory in Admin CMS.
 
 ---
 
