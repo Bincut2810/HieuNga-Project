@@ -45,13 +45,13 @@
             return "admin-editor-tab" + active + disabled;
         }
     }
-    <a class="@TabClass("general")" href="@TabHref("general")" data-tab="general">Basic</a>
-    <a class="@TabClass("media")" href="@TabHref("media")" data-tab="media" title="@(isCreate ? "Lưu xe trước" : null)">Images</a>
-    <a class="@TabClass("specifications")" href="@TabHref("specifications")" data-tab="specifications">Specifications</a>
-    <a class="@TabClass("features")" href="@TabHref("features")" data-tab="features">Features</a>
-    <a class="@TabClass("finance")" href="@TabHref("finance")" data-tab="finance">Pricing</a>
+    <a class="@TabClass("general")" href="@TabHref("general")" data-tab="general">Thông tin</a>
+    <a class="@TabClass("media")" href="@TabHref("media")" data-tab="media" title="@(isCreate ? "Lưu xe trước" : null)">Hình ảnh xe</a>
+    <a class="@TabClass("specifications")" href="@TabHref("specifications")" data-tab="specifications">Thông số</a>
+    <a class="@TabClass("features")" href="@TabHref("features")" data-tab="features">Tính năng</a>
+    <a class="@TabClass("finance")" href="@TabHref("finance")" data-tab="finance">Giá / trả góp</a>
     <a class="@TabClass("seo")" href="@TabHref("seo")" data-tab="seo">SEO</a>
-    <a class="@TabClass("publish")" href="@TabHref("publish")" data-tab="publish">Publish</a>
+    <a class="@TabClass("publish")" href="@TabHref("publish")" data-tab="publish">Đăng bán</a>
 </nav>
 
 <div asp-validation-summary="ModelOnly" class="admin-validation-summary" style="margin-bottom: 1rem;"></div>

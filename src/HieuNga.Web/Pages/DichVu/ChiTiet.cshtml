@@ -6,21 +6,25 @@
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
     var bookUrl = $"/bao-duong?service={Uri.EscapeDataString(s.Slug)}#booking";
-    var hero = s.HeroImageUrl ?? s.ThumbnailUrl
-        ?? "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1800&q=80";
-    var gallery = s.Gallery.Count > 0 ? s.Gallery : (string.IsNullOrWhiteSpace(s.ThumbnailUrl) ? Array.Empty<string>() : new[] { s.ThumbnailUrl! });
+    var hero = s.HeroImageUrl ?? s.ThumbnailUrl;
+    var gallery = s.Gallery.Count > 0
+        ? s.Gallery
+        : (string.IsNullOrWhiteSpace(s.ThumbnailUrl) ? Array.Empty<string>() : new[] { s.ThumbnailUrl! });
 }
 
 <article class="svc-detail">
     <header class="svc-detail-hero">
         <div class="svc-detail-hero-media img-wrap">
-            <img src="@hero"
-                 alt=""
-                 class="img-media svc-detail-hero-img is-loaded"
-                 width="1800"
-                 height="1000"
-                 fetchpriority="high"
-                 decoding="async" />
+            @if (!string.IsNullOrWhiteSpace(hero))
+            {
+                <img src="@hero"
+                     alt=""
+                     class="img-media svc-detail-hero-img is-loaded"
+                     width="1800"
+                     height="1000"
+                     fetchpriority="high"
+                     decoding="async" />
+            }
             <div class="svc-detail-hero-shade" aria-hidden="true"></div>
         </div>
         <div class="svc-detail-hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -321,10 +321,14 @@
     });
   }
 
-  /** HTMX boost strips/ignores inline scripts — load detail viewer when needed. */
+  /** HTMX boost strips/ignores inline scripts — load detail modules when needed. */
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
       if (src.indexOf('detail-viewer') >= 0 && typeof window.registerMotorcycleDetailUi === 'function') {
+        resolve();
+        return;
+      }
+      if (src.indexOf('motorcycle-media-viewer') >= 0 && typeof window.bootMotorcycleMediaViewer === 'function') {
         resolve();
         return;
       }
@@ -347,13 +351,19 @@
     const needsViewer = !!scope.querySelector('.detail-page');
     if (!needsViewer) return Promise.resolve();
 
-    return loadScriptOnce('/js/detail-viewer.js').then(() => {
-      if (typeof window.registerMotorcycleDetailUi === 'function') {
-        try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
-      }
-    }).catch((err) => {
-      console.warn('Detail module load:', err);
-    });
+    return loadScriptOnce('/js/motorcycle-media-viewer.js')
+      .then(() => loadScriptOnce('/js/detail-viewer.js'))
+      .then(() => {
+        if (typeof window.bootMotorcycleMediaViewer === 'function') {
+          try { window.bootMotorcycleMediaViewer(); } catch (_) { /* already booted */ }
+        }
+        if (typeof window.registerMotorcycleDetailUi === 'function') {
+          try { window.registerMotorcycleDetailUi(); } catch (_) { /* already registered */ }
+        }
+      })
+      .catch((err) => {
+        console.warn('Detail module load:', err);
+      });
   }
 
   document.body.addEventListener('htmx:afterSwap', (e) => {

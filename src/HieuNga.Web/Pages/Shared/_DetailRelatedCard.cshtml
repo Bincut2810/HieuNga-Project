@@ -2,21 +2,27 @@
 @using HieuNga.Application.Mappings
 @using HieuNga.Domain
 @{
-    var imageUrl = MotorcycleImageCatalog.ResolveThumbnail(Model.Slug, Model.ThumbnailUrl);
-    var fallbackUrl = MotorcycleImageCatalog.GetThumbnail(Model.Slug);
+    var imageUrl = Model.ThumbnailUrl;
 }
 <article class="detail-related-card group detail-lift">
     <a href="/xe/@Model.Slug" class="block">
         <div class="img-wrap relative aspect-[16/11] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
-            <img src="@imageUrl"
-                 data-fallback="@fallbackUrl"
-                 alt="@Model.Name"
-                 class="img-motorcycle img-media w-full h-full object-cover detail-related-img"
-                 loading="lazy"
-                 decoding="async"
-                 width="800"
-                 height="550"
-                 onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback;this.classList.add('is-loaded');var w=this.closest('.img-wrap');if(w)w.classList.add('is-loaded')}" />
+            @if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                <img src="@imageUrl"
+                     data-fallback="@MotorcycleImageCatalog.Default"
+                     alt="@Model.Name"
+                     class="img-motorcycle img-media w-full h-full object-cover detail-related-img"
+                     loading="lazy"
+                     decoding="async"
+                     width="800"
+                     height="550"
+                     onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback;this.classList.add('is-loaded');var w=this.closest('.img-wrap');if(w)w.classList.add('is-loaded')}" />
+            }
+            else
+            {
+                <div class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-gray-300" aria-hidden="true">@Model.Name.Substring(0, 1)</div>
+            }
             <div class="absolute top-3 left-3 flex flex-wrap gap-2 z-10">
                 @if (Model.IsFeatured)
                 {

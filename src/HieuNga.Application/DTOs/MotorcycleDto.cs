@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using HieuNga.Domain.Enums;
 
 namespace HieuNga.Application.DTOs;
@@ -16,7 +17,14 @@ public record MotorcycleListItemDto(
 
 public record MotorcycleSpecItemDto(string Icon, string Label, string Value);
 
-public record MotorcycleAngleImageDto(string Angle, string Label, string Url);
+/// <summary>
+/// One CMS viewing angle — same keys/labels as Admin Media Studio
+/// (<c>front</c> … <c>front-right</c>). Public detail consumes this list as-is.
+/// </summary>
+public record MotorcycleAngleImageDto(
+    [property: JsonPropertyName("angle")] string Angle,
+    [property: JsonPropertyName("label")] string Label,
+    [property: JsonPropertyName("url")] string Url);
 
 public record MotorcycleDetailDto(
     Guid Id,

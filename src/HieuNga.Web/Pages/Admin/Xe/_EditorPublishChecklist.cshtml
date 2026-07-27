@@ -1,36 +1,33 @@
 @model HieuNga.Web.Pages.Admin.Xe.EditorModel
+@using HieuNga.Domain
 @{
     var hasThumb = !string.IsNullOrWhiteSpace(Model.Input.ThumbnailUrl);
-    var hasGallery = Model.Gallery.Count >= 1;
-    var hasAngles = Model.SpinFrames.Count >= 2;
-    var hasColors = Model.Colors.Count >= 1;
+    var hasGallery = Model.Gallery.Count >= 3;
+    var filledAngles = Model.SpinFrames
+        .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl))
+        .Select(s => s.Angle)
+        .Distinct()
+        .Count();
+    var hasSixAngles = filledAngles >= MotorcycleViewAngleCatalog.Count;
     var hasPrice = Model.Input.BasePrice > 0 || Model.Variants.Any(v => v.Price > 0);
-    var hasSpecs = !string.IsNullOrWhiteSpace(Model.SpecsLines);
-    var hasSeo = !string.IsNullOrWhiteSpace(Model.Input.MetaTitle)
-        || !string.IsNullOrWhiteSpace(Model.Input.MetaDescription);
-    var done = (hasThumb ? 1 : 0) + (hasGallery ? 1 : 0) + (hasAngles ? 1 : 0)
-        + (hasColors ? 1 : 0) + (hasPrice ? 1 : 0) + (hasSpecs ? 1 : 0) + (hasSeo ? 1 : 0);
-    var ready = done >= 7;
+    var ready = hasThumb && hasGallery && hasSixAngles && hasPrice;
     string ItemClass(bool ok) => "admin-checklist-item" + (ok ? " is-done" : "");
 }
 
-<aside class="admin-checklist" aria-label="Publish checklist">
-    <h2 class="admin-checklist-title">Publish checklist</h2>
+<aside class="admin-checklist" aria-label="Kiểm tra trước khi đăng">
+    <h2 class="admin-checklist-title">Trước khi đăng</h2>
     <ul class="admin-checklist-list">
-        <li class="@ItemClass(hasThumb)"><span class="admin-checklist-dot"></span> Thumbnail</li>
-        <li class="@ItemClass(hasGallery)"><span class="admin-checklist-dot"></span> Gallery</li>
-        <li class="@ItemClass(hasAngles)"><span class="admin-checklist-dot"></span> Angles</li>
-        <li class="@ItemClass(hasColors)"><span class="admin-checklist-dot"></span> Colors</li>
-        <li class="@ItemClass(hasPrice)"><span class="admin-checklist-dot"></span> Price</li>
-        <li class="@ItemClass(hasSpecs)"><span class="admin-checklist-dot"></span> Specs</li>
-        <li class="@ItemClass(hasSeo)"><span class="admin-checklist-dot"></span> SEO</li>
+        <li class="@ItemClass(hasThumb)"><span class="admin-checklist-dot"></span> Có ảnh đại diện</li>
+        <li class="@ItemClass(hasGallery)"><span class="admin-checklist-dot"></span> Có ít nhất 3 ảnh giới thiệu</li>
+        <li class="@ItemClass(hasSixAngles)"><span class="admin-checklist-dot"></span> Có đủ 6 góc xe</li>
+        <li class="@ItemClass(hasPrice)"><span class="admin-checklist-dot"></span> Có giá bán</li>
     </ul>
     @if (ready)
     {
-        <p class="admin-checklist-status is-ready">Ready to Publish</p>
+        <p class="admin-checklist-status is-ready">Sẵn sàng đăng</p>
     }
     else
     {
-        <p class="admin-checklist-status is-warn">@done / 7 hoàn thành</p>
+        <p class="admin-checklist-status is-warn">Còn thiếu thông tin / hình</p>
     }
 </aside>

@@ -2,21 +2,27 @@
 @using HieuNga.Application.Mappings
 @using HieuNga.Domain
 @{
-    var imageUrl = MotorcycleImageCatalog.ResolveThumbnail(Model.Slug, Model.ThumbnailUrl);
-    var fallbackUrl = MotorcycleImageCatalog.GetThumbnail(Model.Slug);
+    var imageUrl = Model.ThumbnailUrl;
 }
 <article class="home-featured-card group reveal">
     <div class="img-wrap relative aspect-[16/11] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
         <a href="/xe/@Model.Slug" class="block absolute inset-0" tabindex="-1" aria-hidden="true">
-            <img src="@imageUrl"
-                 data-fallback="@fallbackUrl"
-                 alt=""
-                 class="img-motorcycle img-media w-full h-full object-cover home-featured-img"
-                 loading="lazy"
-                 decoding="async"
-                 width="800"
-                 height="550"
-                 onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback;this.classList.add('is-loaded');var w=this.closest('.img-wrap');if(w)w.classList.add('is-loaded')}" />
+            @if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                <img src="@imageUrl"
+                     data-fallback="@MotorcycleImageCatalog.Default"
+                     alt=""
+                     class="img-motorcycle img-media w-full h-full object-cover home-featured-img"
+                     loading="lazy"
+                     decoding="async"
+                     width="800"
+                     height="550"
+                     onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback;this.classList.add('is-loaded');var w=this.closest('.img-wrap');if(w)w.classList.add('is-loaded')}" />
+            }
+            else
+            {
+                <div class="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-300">@Model.Name.Substring(0, 1)</div>
+            }
         </a>
         <div class="absolute top-3 left-3 flex flex-wrap gap-2 z-10 pointer-events-none">
             @if (Model.IsFeatured)

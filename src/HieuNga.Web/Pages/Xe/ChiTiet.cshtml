@@ -1,6 +1,5 @@
 @page "/xe/{slug}"
 @model HieuNga.Web.Pages.Xe.ChiTietModel
-@using System.Text.Json
 @using HieuNga.Domain
 @using HieuNga.Web.Filters
 @{
@@ -15,41 +14,15 @@
     var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
     var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}";
     var categoryLabel = m.Category.ToDisplayName();
-    var heroImage = m.HeroImageUrl
-        ?? m.Colors.FirstOrDefault(c => !string.IsNullOrEmpty(c.ImageUrl))?.ImageUrl
-        ?? m.ThumbnailUrl
-        ?? m.GalleryUrls.FirstOrDefault()
-        ?? "/images/motorcycles/default.svg";
-    var gallery = m.GalleryUrls.Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().ToList();
-    if (gallery.Count == 0 && !string.IsNullOrWhiteSpace(heroImage))
-        gallery = [heroImage];
-    foreach (var c in m.Colors.Where(c => !string.IsNullOrWhiteSpace(c.ImageUrl)))
-    {
-        if (!gallery.Contains(c.ImageUrl!))
-            gallery.Add(c.ImageUrl!);
-    }
-    var colorBoot = m.Colors.Select(c => new
-    {
-        id = c.Id.ToString(),
-        name = c.Name,
-        hex = c.HexCode,
-        imageUrl = string.IsNullOrWhiteSpace(c.ImageUrl) ? heroImage : c.ImageUrl
-    }).ToList();
-    var colorBootJson = JsonSerializer.Serialize(new
-    {
-        storageKey = $"hn-color-{m.Id}",
-        colors = colorBoot,
-        gallery,
-        selectedId = colorBoot.FirstOrDefault()?.id,
-        heroSrc = heroImage,
-        name = m.Name
-    });
-    var angleJson = JsonSerializer.Serialize(m.AngleImages.Select(a => new { angle = a.Angle, label = a.Label, url = a.Url }));
+    var media = Model.Media;
     var engineLabel = m.EngineCc.HasValue ? $"{m.EngineCc} cc" : null;
     var schemaAvailability = Model.IsAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
     ViewData["CtaXe"] = m.Slug;
     ViewData["CtaSource"] = "detail";
     ViewData["CtaIntent"] = "mua-xe";
+    ViewData["AvailabilityLabel"] = Model.AvailabilityLabel;
+    ViewData["IsAvailable"] = Model.IsAvailable;
+    ViewData["CategoryLabel"] = categoryLabel;
     var purchaseHighlights = m.Highlights.Take(4).ToList();
     if (purchaseHighlights.Count == 0)
     {
@@ -101,7 +74,9 @@
     }
 }
 
-<div class="detail-page bg-white" x-data="detailColorHero(@Html.Raw(colorBootJson))">
+<div class="detail-page bg-white"
+     data-media-viewer
+     data-media='@Html.Raw(media.MediaJson)'>
 
     @* ─── PHASE 1: Hero V2 ─── *@
     <section class="detail-hero relative overflow-hidden border-b border-gray-100 bg-gradient-to-b from-gray-50 via-white to-white" aria-label="Thông tin mua xe">
@@ -118,44 +93,7 @@
 
             <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                 <div class="lg:col-span-7 order-1">
-                    <div class="detail-hero-media img-wrap relative aspect-[5/4] md:aspect-[16/11] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 detail-lift">
-                        <div class="absolute inset-0 bg-gray-100 animate-pulse detail-hero-skeleton" x-show="!heroReady" x-cloak aria-hidden="true"></div>
-                        <img :src="heroSrc" src="@heroImage" alt="@m.Name"
-                             class="img-media absolute inset-0 w-full h-full object-contain md:object-cover p-4 md:p-8 detail-img-fade"
-                             width="1200" height="825" fetchpriority="high" decoding="async"
-                             @@load="heroReady = true"
-                             @@error="heroReady = true" />
-                        <div class="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
-                            <span class="detail-badge @(Model.IsAvailable ? "detail-badge-stock" : "detail-badge-out")">@Model.AvailabilityLabel</span>
-                            <span class="detail-badge detail-badge-cat">@categoryLabel</span>
-                        </div>
-                        <button type="button"
-                                class="detail-zoom-btn touch-press"
-                                @@click="openLightbox()"
-                                aria-label="Xem ảnh toàn màn hình">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
-                            <span>Phóng to</span>
-                        </button>
-                    </div>
-
-                    @* Gallery thumbnail strip *@
-                    @if (gallery.Count > 0)
-                    {
-                        <div class="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" role="list" aria-label="Thư viện ảnh">
-                            <template x-for="(url, i) in gallery" :key="'g-' + i">
-                                <button type="button"
-                                        @@click="selectGallery(url, i)"
-                                        @@dblclick="openLightbox(i)"
-                                        class="touch-press shrink-0 w-[4.5rem] h-14 rounded-xl overflow-hidden border-2 transition bg-gray-50 detail-thumb"
-                                        :class="heroSrc === url ? 'border-honda-red ring-2 ring-honda-red/20' : 'border-transparent opacity-80 hover:opacity-100'"
-                                        role="listitem"
-                                        :aria-label="'Ảnh ' + (i + 1)"
-                                        :aria-current="heroSrc === url ? 'true' : 'false'">
-                                    <img :src="url" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="144" height="112" />
-                                </button>
-                            </template>
-                        </div>
-                    }
+                    <partial name="_DetailHero" model="media" />
                 </div>
 
                 <div class="lg:col-span-5 order-2 space-y-5">
@@ -243,133 +181,9 @@
         </div>
     </section>
 
-    @* ─── PHASE 2: Gallery lightbox ─── *@
-    <div class="detail-lightbox"
-         x-show="lightboxOpen"
-         x-cloak
-         x-transition.opacity
-         role="dialog"
-         aria-modal="true"
-         aria-label="Thư viện ảnh @m.Name"
-         @@keydown.escape.window="closeLightbox()">
-        <div class="detail-lightbox-backdrop" @@click="closeLightbox()" aria-hidden="true"></div>
-        <div class="detail-lightbox-panel"
-             @@touchstart.passive="onLightboxTouchStart($event)"
-             @@touchend.passive="onLightboxTouchEnd($event)">
-            <button type="button" class="detail-lightbox-close" @@click="closeLightbox()" aria-label="Đóng">×</button>
-            <button type="button" class="detail-lightbox-nav detail-lightbox-prev" @@click="lightboxPrev()" aria-label="Ảnh trước">‹</button>
-            <div class="detail-lightbox-stage">
-                <img :src="lightboxSrc" :alt="name + ' — ảnh ' + (lightboxIndex + 1)"
-                     class="detail-lightbox-img" decoding="async" />
-            </div>
-            <button type="button" class="detail-lightbox-nav detail-lightbox-next" @@click="lightboxNext()" aria-label="Ảnh sau">›</button>
-            <p class="detail-lightbox-counter tabular-nums" x-text="(lightboxIndex + 1) + ' / ' + gallery.length"></p>
-        </div>
-    </div>
-
-    @* ─── PHASE 3: Color Experience ─── *@
-    @if (m.Colors.Any())
-    {
-        <section class="detail-section reveal" aria-labelledby="color-heading" id="mau-sac">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6">
-                    <div>
-                        <p class="section-eyebrow">Tuỳ chọn</p>
-                        <h2 id="color-heading" class="section-title">Màu sắc</h2>
-                    </div>
-                    <p class="text-sm font-semibold text-honda-dark" x-text="selected?.name || 'Chọn màu'"></p>
-                </div>
-                <div class="grid lg:grid-cols-12 gap-6 lg:gap-10 items-start">
-                    <div class="lg:col-span-7">
-                        <div class="detail-color-preview img-wrap aspect-[16/11] rounded-2xl overflow-hidden bg-gray-50 border border-gray-100">
-                            <div class="absolute inset-0 bg-gray-100 animate-pulse" x-show="!heroReady" x-cloak aria-hidden="true"></div>
-                            <img :src="heroSrc" alt="" class="img-media absolute inset-0 w-full h-full object-contain p-6 detail-img-fade"
-                                 width="960" height="660" loading="lazy" decoding="async"
-                                 @@load="heroReady = true" />
-                        </div>
-                    </div>
-                    <div class="lg:col-span-5">
-                        <div class="detail-color-cards" role="listbox" aria-label="Chọn màu xe">
-                            <template x-for="c in colors" :key="'cc-' + c.id">
-                                <button type="button"
-                                        @@click="applyColor(c.id)"
-                                        class="detail-color-card touch-press"
-                                        :class="selectedId === c.id ? 'is-selected' : ''"
-                                        role="option"
-                                        :aria-selected="selectedId === c.id"
-                                        :aria-label="c.name">
-                                    <span class="detail-color-swatch" :style="'background:' + c.hex" aria-hidden="true"></span>
-                                    <span class="detail-color-meta">
-                                        <span class="detail-color-name" x-text="c.name"></span>
-                                        <span class="detail-color-hint" x-show="selectedId === c.id">Đang chọn</span>
-                                    </span>
-                                    <span class="detail-color-thumb" aria-hidden="true">
-                                        <img :src="c.imageUrl" alt="" loading="lazy" decoding="async" width="72" height="54" />
-                                    </span>
-                                </button>
-                            </template>
-                        </div>
-                        <p class="mt-4 text-xs text-gray-400">Màu đã chọn được lưu tạm trên thiết bị của bạn.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    }
-
-    @* ─── Six-angle viewer ─── *@
-    @if (m.AngleImages.Count >= 2)
-    {
-        <section class="detail-section detail-section-muted reveal" aria-labelledby="angles-heading" id="xem-360">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
-                 x-data="detailAngleViewer(@Html.Raw(angleJson))">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
-                    <div>
-                        <p class="section-eyebrow">Trải nghiệm</p>
-                        <h2 id="angles-heading" class="section-title">Xem đa góc</h2>
-                        <p class="section-subtitle">Kéo hoặc vuốt giữa 6 góc chụp</p>
-                    </div>
-                    <div class="detail-spin-toolbar" role="toolbar" aria-label="Góc xem">
-                        <button type="button" class="detail-spin-btn" @@click="prev()" aria-label="Góc trước">←</button>
-                        <button type="button" class="detail-spin-btn" @@click="next()" aria-label="Góc sau">→</button>
-                        <button type="button" class="detail-spin-btn" @@click="toggleFullscreen()">Toàn màn hình</button>
-                    </div>
-                </div>
-                <div class="detail-spin-stage relative aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-gray-100 select-none touch-none cursor-grab active:cursor-grabbing"
-                     x-ref="stage"
-                     @@mousedown="onPointerDown($event)"
-                     @@mousemove="onPointerMove($event)"
-                     @@mouseup="onPointerUp()"
-                     @@mouseleave="onPointerUp()"
-                     @@touchstart.passive="onPointerDown($event)"
-                     @@touchmove.passive="onPointerMove($event)"
-                     @@touchend="onPointerUp()">
-                    <div class="absolute inset-0 flex items-center justify-center bg-white/85 z-10" x-show="loading" x-transition.opacity>
-                        <div class="flex flex-col items-center gap-2">
-                            <span class="detail-spin-loader" aria-hidden="true"></span>
-                            <span class="text-xs font-medium text-gray-500">Đang tải góc xem…</span>
-                        </div>
-                    </div>
-                    <img :src="src" :alt="label + ' — @m.Name'"
-                         class="absolute inset-0 w-full h-full object-contain p-4 pointer-events-none transition-opacity duration-200"
-                         :class="loading ? 'opacity-40' : 'opacity-100'"
-                         draggable="false" decoding="async" loading="lazy" width="960" height="600" />
-                    <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="showHint && !dragging && !loading" x-transition.opacity>
-                        <span class="detail-spin-hint">← Kéo hoặc vuốt để đổi góc →</span>
-                    </div>
-                </div>
-                <div class="mt-4 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Chọn góc">
-                    <template x-for="(item, i) in angles" :key="item.angle">
-                        <button type="button"
-                                class="detail-spin-btn text-xs"
-                                :class="i === index ? 'is-on' : ''"
-                                @@click="go(i)"
-                                x-text="item.label"></button>
-                    </template>
-                </div>
-                <p class="mt-3 text-center text-xs text-gray-400" aria-live="polite" x-text="label"></p>
-            </div>
-        </section>
-    }
+    <partial name="_DetailGallery" model="media" />
+    <partial name="_DetailColors" model="media" />
+    <partial name="_DetailAngles" model="media" />
 
     @* ─── PHASE 5: Features Experience ─── *@
     @if (m.Features.Any())
@@ -647,6 +461,7 @@
     </div>
 </div>
 
+<script src="~/js/motorcycle-media-viewer.js" asp-append-version="true"></script>
 <script src="~/js/detail-viewer.js" asp-append-version="true"></script>
 
 <script type="application/ld+json">

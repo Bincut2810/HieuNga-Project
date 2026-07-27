@@ -1,0 +1,56 @@
+@model HieuNga.Web.ViewModels.MotorcycleDetailMediaViewModel
+
+@if (!Model.HasColors)
+{
+    return;
+}
+
+<section class="detail-section reveal" aria-labelledby="color-heading" id="mau-sac" data-media-colors>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6">
+            <div>
+                <p class="section-eyebrow">Tuỳ chọn</p>
+                <h2 id="color-heading" class="section-title">Màu sắc</h2>
+            </div>
+            <p class="text-sm font-semibold text-honda-dark" data-media-color-name>@Model.Colors[0].Name</p>
+        </div>
+        <div class="grid lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+            <div class="lg:col-span-7">
+                <div class="detail-color-preview img-wrap aspect-[16/11] rounded-2xl overflow-hidden bg-gray-50 border border-gray-100">
+                    <img data-media-color-preview
+                         src="@(Model.Colors[0].ImageUrl ?? Model.HeroImage)"
+                         alt=""
+                         class="img-media absolute inset-0 w-full h-full object-contain p-6 detail-img-fade"
+                         width="960" height="660" loading="lazy" decoding="async" />
+                </div>
+            </div>
+            <div class="lg:col-span-5">
+                <div class="detail-color-cards" role="listbox" aria-label="Chọn màu xe">
+                    @for (var i = 0; i < Model.Colors.Count; i++)
+                    {
+                        var c = Model.Colors[i];
+                        <button type="button"
+                                class="detail-color-card touch-press @(i == 0 ? "is-selected" : "")"
+                                data-media-color-item
+                                data-id="@c.Id"
+                                data-name="@c.Name"
+                                data-image="@(c.ImageUrl ?? "")"
+                                role="option"
+                                aria-selected="@(i == 0 ? "true" : "false")"
+                                aria-label="@c.Name">
+                            <span class="detail-color-swatch" style="background:@c.Hex" aria-hidden="true"></span>
+                            <span class="detail-color-meta">
+                                <span class="detail-color-name">@c.Name</span>
+                                <span class="detail-color-hint" data-media-color-hint @(i == 0 ? null : "hidden")>Đang chọn</span>
+                            </span>
+                            <span class="detail-color-thumb" aria-hidden="true">
+                                <img src="@(c.ImageUrl ?? Model.DefaultImage)" alt="" loading="lazy" decoding="async" width="72" height="54" />
+                            </span>
+                        </button>
+                    }
+                </div>
+                <p class="mt-4 text-xs text-gray-400">Màu đã chọn được lưu tạm trên thiết bị của bạn.</p>
+            </div>
+        </div>
+    </div>
+</section>

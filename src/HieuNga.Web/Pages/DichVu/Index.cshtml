@@ -3,17 +3,23 @@
 @using HieuNga.Web.Filters
 @{
     var site = SiteSettingsViewData.Get(ViewData);
+    var heroImg = Model.Services
+        .Select(s => s.ThumbnailUrl)
+        .FirstOrDefault(u => !string.IsNullOrWhiteSpace(u));
 }
 
 <section class="svc-hero">
     <div class="svc-hero-media" aria-hidden="true">
-        <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1800&q=80"
-             alt=""
-             class="svc-hero-img"
-             width="1800"
-             height="1000"
-             fetchpriority="high"
-             decoding="async" />
+        @if (!string.IsNullOrWhiteSpace(heroImg))
+        {
+            <img src="@heroImg"
+                 alt=""
+                 class="svc-hero-img"
+                 width="1800"
+                 height="1000"
+                 fetchpriority="high"
+                 decoding="async" />
+        }
         <div class="svc-hero-shade"></div>
     </div>
     <div class="svc-hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

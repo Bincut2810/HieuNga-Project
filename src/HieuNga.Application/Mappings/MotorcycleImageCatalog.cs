@@ -2,9 +2,13 @@ using HieuNga.Application.Mappings;
 
 namespace HieuNga.Application.Mappings;
 
-/// <summary>Fallback static SVGs when a motorcycle has no uploaded media.</summary>
+/// <summary>
+/// CMS image URL helpers for motorcycles.
+/// Public mapping must not invent Unsplash/demo assets — seed/enricher may still use slug SVGs.
+/// </summary>
 public static class MotorcycleImageCatalog
 {
+    /// <summary>Presentation broken-image recovery only — not a CMS substitute.</summary>
     public const string Default = "/images/motorcycles/default.svg";
 
     public static string GetFallbackThumbnail(string? slug) => slug?.ToLowerInvariant() switch
@@ -25,28 +29,32 @@ public static class MotorcycleImageCatalog
                || url.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Prefer real CMS URLs; fall back to static SVG only when empty/invalid.</summary>
-    public static string ResolveThumbnail(string slug, string? thumbnailUrl, string? firstMediaUrl = null)
+    /// <summary>CMS thumbnail only — thumb, else first gallery asset. Null when Admin has no image.</summary>
+    public static string? ResolveThumbnail(string? thumbnailUrl, string? firstMediaUrl = null)
     {
         if (IsValidImageUrl(thumbnailUrl)) return thumbnailUrl!;
         if (IsValidImageUrl(firstMediaUrl)) return firstMediaUrl!;
-        return GetFallbackThumbnail(slug);
+        return null;
     }
 
-    public static IReadOnlyList<string> ResolveGallery(string slug, IEnumerable<string?> urls)
+    /// <summary>Valid CMS gallery URLs only — empty when none (no invent).</summary>
+    public static IReadOnlyList<string> ResolveGallery(IEnumerable<string?> urls)
     {
-        var list = urls
+        return urls
             .Where(IsValidImageUrl)
             .Select(u => u!)
             .Distinct()
             .ToList();
-
-        if (list.Count > 0) return list;
-        var fallback = GetFallbackThumbnail(slug);
-        return [fallback];
     }
 
-    // Back-compat aliases used by seed/enricher
+    /// <summary>Seed/enricher: pad empty gallery with slug SVG (not used by public ToDetail).</summary>
+    public static IReadOnlyList<string> ResolveGalleryOrSeedFallback(string slug, IEnumerable<string?> urls)
+    {
+        var list = ResolveGallery(urls);
+        if (list.Count > 0) return list;
+        return [GetFallbackThumbnail(slug)];
+    }
+
     public static readonly HashSet<string> DemoSlugs = new(StringComparer.OrdinalIgnoreCase)
     {
         "honda-vision-2025", "honda-sh-160i", "honda-winner-x", "honda-cb150r"

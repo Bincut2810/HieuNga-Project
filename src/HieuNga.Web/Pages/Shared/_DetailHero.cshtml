@@ -1,0 +1,52 @@
+@model HieuNga.Web.ViewModels.MotorcycleDetailMediaViewModel
+@{
+    var media = Model;
+    var availability = ViewData["AvailabilityLabel"] as string;
+    var available = ViewData["IsAvailable"] as bool? ?? true;
+    var categoryLabel = ViewData["CategoryLabel"] as string;
+}
+
+<div class="detail-hero-media img-wrap relative aspect-[5/4] md:aspect-[16/11] rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 detail-lift">
+    <div class="absolute inset-0 bg-gray-100 animate-pulse detail-hero-skeleton" data-media-hero-skeleton hidden aria-hidden="true"></div>
+    <img data-media-hero
+         src="@media.HeroImage"
+         alt="@media.Name"
+         class="img-media absolute inset-0 w-full h-full object-contain md:object-cover p-4 md:p-8 detail-img-fade"
+         width="1200" height="825" fetchpriority="high" decoding="async" />
+    <div class="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
+        @if (!string.IsNullOrEmpty(availability))
+        {
+            <span class="detail-badge @(available ? "detail-badge-stock" : "detail-badge-out")">@availability</span>
+        }
+        @if (!string.IsNullOrEmpty(categoryLabel))
+        {
+            <span class="detail-badge detail-badge-cat">@categoryLabel</span>
+        }
+    </div>
+    <button type="button"
+            class="detail-zoom-btn touch-press"
+            data-media-open-lightbox
+            aria-label="Xem ảnh toàn màn hình">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+        <span>Phóng to</span>
+    </button>
+</div>
+
+@if (media.HasGallery)
+{
+    <div class="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide" role="list" aria-label="Thư viện ảnh" data-media-gallery>
+        @for (var i = 0; i < media.Gallery.Count; i++)
+        {
+            var url = media.Gallery[i];
+            <button type="button"
+                    class="touch-press shrink-0 w-[4.5rem] h-14 rounded-xl overflow-hidden border-2 transition bg-gray-50 detail-thumb border-transparent opacity-80 hover:opacity-100"
+                    data-media-gallery-item
+                    data-index="@i"
+                    data-url="@url"
+                    role="listitem"
+                    aria-label="Ảnh @(i + 1)">
+                <img src="@url" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="144" height="112" />
+            </button>
+        }
+    </div>
+}

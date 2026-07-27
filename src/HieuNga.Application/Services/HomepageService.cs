@@ -1,4 +1,3 @@
-using HieuNga.Application.Catalog;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Application.Mappings;
@@ -36,9 +35,7 @@ public class HomepageService(
             {
                 var count = categoryCounts.GetValueOrDefault(c.Value);
                 var rawThumb = categoryThumbs.GetValueOrDefault(c.Value);
-                var image = MotorcycleImageCatalog.IsValidImageUrl(rawThumb)
-                    ? rawThumb
-                    : HieuNgaInventoryTargets.CategoryThumb(c.Value);
+                var image = MotorcycleImageCatalog.IsValidImageUrl(rawThumb) ? rawThumb : null;
                 return new MotorcycleCategoryCountDto(c.Value, c.Label, count, image);
             })
             .ToList();

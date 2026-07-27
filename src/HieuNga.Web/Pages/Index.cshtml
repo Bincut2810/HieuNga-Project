@@ -233,7 +233,16 @@
                         @foreach (var bank in banks)
                         {
                             <div class="home-finance-bank">
-                                <span class="home-finance-bank-logo" aria-hidden="true" style="--bank-color:@bank.Color">@bank.Initials</span>
+                                @if (!string.IsNullOrWhiteSpace(bank.LogoUrl))
+                                {
+                                    <span class="home-finance-bank-logo home-finance-bank-logo--img" aria-hidden="true" style="--bank-color:@bank.Color">
+                                        <img src="@bank.LogoUrl" alt="" width="44" height="44" loading="lazy" decoding="async" />
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="home-finance-bank-logo" aria-hidden="true" style="--bank-color:@bank.Color">@bank.Initials</span>
+                                }
                                 <div class="home-finance-bank-meta">
                                     <span class="home-finance-bank-name">@bank.Name</span>
                                     <span class="home-finance-bank-rate">@bank.RateLabel</span>
@@ -314,11 +323,14 @@
                         var endIso = promo.EndDate.ToString("o");
                         <a href="/khuyen-mai/@promo.Slug" class="home-promo-slide group">
                             <div class="home-promo-media img-wrap">
-                                <img src="@(promo.ImageUrl ?? "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80")"
-                                     alt="@promo.Title"
-                                     class="img-media home-promo-img"
-                                     width="960" height="540"
-                                     loading="lazy" decoding="async" />
+                                @if (!string.IsNullOrWhiteSpace(promo.ImageUrl))
+                                {
+                                    <img src="@promo.ImageUrl"
+                                         alt="@promo.Title"
+                                         class="img-media home-promo-img"
+                                         width="960" height="540"
+                                         loading="lazy" decoding="async" />
+                                }
                                 <div class="home-promo-shade" aria-hidden="true"></div>
                                 <span class="home-promo-countdown" data-countdown="@endIso" aria-label="Thời hạn khuyến mãi">
                                     Đến @promo.EndDate.ToString("dd/MM")
@@ -357,11 +369,14 @@
                     }
                     <a href="/tin-tuc/@featuredPost.Slug" class="home-news-feature group">
                         <div class="home-news-feature-media img-wrap">
-                            <img src="@(featuredPost.ThumbnailUrl ?? "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=1200&q=80")"
-                                 alt="@featuredPost.Title"
-                                 class="img-media home-news-feature-img"
-                                 width="1200" height="750"
-                                 loading="lazy" decoding="async" />
+                            @if (!string.IsNullOrWhiteSpace(featuredPost.ThumbnailUrl))
+                            {
+                                <img src="@featuredPost.ThumbnailUrl"
+                                     alt="@featuredPost.Title"
+                                     class="img-media home-news-feature-img"
+                                     width="1200" height="750"
+                                     loading="lazy" decoding="async" />
+                            }
                         </div>
                         <div class="home-news-feature-body">
                             <div class="home-news-meta">
@@ -386,11 +401,14 @@
                             var readMins = Math.Max(1, ((post.Summary?.Length ?? 120) + 300) / 350);
                             <a href="/tin-tuc/@post.Slug" class="home-news-side-card group">
                                 <div class="home-news-side-media img-wrap">
-                                    <img src="@(post.ThumbnailUrl ?? "https://images.unsplash.com/photo-1558980664-769d9df238f8?w=600&q=80")"
-                                         alt="@post.Title"
-                                         class="img-media"
-                                         width="320" height="220"
-                                         loading="lazy" decoding="async" />
+                                    @if (!string.IsNullOrWhiteSpace(post.ThumbnailUrl))
+                                    {
+                                        <img src="@post.ThumbnailUrl"
+                                             alt="@post.Title"
+                                             class="img-media"
+                                             width="320" height="220"
+                                             loading="lazy" decoding="async" />
+                                    }
                                 </div>
                                 <div>
                                     <div class="home-news-meta">

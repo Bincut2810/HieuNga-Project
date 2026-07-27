@@ -8,8 +8,11 @@
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-8">
         <a href="/tin-tuc/@Model.Featured.Slug" class="group block rounded-3xl overflow-hidden shadow-2xl bg-honda-dark">
             <div class="grid md:grid-cols-2">
-                <div class="aspect-[16/10] md:aspect-auto overflow-hidden">
-                    <img src="@Model.Featured.ThumbnailUrl" alt="@Model.Featured.Title" class="w-full h-full object-cover group-hover:scale-105 transition duration-700 min-h-[240px]" />
+                <div class="aspect-[16/10] md:aspect-auto overflow-hidden bg-honda-dark/80">
+                    @if (!string.IsNullOrWhiteSpace(Model.Featured.ThumbnailUrl))
+                    {
+                        <img src="@Model.Featured.ThumbnailUrl" alt="@Model.Featured.Title" class="w-full h-full object-cover group-hover:scale-105 transition duration-700 min-h-[240px]" loading="lazy" decoding="async" width="800" height="500" />
+                    }
                 </div>
                 <div class="p-8 md:p-12 flex flex-col justify-center text-white">
                     <span class="text-xs font-bold text-honda-red uppercase">Nổi bật</span>

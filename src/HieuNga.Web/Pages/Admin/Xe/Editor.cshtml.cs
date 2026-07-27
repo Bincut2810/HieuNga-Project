@@ -75,6 +75,9 @@ public class EditorModel(
     public IReadOnlyList<MotorcycleTechnology> Technologies { get; private set; } = [];
     public IReadOnlyList<MotorcycleSpinFrame> SpinFrames { get; private set; } = [];
 
+    /// <summary>CMS Media Studio hero URL (not editable on the general form).</summary>
+    public string? HeroImageUrl { get; private set; }
+
     public SelectList CategoryOptions => new(
         MotorcycleCategoryLabels.All.Select(c => new { Value = (int)c.Value, Text = c.Label }),
         "Value", "Text", (int)Input.Category);
@@ -669,6 +672,7 @@ public class EditorModel(
         Id = bike.Id;
         MotorcycleName = bike.Name;
         PublicSlug = bike.Slug;
+        HeroImageUrl = bike.HeroImageUrl;
         Input = Map(bike);
         PublishStatus = bike.IsPublished ? "published" : "draft";
         SpecsLines = ParseSpecsToLines(bike.TechnicalSpecsJson);

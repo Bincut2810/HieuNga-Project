@@ -2,6 +2,7 @@ using HieuNga.Application.DTOs;
 using HieuNga.Application.Finance;
 using HieuNga.Application.Interfaces;
 using HieuNga.Web.Extensions;
+using HieuNga.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -12,6 +13,7 @@ public class ChiTietModel(
     IFinanceConfigService financeConfig) : PageModel
 {
     public MotorcycleDetailDto? Motorcycle { get; private set; }
+    public MotorcycleDetailMediaViewModel Media { get; private set; } = null!;
     public IReadOnlyList<MotorcycleListItemDto> Related { get; private set; } = [];
     public FinanceCalculatorViewModel Finance { get; private set; } = FinanceCalculatorViewModel.Create(0, []);
     public bool IsAvailable { get; private set; } = true;
@@ -23,6 +25,8 @@ public class ChiTietModel(
     {
         Motorcycle = await motorcycleService.GetBySlugAsync(slug, ct);
         if (Motorcycle is null) return NotFound();
+
+        Media = MotorcycleDetailMediaViewModel.FromDto(Motorcycle);
 
         ResolveAvailability(Motorcycle);
         FuelConsumption = FindSpecValue(Motorcycle.Specifications, "tiêu hao", "mức tiêu thụ", "l/100", "km/lít", "km/l");

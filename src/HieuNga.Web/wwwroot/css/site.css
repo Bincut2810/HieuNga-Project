@@ -865,6 +865,10 @@ body.detail-lightbox-open { overflow: hidden; }
 .detail-lightbox {
   position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center;
 }
+.detail-lightbox[hidden] { display: none !important; }
+[data-media-lightbox-img], [data-media-angle-img], [data-media-hero] {
+  transition: opacity 0.2s ease;
+}
 .detail-lightbox-backdrop { position: absolute; inset: 0; background: rgba(10,10,10,0.88); }
 .detail-lightbox-panel {
   position: relative; z-index: 1; width: min(96vw, 1100px); height: min(88vh, 760px);
@@ -905,27 +909,22 @@ body.detail-lightbox-open { overflow: hidden; }
 .detail-color-thumb { width: 3.5rem; height: 2.6rem; border-radius: 0.5rem; overflow: hidden; background: #f3f4f6; }
 .detail-color-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .detail-color-preview { position: relative; box-shadow: var(--shadow-card); }
-.detail-spin-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.detail-spin-btn {
+.detail-angle-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.detail-angle-btn {
   padding: 0.45rem 0.75rem; border-radius: 0.55rem; border: 1px solid #e5e7eb; background: #fff;
   font-size: 0.75rem; font-weight: 600; color: var(--honda-dark); cursor: pointer;
 }
-.detail-spin-btn:hover, .detail-spin-btn.is-on { border-color: rgba(228,5,33,0.35); color: var(--honda-red); }
-.detail-spin-btn:focus-visible { outline: 2px solid var(--honda-red); outline-offset: 2px; }
-.detail-spin-hint {
+.detail-angle-btn:hover, .detail-angle-btn.is-on { border-color: rgba(228,5,33,0.35); color: var(--honda-red); }
+.detail-angle-btn:focus-visible { outline: 2px solid var(--honda-red); outline-offset: 2px; }
+.detail-angle-hint {
   padding: 0.4rem 0.85rem; border-radius: 999px; background: rgba(0,0,0,0.55); color: #fff;
   font-size: 0.6875rem; font-weight: 600; backdrop-filter: blur(6px);
 }
-.detail-spin-loader {
-  width: 28px; height: 28px; border: 2px solid #e5e7eb; border-top-color: #E40521;
-  border-radius: 50%; animation: detail-spin 0.7s linear infinite;
-}
-@keyframes detail-spin { to { transform: rotate(360deg); } }
-.detail-spin-stage:fullscreen, .detail-spin-stage:-webkit-full-screen {
+.detail-angle-stage:fullscreen, .detail-angle-stage:-webkit-full-screen {
   background: #111; display: flex; align-items: center; justify-content: center;
   aspect-ratio: auto; width: 100%; height: 100%; border-radius: 0;
 }
-.detail-spin-stage:fullscreen img, .detail-spin-stage:-webkit-full-screen img { padding: 1.5rem; }
+.detail-angle-stage:fullscreen img, .detail-angle-stage:-webkit-full-screen img { padding: 1.5rem; }
 .detail-feature-stack { display: flex; flex-direction: column; gap: clamp(2rem, 5vw, 3.5rem); }
 .detail-feature-row { display: grid; gap: 1.25rem; align-items: center; }
 @media (min-width: 900px) {
@@ -1006,7 +1005,7 @@ body.detail-lightbox-open { overflow: hidden; }
 }
 @media print {
   .detail-sticky-bar, .detail-lightbox, .site-header, .site-footer, .mobile-cta-bar,
-  .detail-cta-stack, .detail-spin-toolbar, .detail-print-btn { display: none !important; }
+  .detail-cta-stack, .detail-angle-toolbar, .detail-print-btn { display: none !important; }
   .detail-spec-group { break-inside: avoid; }
   .detail-page { padding: 0 !important; }
 }
@@ -1730,6 +1729,16 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+.home-finance-bank-logo--img {
+  background: #fff;
+  overflow: hidden;
+  padding: 0.2rem;
+}
+.home-finance-bank-logo--img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .home-finance-bank-meta {
   display: flex;
@@ -2468,6 +2477,7 @@ input[type="radio"]:focus-visible {
   align-items: flex-end;
   color: #fff;
   overflow: hidden;
+  background: #111827;
 }
 .svc-hero-media {
   position: absolute;
@@ -2563,6 +2573,15 @@ input[type="radio"]:focus-visible {
   height: 100%;
   object-fit: cover;
   transition: transform var(--motion-slower) var(--ease-premium);
+}
+.svc-exp-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #e5e7eb, #f3f4f6);
+  color: #9ca3af;
+  font-size: 2.5rem;
+  font-weight: 800;
 }
 .svc-exp-card:hover .svc-exp-img {
   transform: scale(1.06);

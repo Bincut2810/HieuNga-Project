@@ -38,18 +38,27 @@ public sealed class MotorcycleMediaStudioService(
         var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, slot), ct);
         if (!uploaded.Ok) return Fail(uploaded.Error!);
 
-        if (slot == MediaSlot.Thumbnail) bike.ThumbnailUrl = uploaded.Url;
+        if (slot == MediaSlot.Thumbnail)
+        {
+            bike.ThumbnailUrl = uploaded.Url;
+            // Ảnh đại diện drives list + detail hero — no separate Hero UI.
+            bike.HeroImageUrl = uploaded.Url;
+        }
         else bike.HeroImageUrl = uploaded.Url;
         bike.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
-        return await OkAsync(motorcycleId, slot == MediaSlot.Thumbnail ? "Đã cập nhật thumbnail." : "Đã cập nhật hero.", ct);
+        return await OkAsync(motorcycleId, "Đã lưu ảnh.", ct);
     }
 
     public async Task<MediaMutationResult> ClearSlotAsync(Guid motorcycleId, MediaSlot slot, CancellationToken ct = default)
     {
         var bike = await db.Motorcycles.FirstOrDefaultAsync(m => m.Id == motorcycleId && !m.IsDeleted, ct);
         if (bike is null) return Fail("Không tìm thấy xe.");
-        if (slot == MediaSlot.Thumbnail) bike.ThumbnailUrl = null;
+        if (slot == MediaSlot.Thumbnail)
+        {
+            bike.ThumbnailUrl = null;
+            bike.HeroImageUrl = null;
+        }
         else if (slot == MediaSlot.Hero) bike.HeroImageUrl = null;
         else return Fail("Slot không hợp lệ.");
         bike.UpdatedAt = DateTime.UtcNow;
@@ -60,7 +69,7 @@ public sealed class MotorcycleMediaStudioService(
     public async Task<MediaMutationResult> AddGalleryAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> files, CancellationToken ct = default)
     {
         if (!await BikeExistsAsync(motorcycleId, ct)) return Fail("Không tìm thấy xe.");
-        if (files.Count == 0) return Fail("Chọn ít nhất một ảnh gallery.");
+        if (files.Count == 0) return Fail("Chọn ít nhất một ảnh.");
 
         var maxSort = await db.MediaAssets.Where(m => m.MotorcycleId == motorcycleId && !m.IsDeleted)
             .Select(m => (int?)m.SortOrder).MaxAsync(ct) ?? -1;
@@ -104,7 +113,7 @@ public sealed class MotorcycleMediaStudioService(
             return Fail(warnings.Count > 0 ? string.Join(" · ", warnings) : "Không tải được ảnh nào.");
 
         await db.SaveChangesAsync(ct);
-        var msg = $"Đã thêm {added} ảnh gallery.";
+        var msg = $"Đã thêm {added} ảnh.";
         if (warnings.Count > 0) msg += " " + string.Join(" ", warnings.Take(3));
         return await OkAsync(motorcycleId, msg, ct);
     }
@@ -447,11 +456,11 @@ public sealed class MotorcycleMediaStudioService(
 
         string statusLabel;
         if (unused) statusLabel = "Chưa có góc xem";
-        else if (complete) statusLabel = $"{filled} / {MotorcycleViewAngleCatalog.Count} · Ready";
+        else if (complete) statusLabel = $"Đủ {MotorcycleViewAngleCatalog.Count} góc";
         else
         {
             var missing = slots.Where(s => string.IsNullOrWhiteSpace(s.Url)).Select(s => s.Label).Take(4);
-            statusLabel = $"{filled} / {MotorcycleViewAngleCatalog.Count} · Thiếu " + string.Join(", ", missing);
+            statusLabel = $"{filled}/{MotorcycleViewAngleCatalog.Count} · Thiếu " + string.Join(", ", missing);
         }
 
         return new MediaStudioStateDto(
@@ -477,40 +486,27 @@ public sealed class MotorcycleMediaStudioService(
         bool complete,
         bool unused)
     {
-        var anglesOk = complete || unused;
+        _ = colors;
+        _ = unused;
+        var hasThumb = !string.IsNullOrWhiteSpace(bike.ThumbnailUrl);
+        var hasGallery = gallery.Count >= 3;
+        var hasAngles = complete;
         var items = new List<MediaHealthItemDto>
         {
-            Item("thumbnail", "Thumbnail", !string.IsNullOrWhiteSpace(bike.ThumbnailUrl), "Có", "Thiếu"),
-            Item("hero", "Hero", !string.IsNullOrWhiteSpace(bike.HeroImageUrl), "Có", "Chưa có (tuỳ chọn)"),
-            Item("gallery", "Gallery", gallery.Count >= 3, $"{gallery.Count} ảnh", gallery.Count == 0 ? "Trống" : $"{gallery.Count} ảnh — nên ≥ 3"),
-            Item("colors", "Colors", colors.Count >= 1 && colors.All(c => !string.IsNullOrWhiteSpace(c.ImageUrl)),
-                $"{colors.Count} màu", colors.Count == 0 ? "Chưa có màu" : "Thiếu ảnh màu"),
-            Item("angles", "6 góc", anglesOk,
-                unused ? "Chưa dùng" : complete ? $"{filled}/6 góc ✓" : $"{filled}/6 góc",
-                unused ? "Tuỳ chọn" : "Chưa đủ góc"),
-            Item("alt", "Alt text", gallery.Count == 0 || gallery.All(g => !string.IsNullOrWhiteSpace(g.AltText)),
-                "Đủ chú thích", $"{gallery.Count(g => string.IsNullOrWhiteSpace(g.AltText))} ảnh thiếu alt")
+            new("thumbnail", "Ảnh đại diện", hasThumb ? "ok" : "bad", hasThumb ? "Có" : "Chưa có"),
+            new("gallery", "Ảnh giới thiệu", hasGallery ? "ok" : gallery.Count > 0 ? "warn" : "bad",
+                hasGallery ? $"{gallery.Count} ảnh" : gallery.Count == 0 ? "Chưa có" : $"{gallery.Count}/3 ảnh"),
+            new("angles", "6 góc xe", hasAngles ? "ok" : "bad",
+                hasAngles ? "Đủ 6 góc" : $"{filled}/6 góc")
         };
 
-        var weights = new Dictionary<string, int>
-        {
-            ["thumbnail"] = 25, ["hero"] = 10, ["gallery"] = 25, ["colors"] = 20, ["angles"] = 10, ["alt"] = 10
-        };
         var score = 0;
-        foreach (var item in items)
-        {
-            if (item.Status is "ok" or "optional")
-                score += weights.GetValueOrDefault(item.Key);
-            else if (item.Key == "angles" && unused)
-                score += weights["angles"];
-            else if (item.Key == "hero" && item.Status == "warn")
-                score += 5;
-        }
+        if (hasThumb) score += 34;
+        if (hasGallery) score += 33;
+        else if (gallery.Count > 0) score += 15;
+        if (hasAngles) score += 33;
 
         return new MediaHealthDto(Math.Clamp(score, 0, 100), items);
-
-        static MediaHealthItemDto Item(string key, string label, bool ok, string okDetail, string badDetail) =>
-            new(key, label, ok ? "ok" : key is "hero" or "angles" or "alt" ? "warn" : "bad", ok ? okDetail : badDetail);
     }
 
     private static PublishReadinessDto BuildPublish(
@@ -519,18 +515,17 @@ public sealed class MotorcycleMediaStudioService(
         List<ColorCardDto> colors,
         int filled)
     {
+        _ = colors;
         var missing = new List<string>();
-        if (string.IsNullOrWhiteSpace(bike.ThumbnailUrl)) missing.Add("Thumbnail");
-        if (gallery.Count == 0) missing.Add("Gallery (ít nhất 1 ảnh)");
-        if (bike.BasePrice <= 0) missing.Add("Giá (BasePrice)");
-        if (colors.Count == 0) missing.Add("Ít nhất một màu");
-        if (filled > 0 && filled < MotorcycleViewAngleCatalog.Count)
-            missing.Add($"Góc xem chưa đủ ({filled}/{MotorcycleViewAngleCatalog.Count})");
+        if (string.IsNullOrWhiteSpace(bike.ThumbnailUrl)) missing.Add("Ảnh đại diện");
+        if (gallery.Count < 3) missing.Add(gallery.Count == 0 ? "Ảnh giới thiệu (ít nhất 3)" : $"Ảnh giới thiệu ({gallery.Count}/3)");
+        if (filled < MotorcycleViewAngleCatalog.Count)
+            missing.Add($"6 góc xe ({filled}/{MotorcycleViewAngleCatalog.Count})");
 
         var ready = missing.Count == 0;
         return new PublishReadinessDto(
             ready,
-            ready ? "Ready to Publish" : "Needs Attention",
+            ready ? "Sẵn sàng đăng" : "Còn thiếu hình",
             missing);
     }
 

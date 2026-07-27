@@ -10,13 +10,15 @@
                     <button hx-get="/so-sanh?handler=Remove&id=@bike.Id" hx-target="#compare-table" hx-swap="innerHTML"
                             class="absolute top-2 right-2 w-8 h-8 rounded-full bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-honda-red text-sm">✕</button>
                     <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4">
-                        @{
-                            var compareImg = HieuNga.Application.Mappings.MotorcycleImageCatalog.ResolveThumbnail(bike.Slug, bike.ThumbnailUrl);
-                            var compareFallback = HieuNga.Application.Mappings.MotorcycleImageCatalog.GetThumbnail(bike.Slug);
+                        @if (!string.IsNullOrWhiteSpace(bike.ThumbnailUrl))
+                        {
+                            <img src="@bike.ThumbnailUrl"
+                                 data-fallback="@HieuNga.Application.Mappings.MotorcycleImageCatalog.Default"
+                                 alt="@bike.Name"
+                                 class="img-motorcycle w-full h-full object-cover"
+                                 loading="lazy" decoding="async" width="400" height="400"
+                                 onerror="if(this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback}" />
                         }
-                        <img src="@compareImg" data-fallback="@compareFallback" alt="@bike.Name"
-                             class="img-motorcycle w-full h-full object-cover"
-                             onerror="if(this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback}" />
                     </div>
                     <h3 class="font-bold text-sm">@bike.Name</h3>
                     <p class="text-honda-red font-bold mt-2">@bike.BasePrice.ToVnd()</p>

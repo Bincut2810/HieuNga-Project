@@ -47,7 +47,7 @@ public static class MotorcycleContentEnricher
             bike.TechnicalSpecsJson = JsonSerializer.Serialize(
                 profile.Specifications.Select(s => new { s.Icon, s.Label, s.Value }), JsonOptions);
 
-            SyncGallery(context, bike, MotorcycleImageCatalog.ResolveGallery(bike.Slug, profile.GalleryUrls));
+            SyncGallery(context, bike, MotorcycleImageCatalog.ResolveGalleryOrSeedFallback(bike.Slug, profile.GalleryUrls));
             SyncColors(context, bike, profile.Colors);
             SyncVariants(context, bike, profile.Variants);
         }
@@ -60,7 +60,7 @@ public static class MotorcycleContentEnricher
     {
         var validUrls = urls.Where(MotorcycleImageCatalog.IsValidImageUrl).ToList();
         if (validUrls.Count == 0)
-            validUrls = MotorcycleImageCatalog.ResolveGallery(bike.Slug, []).ToList();
+            validUrls = MotorcycleImageCatalog.ResolveGalleryOrSeedFallback(bike.Slug, []).ToList();
 
         var existing = bike.MediaAssets.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder).ToList();
         if (existing.Count == validUrls.Count && existing.Select(a => a.Url).SequenceEqual(validUrls))

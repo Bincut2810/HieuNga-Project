@@ -2,20 +2,26 @@
 @using HieuNga.Application.Mappings
 @using HieuNga.Domain
 @{
-    var imageUrl = MotorcycleImageCatalog.ResolveThumbnail(Model.Slug, Model.ThumbnailUrl);
-    var fallbackUrl = MotorcycleImageCatalog.GetThumbnail(Model.Slug);
+    var imageUrl = Model.ThumbnailUrl;
 }
 <a href="/xe/@Model.Slug" class="card-motorcycle group block relative reveal @(Model.IsAvailable ? "" : "opacity-90")">
     <div class="img-wrap relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
-        <img src="@imageUrl"
-             data-fallback="@fallbackUrl"
-             alt="@Model.Name"
-             class="img-motorcycle img-media w-full h-full object-cover transition-transform duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
-             loading="lazy"
-             decoding="async"
-             width="640"
-             height="480"
-             onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback;this.classList.add('is-loaded');var w=this.closest('.img-wrap');if(w)w.classList.add('is-loaded')}" />
+        @if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            <img src="@imageUrl"
+                 data-fallback="@MotorcycleImageCatalog.Default"
+                 alt="@Model.Name"
+                 class="img-motorcycle img-media w-full h-full object-cover transition-transform duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
+                 loading="lazy"
+                 decoding="async"
+                 width="640"
+                 height="480"
+                 onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.onerror=null;this.src=this.dataset.fallback;this.classList.add('is-loaded');var w=this.closest('.img-wrap');if(w)w.classList.add('is-loaded')}" />
+        }
+        else
+        {
+            <div class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-gray-300" aria-hidden="true">@Model.Name.Substring(0, 1)</div>
+        }
         <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
         <div class="absolute top-3 left-3 flex flex-wrap gap-2 z-10">
             @if (Model.IsFeatured)

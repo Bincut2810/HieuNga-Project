@@ -1,0 +1,46 @@
+@model HieuNga.Web.ViewModels.MotorcycleDetailMediaViewModel
+
+@if (!Model.ShowAngleViewer)
+{
+    return;
+}
+
+<section class="detail-section detail-section-muted reveal" aria-labelledby="angles-heading" id="xem-goc" data-media-angles>
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+                <p class="section-eyebrow">Trải nghiệm</p>
+                <h2 id="angles-heading" class="section-title">Xem đa góc</h2>
+                <p class="section-subtitle">Kéo hoặc vuốt giữa các góc chụp</p>
+            </div>
+            <div class="detail-angle-toolbar" role="toolbar" aria-label="Góc xem">
+                <button type="button" class="detail-angle-btn" data-media-angle-prev aria-label="Góc trước">←</button>
+                <button type="button" class="detail-angle-btn" data-media-angle-next aria-label="Góc sau">→</button>
+                <button type="button" class="detail-angle-btn" data-media-angle-fullscreen>Toàn màn hình</button>
+            </div>
+        </div>
+        <div class="detail-angle-stage relative aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-gray-100 select-none touch-none cursor-grab active:cursor-grabbing"
+             data-media-angle-stage>
+            <img data-media-angle-img
+                 src="@Model.Angles[0].Url"
+                 alt="@Model.Angles[0].Label — @Model.Name"
+                 class="absolute inset-0 w-full h-full object-contain p-4 pointer-events-none transition-opacity duration-200"
+                 draggable="false" decoding="async" loading="lazy" width="960" height="600" />
+            <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" data-media-angle-hint>
+                <span class="detail-angle-hint">← Kéo hoặc vuốt để đổi góc →</span>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Chọn góc" data-media-angle-tabs>
+            @for (var i = 0; i < Model.Angles.Count; i++)
+            {
+                var item = Model.Angles[i];
+                <button type="button"
+                        class="detail-angle-btn text-xs @(i == 0 ? "is-on" : "")"
+                        data-media-angle-tab
+                        data-index="@i"
+                        aria-label="@item.Label">@item.Label</button>
+            }
+        </div>
+        <p class="mt-3 text-center text-xs text-gray-400" aria-live="polite" data-media-angle-label>@Model.Angles[0].Label</p>
+    </div>
+</section>

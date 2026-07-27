@@ -150,7 +150,8 @@ public class FinanceConfigService(HieuNgaDbContext db) : IFinanceConfigService
             rate.MinDownPaymentPercent,
             rate.MaxDownPaymentPercent,
             FinanceTerms.Parse(rate.SupportedTermsMonths, rate.MinTermMonths, rate.MaxTermMonths),
-            rate.IsDefault);
+            rate.IsDefault,
+            string.IsNullOrWhiteSpace(bank.LogoUrl) ? null : bank.LogoUrl.Trim());
     }
 }
 

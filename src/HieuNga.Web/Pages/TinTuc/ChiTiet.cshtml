@@ -6,7 +6,10 @@
 
 <article>
     <section class="relative bg-honda-dark text-white py-20 md:py-28 overflow-hidden">
-        <img src="@post.ThumbnailUrl" alt="" class="absolute inset-0 w-full h-full object-cover opacity-25" />
+        @if (!string.IsNullOrWhiteSpace(post.ThumbnailUrl))
+        {
+            <img src="@post.ThumbnailUrl" alt="" class="absolute inset-0 w-full h-full object-cover opacity-25" />
+        }
         <div class="relative max-w-3xl mx-auto px-4 text-center">
             @if (!string.IsNullOrEmpty(post.CategoryName))
             {

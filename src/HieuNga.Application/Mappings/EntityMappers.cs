@@ -21,8 +21,7 @@ public static class EntityMappers
     {
 
         var mediaUrl = m.MediaAssets?.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder).FirstOrDefault()?.Url;
-
-        var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.Slug, m.ThumbnailUrl, mediaUrl);
+        var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.ThumbnailUrl, mediaUrl);
 
         var (available, label) = ResolveAvailability(m);
         return new(m.Id, m.Name, m.Slug, m.ShortDescription, m.Category, m.BasePrice, thumb, m.IsFeatured, available, label);
@@ -55,13 +54,19 @@ public static class EntityMappers
 
     {
 
-        var mediaUrls = m.MediaAssets.Where(a => !a.IsDeleted).OrderBy(a => a.SortOrder).Select(a => a.Url);
+        // CMS Media Studio is the source of truth — no invented gallery/SVG padding.
+        var gallery = m.MediaAssets
+            .Where(a => !a.IsDeleted && MotorcycleImageCatalog.IsValidImageUrl(a.Url))
+            .OrderBy(a => a.SortOrder)
+            .Select(a => a.Url)
+            .Distinct()
+            .ToList();
 
-        var gallery = MotorcycleImageCatalog.ResolveGallery(m.Slug, mediaUrls);
+        var thumb = MotorcycleImageCatalog.IsValidImageUrl(m.ThumbnailUrl)
+            ? m.ThumbnailUrl
+            : gallery.FirstOrDefault();
 
-        var thumb = MotorcycleImageCatalog.ResolveThumbnail(m.Slug, m.ThumbnailUrl, gallery.FirstOrDefault());
-
-
+        var hero = MotorcycleImageCatalog.IsValidImageUrl(m.HeroImageUrl) ? m.HeroImageUrl : null;
 
         var highlights = ParseHighlights(m.HighlightsJson);
 
@@ -78,11 +83,13 @@ public static class EntityMappers
             m.Id, m.Name, m.Slug, m.ShortDescription, m.Description, m.Category, m.BasePrice,
 
             m.EngineCc, m.FuelType, m.Transmission, thumb,
-            MotorcycleImageCatalog.IsValidImageUrl(m.HeroImageUrl) ? m.HeroImageUrl : null,
+
+            hero,
 
             m.Variants.Where(v => !v.IsDeleted).Select(v => new MotorcycleVariantDto(v.Id, v.Name, v.Price, v.StockQuantity, v.IsAvailable)).ToList(),
 
-            m.Colors.Where(c => !c.IsDeleted).OrderBy(c => c.SortOrder).Select(c => new MotorcycleColorDto(c.Id, c.Name, c.HexCode, ResolveColorImage(c.ImageUrl, m.Slug))).ToList(),
+            m.Colors.Where(c => !c.IsDeleted).OrderBy(c => c.SortOrder)
+                .Select(c => new MotorcycleColorDto(c.Id, c.Name, c.HexCode, CmsImageOrNull(c.ImageUrl))).ToList(),
 
             gallery,
 
@@ -104,24 +111,30 @@ public static class EntityMappers
 
 
 
+    /// <summary>
+    /// Single mapping: CMS catalog order → filled angles only (same keys as Admin Media Studio).
+    /// No FrameIndex, no sequence padding, no presentation remapping later.
+    /// </summary>
     private static IReadOnlyList<MotorcycleAngleImageDto> MapAngleImages(Motorcycle m)
     {
         var byAngle = (m.SpinFrames ?? [])
-            .Where(s => !s.IsDeleted)
+            .Where(s => !string.IsNullOrWhiteSpace(s.ImageUrl))
             .GroupBy(s => s.Angle)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).First());
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).First().ImageUrl);
 
         return MotorcycleViewAngleCatalog.All
-            .Where(e => byAngle.ContainsKey(e.Angle))
-            .Select(e => new MotorcycleAngleImageDto(e.Key, e.LabelVi, byAngle[e.Angle].ImageUrl))
+            .Where(e => byAngle.TryGetValue(e.Angle, out _))
+            .Select(e => new MotorcycleAngleImageDto(e.Key, e.LabelVi, byAngle[e.Angle]))
             .ToList();
     }
 
 
 
-    private static string? ResolveColorImage(string? url, string slug) =>
+    private static string? CmsImageOrNull(string? url) =>
 
-        MotorcycleImageCatalog.IsValidImageUrl(url) ? url : MotorcycleImageCatalog.GetThumbnail(slug);
+        MotorcycleImageCatalog.IsValidImageUrl(url) ? url : null;
 
 
 
@@ -147,40 +160,25 @@ public static class EntityMappers
 
 
 
-    public static PromotionDto ToDto(this Promotion p) => new(p.Id, p.Title, p.Slug, p.Summary, p.Type, p.ImageUrl ?? GetPromotionPlaceholder(p.Type), p.EndDate);
-
-
+    public static PromotionDto ToDto(this Promotion p) =>
+        new(p.Id, p.Title, p.Slug, p.Summary, p.Type, CmsImageOrNull(p.ImageUrl), p.EndDate);
 
     public static PromotionDetailDto ToDetail(this Promotion p) => new(
-
         p.Id, p.Title, p.Slug, p.Summary, p.Content, p.Type, p.DiscountPercent, p.DiscountAmount,
-
-        p.StartDate, p.EndDate, p.ImageUrl ?? GetPromotionPlaceholder(p.Type),
-
+        p.StartDate, p.EndDate, CmsImageOrNull(p.ImageUrl),
         p.Motorcycle?.Name, p.Motorcycle?.Slug, p.ToSeo());
 
-
-
-    public static BranchDto ToDto(this Branch b) => new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice, b.Slug);
-
-
+    public static BranchDto ToDto(this Branch b) =>
+        new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice, b.Slug);
 
     public static ReviewDto ToDto(this Review r, string? motorcycleName = null) =>
-
         new(r.Id, r.CustomerName, r.Rating, r.Title, r.Content, motorcycleName);
 
-
-
     public static BlogPostListItemDto ToListItem(this BlogPost p) =>
-
-        new(p.Id, p.Title, p.Slug, p.Summary, p.ThumbnailUrl ?? GetBlogPlaceholder(p.Slug), p.PublishedAt);
-
-
+        new(p.Id, p.Title, p.Slug, p.Summary, CmsImageOrNull(p.ThumbnailUrl), p.PublishedAt);
 
     public static BlogDetailDto ToDetail(this BlogPost p) => new(
-
-        p.Id, p.Title, p.Slug, p.Summary, p.Content, p.ThumbnailUrl ?? GetBlogPlaceholder(p.Slug),
-
+        p.Id, p.Title, p.Slug, p.Summary, p.Content, CmsImageOrNull(p.ThumbnailUrl),
         p.Category?.Name, p.AuthorName, p.PublishedAt, p.ToSeo());
 
 
@@ -238,26 +236,6 @@ public static class EntityMappers
         public string? Value { get; set; }
 
     }
-
-
-
-    private static string GetPromotionPlaceholder(Domain.Enums.PromotionType type) => type switch
-
-    {
-
-        Domain.Enums.PromotionType.Financing => "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
-
-        Domain.Enums.PromotionType.Gift => "https://images.unsplash.com/photo-1605559424843-9e4c228ef1e2?w=800&q=80",
-
-        _ => MotorcycleImageCatalog.Default
-
-    };
-
-
-
-    private static string GetBlogPlaceholder(string slug) =>
-
-        $"https://images.unsplash.com/photo-1558980664-769d9df238f8?w=800&q=80&sig={slug.GetHashCode()}";
 
 
 

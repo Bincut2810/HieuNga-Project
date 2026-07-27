@@ -47,7 +47,8 @@ public record FinanceBankDto(
     int MinDownPercent,
     int MaxDownPercent,
     IReadOnlyList<int> SupportedTerms,
-    bool IsDefault);
+    bool IsDefault,
+    string? LogoUrl = null);
 
 public record SiteSettingsDto(
     string SiteName,

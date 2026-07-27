@@ -4,7 +4,7 @@
 @if (Model.IsCreate)
 {
     <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Lưu xe trước", "Media Studio mở sau khi tạo Draft.", "/admin/xe/editor?tab=general", "Quick Create")' />
+             model='new AdminEmptyStateModel("Lưu xe trước", "Lưu thông tin xe (Draft), rồi quay lại để thêm hình ảnh.", "/admin/xe/editor?tab=general", "Lưu Draft")' />
 }
 else
 {
@@ -14,18 +14,18 @@ else
              data-media-studio
              data-motorcycle-id="@Model.Id"
              data-api="/admin/api/xe/@Model.Id/media">
-            <div class="ms-loading">Đang tải Media Studio…</div>
+            <div class="ms-loading">Đang tải hình ảnh…</div>
         </div>
         <div class="admin-editor-savebar" data-editor-savebar>
             <div class="admin-editor-savebar-inner">
-                <p class="admin-muted" style="margin:0;">Media tự lưu qua Media Studio</p>
+                <p class="admin-muted" style="margin:0;">Hình ảnh tự lưu khi bạn kéo vào — không cần bấm Lưu.</p>
                 <div class="admin-editor-savebar-actions">
-                    <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
+                    <a href="/admin/xe" class="admin-btn admin-btn-ghost">Quay lại</a>
                     @if (!string.IsNullOrEmpty(Model.PublicSlug))
                     {
-                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
+                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Xem trang bán</a>
                     }
-                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Publish</a>
+                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Đăng bán</a>
                 </div>
             </div>
         </div>
