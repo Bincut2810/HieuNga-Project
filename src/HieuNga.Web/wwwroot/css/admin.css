@@ -2068,3 +2068,49 @@ button.admin-btn-danger:hover {
   .ms-actions { flex-direction:column; }
 }
 
+/* Banner CMS thumbnails */
+.bc-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.bc-thumb {
+  position: relative;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: #fff;
+  cursor: grab;
+  aspect-ratio: 16 / 10;
+}
+.bc-thumb.is-dragging { opacity: 0.55; cursor: grabbing; }
+.bc-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.bc-thumb-order {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  z-index: 1;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bc-thumb-remove {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.35rem;
+  z-index: 1;
+}

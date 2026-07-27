@@ -29,17 +29,6 @@ public class BranchInputModel
     public int SortOrder { get; set; }
 }
 
-public class BannerInputModel
-{
-    [Required] public string Title { get; set; } = string.Empty;
-    public string? Subtitle { get; set; }
-    [Required] public string ImageUrl { get; set; } = string.Empty;
-    public string? PrimaryButtonText { get; set; }
-    public string? PrimaryButtonUrl { get; set; }
-    public int DisplayOrder { get; set; }
-    public bool Enabled { get; set; } = true;
-}
-
 public class PromotionInputModel : IAdminSeoInput
 {
     [Required] public string Title { get; set; } = string.Empty;
@@ -147,66 +136,6 @@ public class ChiNhanhSuaModel(IRepository<Branch> repo, IUnitOfWork uow, HieuNga
         await uow.SaveChangesAsync(ct);
         this.SetSuccess("Đã cập nhật chi nhánh.");
         return RedirectToPage("/Admin/ChiNhanh/Index");
-    }
-}
-
-public class BannerThemModel(IRepository<Domain.Entities.Banner> repo, IUnitOfWork uow) : PageModel
-{
-    [BindProperty] public BannerInputModel Input { get; set; } = new();
-    public void OnGet() => ViewData["Title"] = "Thêm banner";
-    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
-    {
-        ViewData["Title"] = "Thêm banner";
-        if (!ModelState.IsValid) return Page();
-        await repo.AddAsync(Map(new Domain.Entities.Banner(), Input), ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã thêm banner.");
-        return RedirectToPage("/Admin/Banner/Index");
-    }
-    internal static Domain.Entities.Banner Map(Domain.Entities.Banner e, BannerInputModel i)
-    {
-        e.Title = i.Title;
-        e.Subtitle = i.Subtitle;
-        e.ImageUrl = i.ImageUrl;
-        e.PrimaryButtonText = i.PrimaryButtonText;
-        e.PrimaryButtonUrl = i.PrimaryButtonUrl;
-        e.SortOrder = i.DisplayOrder;
-        e.IsActive = i.Enabled;
-        return e;
-    }
-}
-
-public class BannerSuaModel(IRepository<Domain.Entities.Banner> repo, IUnitOfWork uow) : PageModel
-{
-    [BindProperty] public BannerInputModel Input { get; set; } = new();
-    public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
-    {
-        ViewData["Title"] = "Sửa banner";
-        var e = await repo.GetByIdAsync(id, ct);
-        if (e is null || e.IsDeleted) return NotFound();
-        Input = new BannerInputModel
-        {
-            Title = e.Title,
-            Subtitle = e.Subtitle,
-            ImageUrl = e.ImageUrl,
-            PrimaryButtonText = e.PrimaryButtonText,
-            PrimaryButtonUrl = e.PrimaryButtonUrl,
-            DisplayOrder = e.SortOrder,
-            Enabled = e.IsActive
-        };
-        return Page();
-    }
-    public async Task<IActionResult> OnPostAsync(Guid id, CancellationToken ct)
-    {
-        ViewData["Title"] = "Sửa banner";
-        if (!ModelState.IsValid) return Page();
-        var e = await repo.GetByIdAsync(id, ct);
-        if (e is null || e.IsDeleted) return NotFound();
-        BannerThemModel.Map(e, Input);
-        await repo.UpdateAsync(e, ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã cập nhật banner.");
-        return RedirectToPage("/Admin/Banner/Index");
     }
 }
 

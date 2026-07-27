@@ -9,15 +9,13 @@ public record SeoMetadataDto(
     string? OgImageUrl,
     string? CanonicalUrl);
 
-public record BannerDto(
-    Guid Id,
+public record HeroSlideDto(Guid Id, string ImageUrl);
+
+public record HomepageHeroDto(
     string Title,
     string? Subtitle,
-    string ImageUrl,
-    string? PrimaryButtonText,
-    string? PrimaryButtonUrl,
-    int DisplayOrder,
-    bool Enabled);
+    bool Enabled,
+    IReadOnlyList<HeroSlideDto> Slides);
 
 public record PromotionDto(
     Guid Id,
@@ -100,7 +98,7 @@ public record CreateInstallmentRequestDto(
     string? Notes);
 
 public record HomepageDto(
-    IReadOnlyList<BannerDto> HeroBanners,
+    HomepageHeroDto Hero,
     IReadOnlyList<MotorcycleListItemDto> FeaturedMotorcycles,
     IReadOnlyList<PromotionDto> Promotions,
     IReadOnlyList<BranchDto> Branches,

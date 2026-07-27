@@ -18,7 +18,7 @@ public class HomepageService(
 {
     public async Task<HomepageDto> GetHomepageDataAsync(CancellationToken ct = default)
     {
-        var banners = await bannerRepo.GetHomepageBannersAsync(5, ct);
+        var banners = await bannerRepo.GetHomepageBannersAsync(20, ct);
         var motorcycles = await motorcycleRepo.GetFeaturedAsync(6, ct);
         var promotions = await promotionRepo.GetActiveAsync(6, ct);
         var branches = await branchRepo.GetActiveAsync(ct);
@@ -40,7 +40,7 @@ public class HomepageService(
             .ToList();
 
         return new HomepageDto(
-            banners.Select(b => b.ToDto()).ToList(),
+            banners.ToHomepageHero(),
             motorcycles.Select(m => m.ToListItem()).ToList(),
             promotions.Select(p => p.ToDto()).ToList(),
             branches.Select(b => b.ToDto()).ToList(),

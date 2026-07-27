@@ -99,6 +99,7 @@ app.MapGet("/health", async (HieuNgaDbContext db, IHostEnvironment env, Cancella
         : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
 });
 app.MapMediaStudioApi();
+app.MapBannerApi();
 app.MapRazorPages();
 
 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");

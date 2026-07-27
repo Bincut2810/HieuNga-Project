@@ -1,3 +1,4 @@
+using HieuNga.Application.DTOs;
 using HieuNga.Application.Mappings;
 using HieuNga.Domain.Entities;
 
@@ -6,42 +7,52 @@ namespace HieuNga.Tests;
 public class BannerHeroDtoTests
 {
     [Fact]
-    public void ToDto_Maps_All_Banner_Fields()
+    public void ToHomepageHero_Maps_Slides_And_Shared_Text()
     {
-        var id = Guid.NewGuid();
-        var banner = new Banner
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var banners = new List<Banner>
         {
-            Id = id,
-            Title = "Hero title",
-            Subtitle = "Hero sub",
-            ImageUrl = "/desk.jpg",
-            PrimaryButtonText = "Primary",
-            PrimaryButtonUrl = "/xe",
-            SortOrder = 2,
-            IsActive = true
+            new()
+            {
+                Id = id1,
+                Title = "Hero title",
+                Subtitle = "Hero sub",
+                ImageUrl = "/a.jpg",
+                SortOrder = 0,
+                IsActive = true
+            },
+            new()
+            {
+                Id = id2,
+                Title = "Hero title",
+                Subtitle = "Hero sub",
+                ImageUrl = "/b.jpg",
+                SortOrder = 1,
+                IsActive = true
+            }
         };
 
-        var dto = banner.ToDto();
+        var hero = banners.ToHomepageHero();
 
-        Assert.Equal(id, dto.Id);
-        Assert.Equal("Hero title", dto.Title);
-        Assert.Equal("Hero sub", dto.Subtitle);
-        Assert.Equal("/desk.jpg", dto.ImageUrl);
-        Assert.Equal("Primary", dto.PrimaryButtonText);
-        Assert.Equal("/xe", dto.PrimaryButtonUrl);
-        Assert.Equal(2, dto.DisplayOrder);
-        Assert.True(dto.Enabled);
+        Assert.Equal("Hero title", hero.Title);
+        Assert.Equal("Hero sub", hero.Subtitle);
+        Assert.True(hero.Enabled);
+        Assert.Equal(2, hero.Slides.Count);
+        Assert.Equal(id1, hero.Slides[0].Id);
+        Assert.Equal("/a.jpg", hero.Slides[0].ImageUrl);
+        Assert.Equal(id2, hero.Slides[1].Id);
+        Assert.Equal("/b.jpg", hero.Slides[1].ImageUrl);
     }
 
     [Fact]
-    public void BannerDto_Defaults_Match_Entity_Defaults()
+    public void ToHomepageHero_Empty_Returns_Disabled_Hero()
     {
-        var dto = new Banner { Title = "t", ImageUrl = "/i.jpg" }.ToDto();
+        var hero = Array.Empty<Banner>().ToHomepageHero();
 
-        Assert.Equal(0, dto.DisplayOrder);
-        Assert.True(dto.Enabled);
-        Assert.Null(dto.Subtitle);
-        Assert.Null(dto.PrimaryButtonText);
-        Assert.Null(dto.PrimaryButtonUrl);
+        Assert.Equal("", hero.Title);
+        Assert.Null(hero.Subtitle);
+        Assert.False(hero.Enabled);
+        Assert.Empty(hero.Slides);
     }
 }

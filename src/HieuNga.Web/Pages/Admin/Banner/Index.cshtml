@@ -2,41 +2,23 @@
 @using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.Banner.IndexModel
 @{
-    ViewData["Title"] = "Banner";
+    ViewData["Title"] = "Banner trang chủ";
 }
 
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
-             "Banner",
-             "Ảnh hero và CTA trên trang chủ.",
-             "/admin/banner/them",
-             "+ Thêm banner")' />
+             "Banner trang chủ",
+             "Kéo ảnh vào khung — thứ tự ảnh = thứ tự carousel. Lưu tiêu đề và bật xuất bản khi xong.")' />
 
-@if (Model.Items.Count == 0)
-{
-    <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Chưa có banner", "Thêm banner để hiển thị trên trang chủ.", "/admin/banner/them", "+ Thêm banner")' />
-}
-else
-{
-    <div class="admin-media-grid">
-        @foreach (var b in Model.Items)
-        {
-            <div class="admin-media-card">
-                <div class="admin-media-card-image">
-                    <img src="@b.ImageUrl" alt="@b.Title" />
-                </div>
-                <div class="admin-media-card-body">
-                    <div>
-                        <h3 class="admin-media-card-title">@b.Title</h3>
-                        @if (!string.IsNullOrEmpty(b.Subtitle))
-                        {
-                            <p class="admin-media-card-meta">@b.Subtitle</p>
-                        }
-                    </div>
-                    <a href="/admin/banner/sua/@b.Id" class="admin-action admin-action-edit">Sửa</a>
-                </div>
-            </div>
-        }
+<div class="admin-form-card" style="max-width: 52rem;">
+    <div id="banner-cms"
+         class="ms-root"
+         data-banner-cms
+         data-api="/admin/api/banner"
+         data-upload-enabled="@Model.SupportsImageUpload.ToString().ToLowerInvariant()">
     </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/banner-cms.js" asp-append-version="true"></script>
 }

@@ -21,16 +21,15 @@
 }
 
 @section Head {
-    @if (d.HeroBanners.Count > 0)
+    @if (d.Hero.Enabled && d.Hero.Slides.Count > 0)
     {
-        var first = d.HeroBanners[0];
-        <link rel="preload" as="image" href="@first.ImageUrl" fetchpriority="high" />
+        <link rel="preload" as="image" href="@d.Hero.Slides[0].ImageUrl" fetchpriority="high" />
     }
 }
 
 <div class="homepage bg-white overflow-x-hidden">
-    @* ─── Sprint 3.7: Flagship Hero Carousel ─── *@
-    <partial name="_HomeHero" model="d.HeroBanners" />
+    @* ─── Homepage hero carousel ─── *@
+    <partial name="_HomeHero" model="d.Hero" />
 
     @* Quick actions *@
     <section class="home-quick reveal" aria-label="Lối tắt">

@@ -94,15 +94,15 @@ public static class EntityMappers
 
 
 
-    public static BannerDto ToDto(this Banner b) => new(
-        b.Id,
-        b.Title,
-        b.Subtitle,
-        b.ImageUrl,
-        b.PrimaryButtonText,
-        b.PrimaryButtonUrl,
-        b.SortOrder,
-        b.IsActive);
+    public static HomepageHeroDto ToHomepageHero(this IReadOnlyList<Banner> banners)
+    {
+        if (banners.Count == 0)
+            return new HomepageHeroDto("", null, false, []);
+
+        var first = banners[0];
+        var slides = banners.Select(b => new HeroSlideDto(b.Id, b.ImageUrl)).ToList();
+        return new HomepageHeroDto(first.Title, first.Subtitle, first.IsActive, slides);
+    }
 
 
 

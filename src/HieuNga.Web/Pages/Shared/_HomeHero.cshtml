@@ -1,37 +1,36 @@
 @using HieuNga.Application.DTOs
-@model IReadOnlyList<BannerDto>
+@model HomepageHeroDto
 @{
-    var banners = Model ?? Array.Empty<BannerDto>();
-    var hasSlides = banners.Count > 0;
-    var multi = banners.Count > 1;
+    var hero = Model;
+    var slides = hero.Slides ?? Array.Empty<HeroSlideDto>();
+    var showHero = hero.Enabled && slides.Count > 0;
+    var multi = slides.Count > 1;
+    var alt = string.IsNullOrWhiteSpace(hero.Title) ? "Banner trang chủ" : hero.Title;
 }
 
 <section class="home-hero"
          aria-roledescription="carousel"
-         aria-label="Homepage banners"
+         aria-label="Banner trang chủ"
          data-home-hero
          data-interval="6000"
          tabindex="0">
-    @if (hasSlides)
+    @if (showHero)
     {
         <div class="home-hero-track" data-hero-track>
-            @{ var bi = 0; }
-            @foreach (var banner in banners)
+            @{ var si = 0; }
+            @foreach (var slide in slides)
             {
-                var isFirst = bi == 0;
-                var primaryHref = string.IsNullOrWhiteSpace(banner.PrimaryButtonUrl) ? "/xe" : banner.PrimaryButtonUrl;
-                var primaryLabel = string.IsNullOrWhiteSpace(banner.PrimaryButtonText) ? "Xem xe" : banner.PrimaryButtonText;
-
+                var isFirst = si == 0;
                 <article class="home-hero-slide @(isFirst ? "is-active" : null)"
                          data-hero-slide
-                         id="home-hero-slide-@bi"
+                         id="home-hero-slide-@si"
                          role="group"
                          aria-roledescription="slide"
-                         aria-label="Banner @(bi + 1) / @banners.Count"
+                         aria-label="Ảnh @(si + 1) / @slides.Count"
                          aria-hidden="@(isFirst ? "false" : "true")">
                     <div class="home-hero-media">
-                        <img src="@banner.ImageUrl"
-                             alt="@banner.Title"
+                        <img src="@slide.ImageUrl"
+                             alt="@alt"
                              class="home-hero-img img-media"
                              width="1920"
                              height="720"
@@ -40,35 +39,36 @@
                              decoding="async" />
                         <div class="home-hero-shade" aria-hidden="true"></div>
                     </div>
-                    <div class="home-hero-content">
-                        <div class="home-hero-inner">
-                            <h1 class="home-hero-title">@banner.Title</h1>
-                            @if (!string.IsNullOrWhiteSpace(banner.Subtitle))
-                            {
-                                <p class="home-hero-sub">@banner.Subtitle</p>
-                            }
-                            <div class="home-hero-actions">
-                                <a href="@primaryHref" class="btn-primary">@primaryLabel</a>
-                            </div>
-                        </div>
-                    </div>
                 </article>
-                bi++;
+                si++;
             }
+        </div>
+
+        <div class="home-hero-content">
+            <div class="home-hero-inner">
+                @if (!string.IsNullOrWhiteSpace(hero.Title))
+                {
+                    <h1 class="home-hero-title">@hero.Title</h1>
+                }
+                @if (!string.IsNullOrWhiteSpace(hero.Subtitle))
+                {
+                    <p class="home-hero-sub">@hero.Subtitle</p>
+                }
+            </div>
         </div>
 
         @if (multi)
         {
             <div class="home-hero-controls">
-                <button type="button" class="home-hero-nav" data-hero-prev aria-controls="home-hero-slide-0" aria-label="Slide trước">
+                <button type="button" class="home-hero-nav" data-hero-prev aria-controls="home-hero-slide-0" aria-label="Ảnh trước">
                     <span aria-hidden="true">‹</span>
                 </button>
-                <div class="home-hero-dots" data-hero-dots role="tablist" aria-label="Chọn banner"></div>
-                <button type="button" class="home-hero-nav" data-hero-next aria-controls="home-hero-slide-0" aria-label="Slide sau">
+                <div class="home-hero-dots" data-hero-dots role="tablist" aria-label="Chọn ảnh"></div>
+                <button type="button" class="home-hero-nav" data-hero-next aria-controls="home-hero-slide-0" aria-label="Ảnh sau">
                     <span aria-hidden="true">›</span>
                 </button>
             </div>
-            <div class="sr-only" aria-live="polite" data-hero-live>Banner 1 / @banners.Count</div>
+            <div class="sr-only" aria-live="polite" data-hero-live>Ảnh 1 / @slides.Count</div>
         }
     }
     else
@@ -78,10 +78,6 @@
                 <p class="section-eyebrow">Honda HEAD · Đà Nẵng</p>
                 <h1 class="home-hero-title text-honda-dark">Xe Máy Hiếu Nga</h1>
                 <p class="home-hero-sub text-gray-600 max-w-2xl">Showroom Honda hiện đại — mua xe chính hãng và dịch vụ HEAD.</p>
-                <div class="home-hero-actions">
-                    <a href="/xe" class="btn-primary">Xem xe</a>
-                    <a href="/bao-duong#booking" class="btn-secondary">Đặt lịch dịch vụ</a>
-                </div>
             </div>
         </div>
     }
