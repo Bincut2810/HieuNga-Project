@@ -4,103 +4,93 @@
 @{
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
-    ViewData["BranchBookUrl"] = "/bao-duong#booking";
-    ViewData["BranchBookLabel"] = "Đặt lịch dịch vụ";
+    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
 }
 
-<section class="page-section bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
-            <a href="/" class="hover:text-honda-red transition focus-ring rounded">Trang chủ</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <a href="/dich-vu" class="hover:text-honda-red transition focus-ring rounded">Dịch vụ</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <span class="text-honda-dark font-medium">Đặt lịch</span>
-        </nav>
-        <p class="section-eyebrow">Xưởng HEAD</p>
-        <h1 class="section-title">Đặt lịch bảo dưỡng / sửa chữa</h1>
-        <p class="section-subtitle">Chọn dịch vụ trên trang <a href="/dich-vu" class="text-honda-red font-semibold hover:underline">Dịch vụ</a> hoặc điền form bên dưới.</p>
-        <div class="mt-6 flex flex-wrap gap-3">
-            <a href="/dich-vu" class="btn-secondary touch-press">Xem tất cả dịch vụ</a>
-            <a href="@telHref" hx-boost="false" class="btn-ghost touch-press">Gọi @site.Hotline</a>
-        </div>
-    </div>
-</section>
+<section class="book-page">
+    <div class="book-shell">
+        @if (Model.Success)
+        {
+            <div class="book-success" role="status">
+                <h1 class="book-success-title">Đã nhận lịch hẹn</h1>
+                <p class="book-success-text">Xe Máy Hiếu Nga sẽ gọi xác nhận trong giờ hành chính.</p>
+                <div class="book-success-actions">
+                    <a href="@telHref" hx-boost="false" class="btn-primary touch-press">Gọi @site.Hotline</a>
+                    <a href="/dich-vu" class="btn-secondary touch-press">Xem dịch vụ</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <header class="book-header">
+                <p class="section-eyebrow">Đặt lịch</p>
+                <h1 class="book-title">Đặt lịch bảo dưỡng</h1>
+                <p class="book-sub">Chỉ mất khoảng 30 giây — chúng tôi sẽ gọi lại xác nhận.</p>
+            </header>
 
-<section class="page-section bg-gray-50 border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p class="section-eyebrow">Chi nhánh</p>
-        <h2 class="section-title">Xưởng Hiếu Nga</h2>
-        <div class="mt-8">
-            <partial name="_BranchCards" model="Model.Branches" />
-        </div>
-    </div>
-</section>
+            <form id="booking" method="post" class="book-form scroll-mt-24">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="book-error"></div>
 
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-10">
-    <div class="grid lg:grid-cols-2 gap-10 items-start">
-        <div class="bg-white border border-gray-200 rounded-2xl p-8 reveal">
-            <h2 class="text-2xl font-bold text-honda-dark">Tại sao chọn HEAD?</h2>
-            <ul class="mt-6 space-y-4 text-gray-600 text-sm">
-                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Kỹ thuật viên đào tạo bài bản Honda Việt Nam</li>
-                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Phụ tùng, nhớt chính hãng</li>
-                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Minh bạch báo giá trước khi sửa</li>
-                <li class="flex gap-3"><span class="text-honda-red font-bold">✓</span> Hai xưởng tại Hải Châu, Đà Nẵng</li>
-            </ul>
-            @if (!string.IsNullOrWhiteSpace(Model.PricingDisclaimer))
-            {
-                <p class="mt-6 text-xs text-gray-400">@Model.PricingDisclaimer</p>
-            }
-            <a href="@telHref" hx-boost="false" class="btn-primary mt-8 inline-flex">Gọi xưởng dịch vụ</a>
-        </div>
+                <div class="book-field">
+                    <label asp-for="CustomerName">Họ tên *</label>
+                    <input asp-for="CustomerName" class="book-input" autocomplete="name" required />
+                    <span asp-validation-for="CustomerName" class="book-field-error"></span>
+                </div>
 
-        <div class="reveal">
-            @if (Model.Success)
-            {
-                <partial name="_LeadSuccess" model='("Đặt lịch bảo dưỡng thành công!", "Xưởng dịch vụ sẽ xác nhận lịch hẹn qua điện thoại.", "Giữ máy trong giờ hành chính.")' />
-            }
-            else
-            {
-                <form id="booking" method="post" class="bg-white border border-gray-200 rounded-2xl p-8 space-y-5 shadow-sm scroll-mt-24">
-                    <h2 class="text-xl font-bold text-honda-dark">Đặt lịch hẹn</h2>
-                    <p class="text-sm text-gray-500">Báo giá sau khi kiểm tra — Xe Máy Hiếu Nga sẽ xác nhận trước khi thực hiện.</p>
-                    <div asp-validation-summary="All" class="text-red-600 text-sm"></div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Họ tên *</label>
-                        <input asp-for="CustomerName" class="lead-input" autocomplete="name" />
+                <div class="book-field">
+                    <label asp-for="Phone">Số điện thoại *</label>
+                    <input asp-for="Phone" class="book-input" autocomplete="tel" inputmode="tel" required />
+                    <span asp-validation-for="Phone" class="book-field-error"></span>
+                </div>
+
+                <div class="book-field">
+                    <label asp-for="MotorcycleModel">Dòng xe *</label>
+                    <input asp-for="MotorcycleModel" class="book-input" placeholder="VD: Vision, Wave, SH" required />
+                    <span asp-validation-for="MotorcycleModel" class="book-field-error"></span>
+                </div>
+
+                <div class="book-field">
+                    <label asp-for="ServiceType">Dịch vụ *</label>
+                    <select asp-for="ServiceType" class="book-input" required>
+                        @foreach (var option in Model.BookingServiceOptions)
+                        {
+                            <option value="@option">@option</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ServiceType" class="book-field-error"></span>
+                </div>
+
+                <div class="book-row">
+                    <div class="book-field">
+                        <label asp-for="PreferredDate">Ngày *</label>
+                        <input asp-for="PreferredDate" type="date" class="book-input" min="@minDate" required />
+                        <span asp-validation-for="PreferredDate" class="book-field-error"></span>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Số điện thoại *</label>
-                        <input asp-for="Phone" class="lead-input" autocomplete="tel" inputmode="tel" />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Dòng xe</label>
-                        <input asp-for="MotorcycleModel" placeholder="VD: Vision 2025" class="lead-input" />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Biển số</label>
-                        <input asp-for="LicensePlate" class="lead-input" />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Loại dịch vụ</label>
-                        <select asp-for="ServiceType" class="lead-input">
-                            @foreach (var option in Model.BookingServiceOptions)
+                    <div class="book-field">
+                        <label asp-for="PreferredTime">Giờ *</label>
+                        <select asp-for="PreferredTime" class="book-input" required>
+                            @foreach (var slot in Model.TimeSlots)
                             {
-                                <option value="@option">@option</option>
+                                <option value="@slot">@slot</option>
                             }
                         </select>
+                        <span asp-validation-for="PreferredTime" class="book-field-error"></span>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Ngày hẹn *</label>
-                        <input asp-for="PreferredDate" type="date" class="lead-input" />
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Ghi chú</label>
-                        <textarea asp-for="Notes" rows="2" placeholder="Mô tả thêm tình trạng xe hoặc dịch vụ cụ thể" class="lead-input"></textarea>
-                    </div>
-                    <button type="submit" class="btn-primary w-full touch-press">Đặt lịch</button>
-                </form>
-            }
-        </div>
+                </div>
+
+                <div class="book-field">
+                    <label asp-for="Notes">Ghi chú (tuỳ chọn)</label>
+                    <input asp-for="Notes" class="book-input" maxlength="500" placeholder="Ví dụ: xe rung khi tăng tốc" />
+                </div>
+
+                <button type="submit" class="btn-primary book-submit touch-press">Gửi lịch hẹn</button>
+                <p class="book-footnote">
+                    Hoặc gọi ngay <a href="@telHref" hx-boost="false">@site.Hotline</a>
+                </p>
+            </form>
+        }
     </div>
 </section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

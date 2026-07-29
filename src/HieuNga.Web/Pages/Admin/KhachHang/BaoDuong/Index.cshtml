@@ -1,51 +1,52 @@
 @page "/admin/khach-hang/bao-duong"
 @using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.BaoDuongIndexModel
+@{
+    string RangeClass(string value) =>
+        string.Equals(Model.Range, value, StringComparison.OrdinalIgnoreCase) ? "book-chip is-active" : "book-chip";
+}
 
 <partial name="Admin/Shared/_AdminPageHeader"
-         model='new AdminPageHeaderModel("Đặt bảo dưỡng")' />
+         model='new AdminPageHeaderModel(
+             "Lịch bảo dưỡng",
+             "Bảng lịch trong ngày — xác nhận / hoàn thành / hủy bằng một chạm.")' />
 
-<form method="get" class="admin-toolbar">
-    <div class="admin-toolbar-fields">
-        <div class="admin-field">
-            <label for="q" class="admin-label">Tìm kiếm</label>
-            <input id="q" name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="admin-input" />
-        </div>
-        <div class="admin-toolbar-actions">
-            <button type="submit" class="admin-btn admin-btn-secondary">Lọc</button>
-        </div>
+<div class="book-dash">
+    <div class="book-dash-card">
+        <p class="book-dash-label">Hôm nay</p>
+        <p class="book-dash-value">@Model.Board.Counts.Today</p>
+    </div>
+    <div class="book-dash-card">
+        <p class="book-dash-label">Chờ xác nhận</p>
+        <p class="book-dash-value book-dash-warn">@Model.Board.Counts.Waiting</p>
+    </div>
+    <div class="book-dash-card">
+        <p class="book-dash-label">Hoàn thành hôm nay</p>
+        <p class="book-dash-value book-dash-ok">@Model.Board.Counts.CompletedToday</p>
+    </div>
+    <div class="book-dash-card">
+        <p class="book-dash-label">Đã hủy</p>
+        <p class="book-dash-value">@Model.Board.Counts.Cancelled</p>
+    </div>
+</div>
+
+<form method="get" class="book-filters">
+    <div class="book-chips">
+        <a class="@RangeClass("today")" href="?range=today&q=@Uri.EscapeDataString(Model.Q ?? "")">Hôm nay</a>
+        <a class="@RangeClass("tomorrow")" href="?range=tomorrow&q=@Uri.EscapeDataString(Model.Q ?? "")">Ngày mai</a>
+        <a class="@RangeClass("week")" href="?range=week&q=@Uri.EscapeDataString(Model.Q ?? "")">Tuần này</a>
+        <a class="@RangeClass("all")" href="?range=all&q=@Uri.EscapeDataString(Model.Q ?? "")">Tất cả</a>
+    </div>
+    <div class="book-search">
+        <input type="hidden" name="range" value="@Model.Range" />
+        <input name="q" value="@Model.Q" class="admin-input" placeholder="Tìm tên, SĐT, xe..." />
+        <button type="submit" class="admin-btn admin-btn-secondary">Tìm</button>
     </div>
 </form>
 
-<div class="admin-card admin-table-wrap">
-    <div class="admin-table-scroll">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Khách hàng</th>
-                    <th>Dịch vụ</th>
-                    <th>Ngày</th>
-                    <th>Trạng thái</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Items)
-                {
-                    <tr>
-                        <td>
-                            <p class="admin-table-primary">@item.CustomerName</p>
-                            <p class="admin-table-secondary">@item.Phone</p>
-                        </td>
-                        <td>@item.ServiceType</td>
-                        <td>@item.PreferredDate.ToString("dd/MM/yyyy")</td>
-                        <td>@item.Status</td>
-                        <td class="text-right">
-                            <a href="/admin/khach-hang/bao-duong/@item.Id" class="admin-action admin-action-edit">Chi tiết</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+<div class="book-board">
+    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Mới", "new", Model.NewItems, Model.Range, Model.Q)' />
+    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Đã xác nhận", "confirmed", Model.ConfirmedItems, Model.Range, Model.Q)' />
+    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Hoàn thành", "done", Model.CompletedItems, Model.Range, Model.Q)' />
+    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Đã hủy", "cancel", Model.CancelledItems, Model.Range, Model.Q)' />
 </div>

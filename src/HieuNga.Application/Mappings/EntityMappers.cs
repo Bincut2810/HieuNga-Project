@@ -100,7 +100,7 @@ public static class EntityMappers
             return new HomepageHeroDto("", null, false, []);
 
         var first = banners[0];
-        var slides = banners.Select(b => new HeroSlideDto(b.Id, b.ImageUrl)).ToList();
+        var slides = banners.Select(b => new HeroSlideDto(b.ImageUrl)).ToList();
         return new HomepageHeroDto(first.Title, first.Subtitle, first.IsActive, slides);
     }
 

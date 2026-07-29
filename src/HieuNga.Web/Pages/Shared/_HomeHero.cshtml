@@ -3,7 +3,7 @@
 @{
     var hero = Model;
     var slides = hero.Slides ?? Array.Empty<HeroSlideDto>();
-    var showHero = hero.Enabled && slides.Count > 0;
+    if (!hero.Enabled || slides.Count == 0) { return; }
     var multi = slides.Count > 1;
     var alt = string.IsNullOrWhiteSpace(hero.Title) ? "Banner trang chủ" : hero.Title;
 }
@@ -12,43 +12,44 @@
          aria-roledescription="carousel"
          aria-label="Banner trang chủ"
          data-home-hero
-         data-interval="6000"
-         tabindex="0">
-    @if (showHero)
-    {
-        <div class="home-hero-track" data-hero-track>
-            @{ var si = 0; }
-            @foreach (var slide in slides)
-            {
-                var isFirst = si == 0;
-                <article class="home-hero-slide @(isFirst ? "is-active" : null)"
-                         data-hero-slide
-                         id="home-hero-slide-@si"
-                         role="group"
-                         aria-roledescription="slide"
-                         aria-label="Ảnh @(si + 1) / @slides.Count"
-                         aria-hidden="@(isFirst ? "false" : "true")">
-                    <div class="home-hero-media">
-                        <img src="@slide.ImageUrl"
-                             alt="@alt"
-                             class="home-hero-img img-media"
-                             width="1920"
-                             height="720"
-                             fetchpriority="@(isFirst ? "high" : "low")"
-                             loading="@(isFirst ? "eager" : "lazy")"
-                             decoding="async" />
-                        <div class="home-hero-shade" aria-hidden="true"></div>
-                    </div>
-                </article>
-                si++;
-            }
-        </div>
+         data-interval="5000"
+         tabindex="-1">
 
-        <div class="home-hero-content">
+    @* ── Slide track ── *@
+    <div class="home-hero-track" data-hero-track>
+
+        @{ var si = 0; }
+        @foreach (var slide in slides)
+        {
+            var isFirst = si == 0;
+            <article class="home-hero-slide @(isFirst ? "is-active" : null)"
+                     data-hero-slide
+                     id="home-hero-slide-@si"
+                     role="group"
+                     aria-roledescription="slide"
+                     aria-label="Ảnh @(si + 1) / @slides.Count"
+                     aria-current="@(isFirst ? "true" : null)">
+                <div class="home-hero-media">
+                    <img src="@slide.ImageUrl"
+                         alt="@alt"
+                         class="home-hero-img"
+                         width="1920"
+                         height="@(si == 0 ? "720" : "720")"
+                         fetchpriority="@(isFirst ? "high" : "low")"
+                         loading="@(isFirst ? "eager" : "lazy")"
+                         decoding="async" />
+                    <div class="home-hero-shade" aria-hidden="true"></div>
+                </div>
+            </article>
+            si++;
+        }
+
+        @* Overlay text *@
+        <div class="home-hero-content" aria-hidden="true">
             <div class="home-hero-inner">
                 @if (!string.IsNullOrWhiteSpace(hero.Title))
                 {
-                    <h1 class="home-hero-title">@hero.Title</h1>
+                    <p class="home-hero-title">@hero.Title</p>
                 }
                 @if (!string.IsNullOrWhiteSpace(hero.Subtitle))
                 {
@@ -57,28 +58,27 @@
             </div>
         </div>
 
+        @* Arrow navigation — flanking inside track edges *@
         @if (multi)
         {
-            <div class="home-hero-controls">
-                <button type="button" class="home-hero-nav" data-hero-prev aria-controls="home-hero-slide-0" aria-label="Ảnh trước">
-                    <span aria-hidden="true">‹</span>
+            <div class="home-hero-arrows" aria-hidden="true">
+                <button type="button" class="home-hero-nav" data-hero-prev aria-label="Ảnh trước">
+                    <span>&#8249;</span>
                 </button>
-                <div class="home-hero-dots" data-hero-dots role="tablist" aria-label="Chọn ảnh"></div>
-                <button type="button" class="home-hero-nav" data-hero-next aria-controls="home-hero-slide-0" aria-label="Ảnh sau">
-                    <span aria-hidden="true">›</span>
+                <button type="button" class="home-hero-nav" data-hero-next aria-label="Ảnh sau">
+                    <span>&#8250;</span>
                 </button>
             </div>
-            <div class="sr-only" aria-live="polite" data-hero-live>Ảnh 1 / @slides.Count</div>
         }
-    }
-    else
+    </div>
+
+    @* ── Dot indicators — BELOW the image, never overlapping ── *@
+    @if (multi)
     {
-        <div class="home-hero-fallback">
-            <div class="home-hero-inner home-hero-fallback-inner">
-                <p class="section-eyebrow">Honda HEAD · Đà Nẵng</p>
-                <h1 class="home-hero-title text-honda-dark">Xe Máy Hiếu Nga</h1>
-                <p class="home-hero-sub text-gray-600 max-w-2xl">Showroom Honda hiện đại — mua xe chính hãng và dịch vụ HEAD.</p>
-            </div>
-        </div>
+        <div class="home-hero-controls"
+             role="tablist"
+             aria-label="Chọn ảnh"
+             data-hero-dots></div>
+        <div class="sr-only" aria-live="polite" aria-atomic="true" data-hero-live></div>
     }
 </section>

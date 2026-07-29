@@ -9,13 +9,10 @@ public class BannerHeroDtoTests
     [Fact]
     public void ToHomepageHero_Maps_Slides_And_Shared_Text()
     {
-        var id1 = Guid.NewGuid();
-        var id2 = Guid.NewGuid();
         var banners = new List<Banner>
         {
             new()
             {
-                Id = id1,
                 Title = "Hero title",
                 Subtitle = "Hero sub",
                 ImageUrl = "/a.jpg",
@@ -24,7 +21,6 @@ public class BannerHeroDtoTests
             },
             new()
             {
-                Id = id2,
                 Title = "Hero title",
                 Subtitle = "Hero sub",
                 ImageUrl = "/b.jpg",
@@ -39,9 +35,7 @@ public class BannerHeroDtoTests
         Assert.Equal("Hero sub", hero.Subtitle);
         Assert.True(hero.Enabled);
         Assert.Equal(2, hero.Slides.Count);
-        Assert.Equal(id1, hero.Slides[0].Id);
         Assert.Equal("/a.jpg", hero.Slides[0].ImageUrl);
-        Assert.Equal(id2, hero.Slides[1].Id);
         Assert.Equal("/b.jpg", hero.Slides[1].ImageUrl);
     }
 

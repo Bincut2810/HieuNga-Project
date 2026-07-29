@@ -9,7 +9,7 @@ public record SeoMetadataDto(
     string? OgImageUrl,
     string? CanonicalUrl);
 
-public record HeroSlideDto(Guid Id, string ImageUrl);
+public record HeroSlideDto(string ImageUrl);
 
 public record HomepageHeroDto(
     string Title,
@@ -78,14 +78,33 @@ public record CreateBookingDto(
 public record CreateMaintenanceBookingDto(
     string CustomerName,
     string Phone,
-    string? Email,
-    string? MotorcycleModel,
-    string? LicensePlate,
+    string MotorcycleModel,
     string ServiceType,
     DateTime PreferredDate,
-    string? PreferredTime,
+    string PreferredTime,
+    string? Notes);
+
+public record MaintenanceBookingDto(
+    Guid Id,
+    string CustomerName,
+    string Phone,
+    string MotorcycleModel,
+    string ServiceType,
+    DateTime PreferredDate,
+    string PreferredTime,
     string? Notes,
-    Guid? BranchId);
+    BookingStatus Status,
+    DateTime CreatedAt);
+
+public record MaintenanceBoardDto(
+    IReadOnlyList<MaintenanceBookingDto> Items,
+    MaintenanceBoardCounts Counts);
+
+public record MaintenanceBoardCounts(
+    int Today,
+    int Waiting,
+    int CompletedToday,
+    int Cancelled);
 
 public record CreateInstallmentRequestDto(
     string CustomerName,

@@ -24,6 +24,10 @@
     @if (d.Hero.Enabled && d.Hero.Slides.Count > 0)
     {
         <link rel="preload" as="image" href="@d.Hero.Slides[0].ImageUrl" fetchpriority="high" />
+        @if (d.Hero.Slides.Count > 1)
+        {
+            <link rel="preload" as="image" href="@d.Hero.Slides[1].ImageUrl" fetchpriority="low" />
+        }
     }
 }
 
