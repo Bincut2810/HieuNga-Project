@@ -1179,76 +1179,23 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 30%;
+  object-position: center center;
   display: block;
 }
 
-/* Gradient shade */
+/* Gradient shade — light bottom scrim only, lets CMS images breathe */
 .home-hero-shade {
-  --hero-overlay: 0.6;
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(10, 10, 10, calc(var(--hero-overlay) * 1.1)) 0%,
-      rgba(10, 10, 10, calc(var(--hero-overlay) * 0.4)) 55%,
-      transparent 100%
-    ),
-    linear-gradient(
-      0deg,
-      rgba(10, 10, 10, calc(var(--hero-overlay) * 0.75)) 0%,
-      transparent 45%
-    );
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.1) 35%,
+    transparent 65%
+  );
 }
 
-/* Overlay text — balanced vertical centering inside image */
-.home-hero-content {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  pointer-events: none;
-  color: #fff;
-  text-align: left;
-}
-.home-hero-inner {
-  width: 100%;
-  max-width: var(--container-max, 80rem);
-  margin-inline: auto;
-  padding-inline: clamp(1.25rem, 5vw, 3rem);
-  pointer-events: auto;
-}
-.home-hero-title {
-  margin: 0;
-  font-size: clamp(1.75rem, 4.5vw, 3.5rem);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.12;
-  max-width: 18ch;
-  color: #fff;
-  text-wrap: balance;
-}
-.home-hero-sub {
-  margin-top: 0.75rem;
-  font-size: clamp(0.95rem, 2vw, 1.175rem);
-  color: rgba(255, 255, 255, 0.85);
-  max-width: 34rem;
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-@media (max-width: 767px) {
-  .home-hero-title {
-    font-size: clamp(1.5rem, 6.5vw, 2.25rem);
-    max-width: 15ch;
-  }
-  .home-hero-sub {
-    font-size: 0.9375rem;
-  }
-}
 
 /* Arrow navigation — flanking the track, outside image branding area */
 .home-hero-arrows {
@@ -1330,10 +1277,9 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
 }
 
 .home-quick {
-  margin-top: -1.75rem;
   position: relative;
   z-index: 4;
-  padding-bottom: 0.5rem;
+  padding-block: 0.75rem;
 }
 .home-quick-grid {
   display: grid;

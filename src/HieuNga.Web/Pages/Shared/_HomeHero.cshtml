@@ -5,19 +5,17 @@
     var slides = hero.Slides ?? Array.Empty<HeroSlideDto>();
     if (!hero.Enabled || slides.Count == 0) { return; }
     var multi = slides.Count > 1;
-    var alt = string.IsNullOrWhiteSpace(hero.Title) ? "Banner trang chủ" : hero.Title;
+    var alt = string.IsNullOrWhiteSpace(hero.Title) ? "Banner trang chủ Xe Máy Hiếu Nga" : hero.Title;
 }
 
 <section class="home-hero"
          aria-roledescription="carousel"
-         aria-label="Banner trang chủ"
+         aria-label="@alt"
          data-home-hero
          data-interval="5000"
          tabindex="-1">
 
-    @* ── Slide track ── *@
     <div class="home-hero-track" data-hero-track>
-
         @{ var si = 0; }
         @foreach (var slide in slides)
         {
@@ -33,8 +31,7 @@
                     <img src="@slide.ImageUrl"
                          alt="@alt"
                          class="home-hero-img"
-                         width="1920"
-                         height="@(si == 0 ? "720" : "720")"
+                         width="1920" height="720"
                          fetchpriority="@(isFirst ? "high" : "low")"
                          loading="@(isFirst ? "eager" : "lazy")"
                          decoding="async" />
@@ -44,41 +41,18 @@
             si++;
         }
 
-        @* Overlay text *@
-        <div class="home-hero-content" aria-hidden="true">
-            <div class="home-hero-inner">
-                @if (!string.IsNullOrWhiteSpace(hero.Title))
-                {
-                    <p class="home-hero-title">@hero.Title</p>
-                }
-                @if (!string.IsNullOrWhiteSpace(hero.Subtitle))
-                {
-                    <p class="home-hero-sub">@hero.Subtitle</p>
-                }
-            </div>
-        </div>
-
-        @* Arrow navigation — flanking inside track edges *@
         @if (multi)
         {
             <div class="home-hero-arrows" aria-hidden="true">
-                <button type="button" class="home-hero-nav" data-hero-prev aria-label="Ảnh trước">
-                    <span>&#8249;</span>
-                </button>
-                <button type="button" class="home-hero-nav" data-hero-next aria-label="Ảnh sau">
-                    <span>&#8250;</span>
-                </button>
+                <button type="button" class="home-hero-nav" data-hero-prev aria-label="Ảnh trước">&#8249;</button>
+                <button type="button" class="home-hero-nav" data-hero-next aria-label="Ảnh sau">&#8250;</button>
             </div>
         }
     </div>
 
-    @* ── Dot indicators — BELOW the image, never overlapping ── *@
     @if (multi)
     {
-        <div class="home-hero-controls"
-             role="tablist"
-             aria-label="Chọn ảnh"
-             data-hero-dots></div>
+        <div class="home-hero-controls" role="tablist" aria-label="Chọn ảnh" data-hero-dots></div>
         <div class="sr-only" aria-live="polite" aria-atomic="true" data-hero-live></div>
     }
 </section>
