@@ -42,9 +42,13 @@
                     </h3>
                     <span class="book-badge book-badge-@Model.Tone">@StatusLabel(b.Status)</span>
                 </div>
-                <a class="book-card-phone" href="tel:@b.Phone" data-ride-call data-phone="@b.Phone">@b.Phone</a>
+                <a class="book-card-phone ride-card-phone" href="tel:@b.Phone"
+                   data-ride-call data-phone="@b.Phone">@b.Phone</a>
                 <p class="ride-card-bike">@(b.MotorcycleName ?? "Chưa chọn xe")</p>
-                <p class="ride-card-when">@DayLabel(b.PreferredDate) · @b.PreferredTime</p>
+                <p class="ride-card-when">
+                    <span class="ride-card-day">@DayLabel(b.PreferredDate)</span>
+                    <span class="ride-card-time">@b.PreferredTime</span>
+                </p>
                 <div class="book-card-actions">
                     <a class="book-action book-action-call" href="tel:@b.Phone"
                        data-ride-call data-phone="@b.Phone">Gọi</a>

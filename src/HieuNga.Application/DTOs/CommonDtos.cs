@@ -100,6 +100,9 @@ public record TestRideBoardCounts(
     int TodayConfirmed,
     int TodayCompleted);
 
+/// <summary>Result of creating a test-ride booking (idempotent within 30 minutes).</summary>
+public record CreateTestRideResult(Guid Id, bool IsDuplicate);
+
 public record CreateMaintenanceBookingDto(
     string CustomerName,
     string Phone,

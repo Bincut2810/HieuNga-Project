@@ -288,7 +288,7 @@
     if (target.id !== 'main-content') return;
 
     syncTitleFromResponse(e.detail.xhr);
-    bootDetailPageModules(target).then(() => {
+    bootPageModules(target).then(() => {
       initPage(target);
       if (!prefersReducedMotion) {
         target.classList.add('page-enter');
@@ -297,7 +297,7 @@
     });
   }
 
-  /** HTMX boost strips/ignores inline scripts — load detail modules when needed. */
+  /** HTMX boost strips/ignores @section Scripts (outside #main-content) — load page modules when needed. */
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
       if (src.indexOf('detail-viewer') >= 0 && typeof window.registerMotorcycleDetailUi === 'function') {
@@ -305,6 +305,10 @@
         return;
       }
       if (src.indexOf('motorcycle-media-viewer') >= 0 && typeof window.bootMotorcycleMediaViewer === 'function') {
+        resolve();
+        return;
+      }
+      if (src.indexOf('test-ride-booking') >= 0 && typeof window.bootTestRideBooking === 'function') {
         resolve();
         return;
       }
@@ -320,6 +324,10 @@
       s.onerror = () => reject(new Error('Failed to load ' + src));
       document.body.appendChild(s);
     });
+  }
+
+  function bootPageModules(root) {
+    return Promise.all([bootDetailPageModules(root), bootTestRideBookingModule(root)]);
   }
 
   function bootDetailPageModules(root) {
@@ -339,6 +347,21 @@
       })
       .catch((err) => {
         console.warn('Detail module load:', err);
+      });
+  }
+
+  function bootTestRideBookingModule(root) {
+    const scope = root || document;
+    if (!scope.querySelector('[data-trb-form]')) return Promise.resolve();
+
+    return loadScriptOnce('/js/test-ride-booking.js')
+      .then(() => {
+        if (typeof window.bootTestRideBooking === 'function') {
+          try { window.bootTestRideBooking(); } catch (_) { /* already booted */ }
+        }
+      })
+      .catch((err) => {
+        console.warn('Test-ride booking module load:', err);
       });
   }
 
@@ -368,7 +391,7 @@
   document.body.addEventListener('htmx:historyRestore', () => {
     const main = document.getElementById('main-content');
     if (main) {
-      bootDetailPageModules(main).then(() => initPage(main));
+      bootPageModules(main).then(() => initPage(main));
     }
     updateNavActive();
     requestAnimationFrame(scrollAfterNavigation);
@@ -428,5 +451,11 @@
   window.addEventListener('resize', onParallaxScroll, { passive: true });
   onScroll();
 
-  document.addEventListener('DOMContentLoaded', () => initPage(document));
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      bootPageModules(document).then(() => initPage(document));
+    });
+  } else {
+    bootPageModules(document).then(() => initPage(document));
+  }
 })();

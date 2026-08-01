@@ -2218,26 +2218,55 @@ button.admin-btn-danger:hover {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  min-height: 1.5rem;
-  padding: 0.15rem 0.5rem;
+  min-height: 1.65rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  border: 1px solid transparent;
 }
-.book-badge-new { background: #fef9c3; color: #a16207; }
-.book-badge-confirmed { background: #dbeafe; color: #1d4ed8; }
-.book-badge-done { background: #d1fae5; color: #047857; }
-.book-badge-cancel { background: #f3f4f6; color: #6b7280; }
+.book-badge-new {
+  background: #fef08a;
+  color: #854d0e;
+  border-color: #fde047;
+}
+.book-badge-confirmed {
+  background: #bfdbfe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+.book-badge-done {
+  background: #a7f3d0;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+.book-badge-cancel {
+  background: #e5e7eb;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
 .book-card-phone {
-  display: inline-block;
-  margin-bottom: 0.45rem;
-  font-size: 1rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  margin-bottom: 0.35rem;
+  padding: 0.15rem 0;
+  font-size: 1.05rem;
+  font-weight: 800;
   color: #E40521;
   text-decoration: none;
+  letter-spacing: 0.01em;
 }
 .book-card-phone:hover { text-decoration: underline; }
+.ride-card-phone {
+  border-radius: 0.4rem;
+}
+.ride-card-phone:focus-visible {
+  outline: 2px solid #E40521;
+  outline-offset: 2px;
+}
 .book-card-line {
   margin: 0 0 0.25rem;
   font-size: 0.8125rem;
@@ -2266,8 +2295,8 @@ button.admin-btn-danger:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.35rem;
-  padding: 0.35rem 0.75rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.85rem;
   border-radius: 0.5rem;
   border: 1px solid transparent;
   font-size: 0.8125rem;
@@ -2281,6 +2310,11 @@ button.admin-btn-danger:hover {
   background: #fff;
   border-color: #E40521;
   color: #E40521;
+  min-width: 4.25rem;
+  box-shadow: inset 0 0 0 1px rgba(228, 5, 33, 0.08);
+}
+.book-action-call:hover {
+  background: #fff1f2;
 }
 .book-action-confirm {
   background: #1d4ed8;
@@ -2427,16 +2461,28 @@ button.admin-btn-danger:hover {
 }
 
 .ride-card-bike {
-  margin: 0 0 0.2rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  margin: 0 0 0.15rem;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: #111827;
+  line-height: 1.3;
 }
 .ride-card-when {
   margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
   color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.ride-card-day { color: #6b7280; }
+.ride-card-time {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.01em;
 }
 .ride-detail-h {
   margin: 0 0 0.65rem;

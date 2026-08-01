@@ -83,7 +83,17 @@ public class LichHenIndexModel(IBookingService bookingService) : PageModel
     public async Task OnGetAsync(CancellationToken ct)
     {
         ViewData["Title"] = "Lịch xem xe";
-        // One query: load all (optional search), client tabs filter Today/Tomorrow/All.
+        await LoadBoardAsync(ct);
+    }
+
+    public async Task<IActionResult> OnGetRefreshAsync(CancellationToken ct)
+    {
+        await LoadBoardAsync(ct);
+        return Partial("Admin/KhachHang/LichHen/_BoardRefresh", this);
+    }
+
+    private async Task LoadBoardAsync(CancellationToken ct)
+    {
         Board = await bookingService.GetTestRideBoardAsync("all", Q, ct);
         if (string.IsNullOrWhiteSpace(Range)
             || Range is not ("today" or "tomorrow" or "all"))

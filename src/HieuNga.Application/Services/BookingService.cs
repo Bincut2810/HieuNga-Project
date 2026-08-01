@@ -14,15 +14,35 @@ public class BookingService(
     IBranchRepository branchRepo,
     IUnitOfWork unitOfWork) : IBookingService
 {
-    public async Task<Guid> CreateTestRideBookingAsync(CreateBookingDto dto, CancellationToken ct = default)
+    public async Task<CreateTestRideResult> CreateTestRideBookingAsync(CreateBookingDto dto, CancellationToken ct = default)
     {
+        var phone = dto.Phone.Trim();
+        var day = dto.PreferredDate.Date;
+        var dayEnd = day.AddDays(1);
+        var since = DateTime.UtcNow.AddMinutes(-30);
+
+        var recent = await bookingRepo.FindAsync(
+            b => !b.IsDeleted
+                 && b.Type == BookingType.TestRide
+                 && b.Status != BookingStatus.Cancelled
+                 && b.Phone == phone
+                 && b.PreferredDate >= day
+                 && b.PreferredDate < dayEnd
+                 && b.MotorcycleId == dto.MotorcycleId
+                 && b.CreatedAt >= since,
+            ct);
+
+        var existing = recent.OrderByDescending(b => b.CreatedAt).FirstOrDefault();
+        if (existing is not null)
+            return new CreateTestRideResult(existing.Id, IsDuplicate: true);
+
         var booking = new Booking
         {
             Type = BookingType.TestRide,
             CustomerName = dto.CustomerName.Trim(),
-            Phone = dto.Phone.Trim(),
+            Phone = phone,
             Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim(),
-            PreferredDate = dto.PreferredDate.Date,
+            PreferredDate = day,
             PreferredTime = dto.PreferredTime?.Trim(),
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
             MotorcycleId = dto.MotorcycleId,
@@ -32,7 +52,7 @@ public class BookingService(
 
         await bookingRepo.AddAsync(booking, ct);
         await unitOfWork.SaveChangesAsync(ct);
-        return booking.Id;
+        return new CreateTestRideResult(booking.Id, IsDuplicate: false);
     }
 
     public async Task<Guid> CreateMaintenanceBookingAsync(CreateMaintenanceBookingDto dto, CancellationToken ct = default)
