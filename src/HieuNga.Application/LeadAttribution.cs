@@ -60,6 +60,19 @@ public static class LeadAttribution
         return bits.Count == 0 ? null : string.Join(" · ", bits);
     }
 
+    /// <summary>Human-readable note without the [lead …] tag.</summary>
+    public static string? StripTag(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        if (!notes.StartsWith(TagPrefix, StringComparison.Ordinal))
+            return notes.Trim();
+
+        var end = notes.IndexOf(']');
+        if (end < 0) return notes.Trim();
+        var rest = notes[(end + 1)..].Trim();
+        return string.IsNullOrWhiteSpace(rest) ? null : rest;
+    }
+
     public static string PrettySource(string source) => source.ToLowerInvariant() switch
     {
         "homepage" or "home" => "Trang chủ",

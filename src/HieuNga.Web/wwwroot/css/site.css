@@ -2726,4 +2726,83 @@ input[type="radio"]:focus-visible {
   .book-row { grid-template-columns: 1fr; }
 }
 
+/* —— Test Ride V2 success modal + submit spinner —— */
+.trb-spinner {
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-left: 0.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: trb-spin 0.7s linear infinite;
+}
+@keyframes trb-spin { to { transform: rotate(360deg); } }
+.trb-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+.trb-modal[hidden] { display: none !important; }
+.trb-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.55);
+}
+.trb-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 24rem);
+  padding: 1.75rem 1.35rem 1.5rem;
+  border-radius: 1.15rem;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+.trb-modal-mark {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.85rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 1.35rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.trb-modal-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--honda-dark);
+}
+.trb-modal-text {
+  margin: 0 0 1.25rem;
+  color: var(--honda-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.trb-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.trb-modal-actions .btn-primary,
+.trb-modal-actions .btn-secondary {
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .trb-spinner { animation: none; border-top-color: rgba(255,255,255,0.8); }
+}
+
+
 

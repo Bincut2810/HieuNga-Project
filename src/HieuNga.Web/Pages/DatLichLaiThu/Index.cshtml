@@ -3,124 +3,130 @@
 @using HieuNga.Web.Filters
 @{
     var site = SiteSettingsViewData.Get(ViewData);
-    ViewData["VehicleChangeUrl"] = "/xe?from=dat-lich";
+    var telHref = SiteSettingsViewData.TelHref(site);
+    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
+    var selectedId = Model.MotorcycleId;
+    var selectedSlug = Model.SelectedMotorcycle?.Slug ?? "";
 }
 
-<section class="lead-page">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 pb-4">
-        <nav class="text-sm text-gray-400 mb-4" aria-label="Breadcrumb">
-            <a href="/" class="hover:text-honda-red transition focus-ring rounded">Trang chủ</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <span class="text-honda-dark font-medium">Đặt lịch xem xe</span>
-        </nav>
-        <p class="section-eyebrow">Trải nghiệm showroom</p>
-        <h1 class="section-title">Đặt lịch xem / lái thử</h1>
-        <p class="section-subtitle max-w-2xl">Chọn chi nhánh, thời gian và để lại thông tin — xác nhận miễn phí tại HEAD Hiếu Nga.</p>
-    </div>
+<section class="book-page" data-trb-page data-hotline="@site.Hotline" data-tel="@telHref">
+    <div class="book-shell">
+        <header class="book-header">
+            <p class="section-eyebrow">Đặt lịch</p>
+            <h1 class="book-title">Đặt lịch xem xe</h1>
+            <p class="book-sub">Chỉ mất khoảng 30 giây — showroom sẽ gọi xác nhận.</p>
+        </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 md:pb-16">
-        @if (Model.Success)
-        {
-            <partial name="_LeadSuccess" model='("Đặt lịch thành công!", "Chúng tôi đã nhận lịch xem xe của bạn.", "Showroom sẽ gọi xác nhận trước giờ hẹn.")' />
-        }
-        else
-        {
-            <div class="grid lg:grid-cols-12 gap-8 lg:gap-10">
-                <div class="lg:col-span-5 space-y-6">
-                    @if (Model.SelectedMotorcycle is not null)
+        <form id="trb-form" class="book-form" method="post" novalidate
+              data-trb-form data-handler="?handler=Book">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SourceField" value="@Model.LeadSource" />
+
+            <div class="book-error" data-trb-errors hidden role="alert"></div>
+
+            <div class="book-field">
+                <label for="CustomerName">Họ tên *</label>
+                <input id="CustomerName" name="CustomerName" class="book-input" autocomplete="name"
+                       value="@Model.CustomerName" required maxlength="100" />
+            </div>
+
+            <div class="book-field">
+                <label for="Phone">Số điện thoại *</label>
+                <input id="Phone" name="Phone" class="book-input" autocomplete="tel" inputmode="tel"
+                       value="@Model.Phone" required placeholder="09…" />
+            </div>
+
+            <div class="book-field">
+                <label for="MotorcycleId">Xe muốn xem *</label>
+                <select id="MotorcycleId" name="MotorcycleId" class="book-input" data-trb-moto required>
+                    <option value="">— Chọn mẫu xe —</option>
+                    @foreach (var bike in Model.MotorcycleOptions)
                     {
-                        <partial name="_LeadVehicleCard" model="Model.SelectedMotorcycle" />
+                        if (selectedId == bike.Id)
+                        {
+                            <option value="@bike.Id" data-slug="@bike.Slug" selected>@bike.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@bike.Id" data-slug="@bike.Slug">@bike.Name</option>
+                        }
                     }
-                    else
-                    {
-                        <div class="lead-form-card">
-                            <h2 class="font-bold text-honda-dark">Chưa chọn xe?</h2>
-                            <p class="text-sm text-gray-500 mt-2">Bạn vẫn có thể đặt lịch — hoặc chọn mẫu trước.</p>
-                            <a href="/xe" class="btn-secondary inline-flex mt-4 touch-press">Xem danh mục xe</a>
-                        </div>
-                    }
-                    <partial name="_LeadTrust" />
-                    @{
-                        ViewData["BranchBookUrl"] = "/dat-lich-lai-thu?source=test-ride";
-                        ViewData["BranchBookLabel"] = "Đặt lịch hẹn";
-                    }
-                    <partial name="_BranchCards" model="Model.Branches" />
+                </select>
+                @if (Model.SelectedMotorcycle is not null)
+                {
+                    <p class="book-footnote" style="text-align:left;margin-top:0.4rem;" data-trb-moto-hint>
+                        Đang chọn: <strong data-trb-moto-name>@Model.SelectedMotorcycle.Name</strong>
+                        · <a href="/xe/@Model.SelectedMotorcycle.Slug" data-trb-moto-link>Xem chi tiết</a>
+                    </p>
+                }
+                else
+                {
+                    <p class="book-footnote" style="text-align:left;margin-top:0.4rem;" data-trb-moto-hint hidden>
+                        Đang chọn: <strong data-trb-moto-name></strong>
+                        · <a href="#" data-trb-moto-link>Xem chi tiết</a>
+                    </p>
+                }
+            </div>
+
+            <div class="book-row">
+                <div class="book-field">
+                    <label for="PreferredDate">Ngày *</label>
+                    <input id="PreferredDate" name="PreferredDate" type="date" class="book-input"
+                           value="@Model.PreferredDate.ToString("yyyy-MM-dd")" min="@minDate" required />
                 </div>
-
-                <div class="lg:col-span-7">
-                    <div class="lead-form-card">
-                        <h2 class="text-xl font-bold text-honda-dark">Thông tin đặt lịch</h2>
-                        <p class="text-sm text-gray-500 mt-1">Giờ làm việc: @site.OpeningHours</p>
-
-                        <form method="post" class="mt-6 space-y-4" novalidate>
-                            <div asp-validation-summary="All" class="text-red-600 text-sm" role="alert"></div>
-                            <input type="hidden" asp-for="MotorcycleId" />
-                            <input type="hidden" asp-for="SourceField" value="@Model.LeadSource" />
-
-                            <div class="grid sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label asp-for="CustomerName" class="block text-sm font-medium mb-1">Họ tên *</label>
-                                    <input asp-for="CustomerName" autocomplete="name" class="lead-input" required />
-                                </div>
-                                <div>
-                                    <label asp-for="Phone" class="block text-sm font-medium mb-1">Số điện thoại *</label>
-                                    <input asp-for="Phone" autocomplete="tel" inputmode="tel" class="lead-input" required />
-                                </div>
-                            </div>
-                            <div>
-                                <label asp-for="Email" class="block text-sm font-medium mb-1">Email</label>
-                                <input asp-for="Email" type="email" autocomplete="email" class="lead-input" />
-                            </div>
-
-                            @if (Model.Branches.Any())
+                <div class="book-field">
+                    <label for="PreferredTime">Khung giờ *</label>
+                    <select id="PreferredTime" name="PreferredTime" class="book-input" required>
+                        @foreach (var slot in Model.TimeSlots)
+                        {
+                            if (slot == Model.PreferredTime)
                             {
-                                <div>
-                                    <label asp-for="BranchId" class="block text-sm font-medium mb-1">Chi nhánh *</label>
-                                    <select asp-for="BranchId" class="lead-input" required>
-                                        @foreach (var b in Model.Branches)
-                                        {
-                                            <option value="@b.Id">@b.Name — @b.Address</option>
-                                        }
-                                    </select>
-                                </div>
+                                <option value="@slot" selected>@slot</option>
                             }
-
-                            <div class="grid sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label asp-for="PreferredDate" class="block text-sm font-medium mb-1">Ngày mong muốn *</label>
-                                    <input asp-for="PreferredDate" type="date" class="lead-input" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
-                                </div>
-                                <div>
-                                    <label asp-for="PreferredTime" class="block text-sm font-medium mb-1">Giờ</label>
-                                    <select asp-for="PreferredTime" class="lead-input">
-                                        @foreach (var t in DatLichLaiThu.IndexModel.TimeSlots)
-                                        {
-                                            <option value="@t">@t</option>
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label asp-for="Notes" class="block text-sm font-medium mb-1">Ghi chú</label>
-                                <textarea asp-for="Notes" rows="3" class="lead-input" placeholder="VD: Muốn xem màu đỏ, mang theo CMND…"></textarea>
-                            </div>
-
-                            <div class="lead-confirm-card" aria-label="Tóm tắt đặt lịch">
-                                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Xác nhận nhanh</p>
-                                <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                                    <li>Xe: <strong>@(Model.SelectedMotorcycle?.Name ?? "Để tư vấn viên gợi ý")</strong></li>
-                                    <li>Hình thức: Xem / lái thử tại showroom</li>
-                                    <li>Phản hồi: trong 30 phút (giờ hành chính)</li>
-                                </ul>
-                            </div>
-
-                            <p class="text-xs text-gray-400">Thông tin chỉ dùng để xác nhận lịch hẹn tại Xe Máy Hiếu Nga.</p>
-                            <button type="submit" class="btn-primary w-full touch-press justify-center">Xác nhận đặt lịch</button>
-                        </form>
-                    </div>
+                            else
+                            {
+                                <option value="@slot">@slot</option>
+                            }
+                        }
+                    </select>
                 </div>
             </div>
-        }
+
+            <div class="book-field">
+                <label for="Notes">Ghi chú (tuỳ chọn)</label>
+                <input id="Notes" name="Notes" class="book-input" maxlength="500"
+                       value="@Model.Notes" placeholder="VD: Muốn xem màu đỏ" />
+            </div>
+
+            <button type="submit" class="btn-primary book-submit touch-press" data-trb-submit>
+                <span data-trb-submit-label>Gửi lịch xem xe</span>
+                <span class="trb-spinner" data-trb-spinner hidden aria-hidden="true"></span>
+            </button>
+
+            <p class="book-footnote">
+                Hoặc gọi ngay <a href="@telHref" hx-boost="false">@site.Hotline</a>
+            </p>
+        </form>
+    </div>
+
+    <div class="trb-modal" data-trb-modal hidden>
+        <div class="trb-modal-backdrop" data-trb-modal-close></div>
+        <div class="trb-modal-card" role="dialog" aria-modal="true" aria-labelledby="trb-success-title">
+            <div class="trb-modal-mark" aria-hidden="true">✓</div>
+            <h2 id="trb-success-title" class="trb-modal-title">Đã gửi lịch thành công</h2>
+            <p class="trb-modal-text">
+                Cảm ơn bạn. Xe Máy Hiếu Nga đã nhận lịch xem xe.
+                Nhân viên sẽ gọi xác nhận trong giờ hành chính.
+            </p>
+            <div class="trb-modal-actions">
+                <a href="@telHref" hx-boost="false" class="btn-primary touch-press">Gọi ngay</a>
+                <a href="@(string.IsNullOrEmpty(selectedSlug) ? "/xe" : $"/xe/{selectedSlug}")"
+                   class="btn-secondary touch-press" data-trb-back>Về trang xe</a>
+            </div>
+        </div>
     </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/test-ride-booking.js" asp-append-version="true"></script>
+}

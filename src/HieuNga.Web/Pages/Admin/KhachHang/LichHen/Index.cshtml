@@ -1,57 +1,72 @@
 @page "/admin/khach-hang/lich-hen"
 @using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.LichHenIndexModel
+@{
+    var c = Model.Board.Counts;
+    var activeRange = Model.Range is "tomorrow" or "all" ? Model.Range : "today";
+}
 
 <partial name="Admin/Shared/_AdminPageHeader"
-         model='new AdminPageHeaderModel("Lịch hẹn")' />
+         model='new AdminPageHeaderModel(
+             "Lịch xem xe",
+             "Bảng tiếp khách — ưu tiên hôm nay.")' />
 
-<form method="get" class="admin-toolbar">
-    <div class="admin-toolbar-fields">
-        <div class="admin-field">
-            <label for="q" class="admin-label">Tìm kiếm</label>
-            <input id="q" name="q" value="@Model.Q" placeholder="Tên, SĐT..." class="admin-input" />
+<div class="ride-board" data-ride-board data-range="@activeRange">
+    <section class="ride-summary" aria-label="Tóm tắt hôm nay">
+        <div class="ride-summary-main">
+            <p class="ride-summary-eyebrow">Hôm nay</p>
+            <p class="ride-summary-total"><span data-ride-today-total>@c.TodayTotal</span> lịch hẹn</p>
         </div>
-        <div class="admin-field admin-field-sm">
-            <label for="status" class="admin-label">Trạng thái</label>
-            <select id="status" name="status" asp-items="Model.StatusOptions" class="admin-select">
-                <option value="">Tất cả trạng thái</option>
-            </select>
+        <div class="ride-summary-stats">
+            <div class="ride-stat ride-stat-wait">
+                <span class="ride-stat-num">@c.TodayWaiting</span>
+                <span class="ride-stat-label">Chờ xác nhận</span>
+            </div>
+            <div class="ride-stat ride-stat-ok">
+                <span class="ride-stat-num">@c.TodayConfirmed</span>
+                <span class="ride-stat-label">Đã xác nhận</span>
+            </div>
+            <div class="ride-stat ride-stat-done">
+                <span class="ride-stat-num">@c.TodayCompleted</span>
+                <span class="ride-stat-label">Hoàn thành</span>
+            </div>
         </div>
-        <div class="admin-toolbar-actions">
-            <button type="submit" class="admin-btn admin-btn-secondary">Lọc</button>
-        </div>
+    </section>
+
+    <div class="ride-tabs" role="tablist" aria-label="Lọc theo ngày">
+        <button type="button" class="ride-tab" role="tab" data-ride-tab="today"
+                aria-selected="@(activeRange == "today" ? "true" : "false")">
+            Hôm nay <span class="ride-tab-count">@c.TodayTotal</span>
+        </button>
+        <button type="button" class="ride-tab" role="tab" data-ride-tab="tomorrow"
+                aria-selected="@(activeRange == "tomorrow" ? "true" : "false")">
+            Ngày mai <span class="ride-tab-count">@c.TomorrowTotal</span>
+        </button>
+        <button type="button" class="ride-tab" role="tab" data-ride-tab="all"
+                aria-selected="@(activeRange == "all" ? "true" : "false")">
+            Tất cả <span class="ride-tab-count">@c.AllTotal</span>
+        </button>
     </div>
-</form>
 
-<div class="admin-card admin-table-wrap">
-    <div class="admin-table-scroll">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Khách hàng</th>
-                    <th>Loại</th>
-                    <th>Ngày</th>
-                    <th>Trạng thái</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Items)
-                {
-                    <tr>
-                        <td>
-                            <p class="admin-table-primary">@item.CustomerName</p>
-                            <p class="admin-table-secondary">@item.Phone</p>
-                        </td>
-                        <td>@item.Type</td>
-                        <td>@item.PreferredDate.ToString("dd/MM/yyyy")</td>
-                        <td>@item.Status</td>
-                        <td class="text-right">
-                            <a href="/admin/khach-hang/lich-hen/@item.Id" class="admin-action admin-action-edit">Chi tiết</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <form method="get" class="ride-search">
+        <input type="hidden" name="range" value="@activeRange" data-ride-range-input />
+        <input name="q" value="@Model.Q" class="admin-input" placeholder="Tìm tên, SĐT, xe…" />
+        <button type="submit" class="admin-btn admin-btn-secondary">Tìm</button>
+    </form>
+
+    <div class="ride-empty" data-ride-empty hidden>
+        <p class="ride-empty-title">Không có lịch hẹn hôm nay.</p>
+        <p class="ride-empty-sub">Thư giãn uống cà phê đi ☕</p>
+    </div>
+
+    <div class="book-board" data-ride-columns>
+        <partial name="Admin/KhachHang/LichHen/_BoardColumn" model='("Chờ xác nhận", "new", Model.WaitingItems, activeRange, Model.Q)' />
+        <partial name="Admin/KhachHang/LichHen/_BoardColumn" model='("Đã xác nhận", "confirmed", Model.ConfirmedItems, activeRange, Model.Q)' />
+        <partial name="Admin/KhachHang/LichHen/_BoardColumn" model='("Hoàn thành", "done", Model.CompletedItems, activeRange, Model.Q)' />
+        <partial name="Admin/KhachHang/LichHen/_BoardColumn" model='("Đã hủy", "cancel", Model.CancelledItems, activeRange, Model.Q)' />
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/test-ride-board.js" asp-append-version="true"></script>
+}

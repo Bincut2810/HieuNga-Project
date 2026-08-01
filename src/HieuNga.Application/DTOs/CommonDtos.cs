@@ -75,6 +75,31 @@ public record CreateBookingDto(
     Guid? MotorcycleId,
     Guid? BranchId);
 
+public record TestRideBookingDto(
+    Guid Id,
+    string CustomerName,
+    string Phone,
+    string? MotorcycleName,
+    Guid? MotorcycleId,
+    string? BranchName,
+    DateTime PreferredDate,
+    string PreferredTime,
+    string? Notes,
+    BookingStatus Status,
+    DateTime CreatedAt);
+
+public record TestRideBoardDto(
+    IReadOnlyList<TestRideBookingDto> Items,
+    TestRideBoardCounts Counts);
+
+public record TestRideBoardCounts(
+    int TodayTotal,
+    int TomorrowTotal,
+    int AllTotal,
+    int TodayWaiting,
+    int TodayConfirmed,
+    int TodayCompleted);
+
 public record CreateMaintenanceBookingDto(
     string CustomerName,
     string Phone,

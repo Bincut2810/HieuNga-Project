@@ -7,7 +7,6 @@ using HieuNga.Infrastructure.Persistence;
 using HieuNga.Web.Pages.Admin.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -61,30 +60,59 @@ public class BaoDuongIndexModel(IBookingService bookingService) : PageModel
     }
 }
 
-public class LichHenIndexModel(HieuNgaDbContext db) : PageModel
+public class LichHenIndexModel(IBookingService bookingService) : PageModel
 {
-    [BindProperty(SupportsGet = true)] public string? Q { get; set; }
-    [BindProperty(SupportsGet = true)] public BookingStatus? Status { get; set; }
+    [BindProperty(SupportsGet = true)]
+    public string Range { get; set; } = "today";
 
-    public IReadOnlyList<Row> Items { get; private set; } = [];
-    public record Row(Guid Id, string CustomerName, string Phone, BookingType Type, BookingStatus Status, DateTime PreferredDate);
+    [BindProperty(SupportsGet = true)]
+    public string? Q { get; set; }
+
+    public TestRideBoardDto Board { get; private set; } =
+        new([], new TestRideBoardCounts(0, 0, 0, 0, 0, 0));
+
+    public IReadOnlyList<TestRideBookingDto> WaitingItems =>
+        Board.Items.Where(b => b.Status == BookingStatus.Pending).ToList();
+    public IReadOnlyList<TestRideBookingDto> ConfirmedItems =>
+        Board.Items.Where(b => b.Status == BookingStatus.Confirmed).ToList();
+    public IReadOnlyList<TestRideBookingDto> CompletedItems =>
+        Board.Items.Where(b => b.Status == BookingStatus.Completed).ToList();
+    public IReadOnlyList<TestRideBookingDto> CancelledItems =>
+        Board.Items.Where(b => b.Status == BookingStatus.Cancelled).ToList();
 
     public async Task OnGetAsync(CancellationToken ct)
     {
-        ViewData["Title"] = "Lịch hẹn";
-        var q = db.Bookings.AsNoTracking().Where(b => !b.IsDeleted);
-        if (!string.IsNullOrWhiteSpace(Q))
-            q = q.Where(b => b.CustomerName.Contains(Q) || b.Phone.Contains(Q));
-        if (Status.HasValue) q = q.Where(b => b.Status == Status.Value);
-        Items = await q.OrderByDescending(b => b.CreatedAt)
-            .Select(b => new Row(b.Id, b.CustomerName, b.Phone, b.Type, b.Status, b.PreferredDate))
-            .ToListAsync(ct);
+        ViewData["Title"] = "Lịch xem xe";
+        // One query: load all (optional search), client tabs filter Today/Tomorrow/All.
+        Board = await bookingService.GetTestRideBoardAsync("all", Q, ct);
+        if (string.IsNullOrWhiteSpace(Range)
+            || Range is not ("today" or "tomorrow" or "all"))
+            Range = "today";
     }
 
-    public SelectList StatusOptions => new(Enum.GetValues<BookingStatus>().Select(s => new { Value = (int)s, Text = s.ToString() }), "Value", "Text", Status.HasValue ? (int)Status.Value : null);
+    public async Task<IActionResult> OnPostConfirmAsync(Guid id, string range, string? q, CancellationToken ct)
+    {
+        await bookingService.UpdateTestRideStatusAsync(id, BookingStatus.Confirmed, ct);
+        this.SetSuccess("Đã xác nhận lịch xem xe.");
+        return RedirectToPage(new { range = range ?? "today", q });
+    }
+
+    public async Task<IActionResult> OnPostCompleteAsync(Guid id, string range, string? q, CancellationToken ct)
+    {
+        await bookingService.UpdateTestRideStatusAsync(id, BookingStatus.Completed, ct);
+        this.SetSuccess("Đã hoàn thành.");
+        return RedirectToPage(new { range = range ?? "today", q });
+    }
+
+    public async Task<IActionResult> OnPostCancelAsync(Guid id, string range, string? q, CancellationToken ct)
+    {
+        await bookingService.UpdateTestRideStatusAsync(id, BookingStatus.Cancelled, ct);
+        this.SetSuccess("Đã hủy lịch xem xe.");
+        return RedirectToPage(new { range = range ?? "today", q });
+    }
 }
 
-public class LichHenDetailModel(IRepository<Booking> repo, IUnitOfWork uow, HieuNgaDbContext db) : PageModel
+public class LichHenDetailModel(IBookingService bookingService, HieuNgaDbContext db) : PageModel
 {
     public Booking? Booking { get; private set; }
 
@@ -99,10 +127,10 @@ public class LichHenDetailModel(IRepository<Booking> repo, IUnitOfWork uow, Hieu
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
     {
-        ViewData["Title"] = "Chi tiết lịch hẹn";
+        ViewData["Title"] = "Chi tiết lịch xem xe";
         Booking = await db.Bookings.AsNoTracking()
             .Include(b => b.Motorcycle).Include(b => b.Branch)
-            .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted, ct);
+            .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted && b.Type == BookingType.TestRide, ct);
         if (Booking is null) return NotFound();
         Input = new DetailInput { Status = Booking.Status, AdminNotes = Booking.AdminNotes };
         return Page();
@@ -110,13 +138,16 @@ public class LichHenDetailModel(IRepository<Booking> repo, IUnitOfWork uow, Hieu
 
     public async Task<IActionResult> OnPostAsync(Guid id, CancellationToken ct)
     {
-        var entity = await repo.GetByIdAsync(id, ct);
-        if (entity is null || entity.IsDeleted) return NotFound();
-        entity.Status = Input.Status;
-        entity.AdminNotes = Input.AdminNotes;
-        await repo.UpdateAsync(entity, ct);
-        await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã cập nhật lịch hẹn.");
+        try
+        {
+            await bookingService.UpdateTestRideAdminAsync(id, Input.Status, Input.AdminNotes, ct);
+            this.SetSuccess("Đã cập nhật lịch xem xe.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            this.SetError(ex.Message);
+        }
+
         return RedirectToPage(new { id });
     }
 }

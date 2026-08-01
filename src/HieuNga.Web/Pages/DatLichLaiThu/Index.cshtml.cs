@@ -1,6 +1,7 @@
 using HieuNga.Application;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
+using HieuNga.Application.Validators;
 using HieuNga.Web.Extensions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -14,43 +15,35 @@ public class IndexModel(
     IMotorcycleService motorcycleService,
     IValidator<CreateBookingDto> validator) : PageModel
 {
-    public IReadOnlyList<BranchDto> Branches { get; private set; } = [];
-    public MotorcycleDetailDto? SelectedMotorcycle { get; private set; }
+    public IReadOnlyList<MotorcycleListItemDto> MotorcycleOptions { get; private set; } = [];
+    public MotorcycleListItemDto? SelectedMotorcycle { get; private set; }
     public string LeadSource { get; private set; } = "test-ride";
+    public IReadOnlyList<string> TimeSlots { get; } = CreateBookingValidator.AllowedTimeSlots;
 
     [BindProperty] public string CustomerName { get; set; } = "";
     [BindProperty] public string Phone { get; set; } = "";
-    [BindProperty] public string? Email { get; set; }
-    [BindProperty] public DateTime PreferredDate { get; set; } = DateTime.Today.AddDays(1);
-    [BindProperty] public string? PreferredTime { get; set; } = "09:00";
+    [BindProperty] public DateTime PreferredDate { get; set; } = DateTime.Today;
+    [BindProperty] public string PreferredTime { get; set; } = CreateBookingValidator.AllowedTimeSlots[0];
     [BindProperty] public string? Notes { get; set; }
     [BindProperty] public Guid? MotorcycleId { get; set; }
-    [BindProperty] public Guid? BranchId { get; set; }
     [BindProperty] public string? SourceField { get; set; }
-
-    public bool Success { get; private set; }
-    public static readonly string[] TimeSlots = ["08:30", "09:00", "10:00", "11:00", "13:30", "14:30", "15:30", "16:30"];
 
     public async Task OnGetAsync([FromQuery] Guid? xeId, [FromQuery] string? source, CancellationToken ct)
     {
-        Branches = await branchService.GetActiveAsync(ct);
-        LeadSource = string.IsNullOrWhiteSpace(source) ? "test-ride" : source.Trim().ToLowerInvariant();
-        MotorcycleId = xeId;
-        BranchId = Branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? Branches.FirstOrDefault()?.Id;
-        if (xeId.HasValue)
-        {
-            // Resolve via related list / search — use GetBySlug if we only have id through service
-            SelectedMotorcycle = await ResolveBikeByIdAsync(xeId.Value, ct);
-        }
-        this.SetSeo(null, "Đặt lịch xem xe | Xe Máy Hiếu Nga", "Đặt lịch xem / lái thử xe Honda tại showroom Hiếu Nga.");
+        await LoadAsync(xeId, source, ct);
+        this.SetSeo(null, "Đặt lịch xem xe | Xe Máy Hiếu Nga",
+            "Đặt lịch xem / lái thử xe Honda tại showroom Hiếu Nga — chỉ mất khoảng 30 giây.");
     }
 
-    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
+    public async Task<IActionResult> OnPostBookAsync(CancellationToken ct)
     {
-        Branches = await branchService.GetActiveAsync(ct);
         LeadSource = string.IsNullOrWhiteSpace(SourceField) ? "test-ride" : SourceField.Trim().ToLowerInvariant();
-        if (MotorcycleId.HasValue)
-            SelectedMotorcycle = await ResolveBikeByIdAsync(MotorcycleId.Value, ct);
+        SelectedMotorcycle = MotorcycleId.HasValue
+            ? await motorcycleService.GetListItemByIdAsync(MotorcycleId.Value, ct)
+            : null;
+
+        var branches = await branchService.GetActiveAsync(ct);
+        var branchId = branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? branches.FirstOrDefault()?.Id;
 
         var attributedNotes = LeadAttribution.BuildNotes(
             LeadSource,
@@ -62,26 +55,43 @@ public class IndexModel(
             SelectedMotorcycle is null ? null : $"bike={SelectedMotorcycle.Name}");
 
         var dto = new CreateBookingDto(
-            CustomerName, Phone, Email, PreferredDate, PreferredTime, attributedNotes, MotorcycleId, BranchId);
+            CustomerName,
+            Phone,
+            Email: null,
+            PreferredDate,
+            PreferredTime,
+            attributedNotes,
+            MotorcycleId,
+            branchId);
+
         var validation = await validator.ValidateAsync(dto, ct);
         if (!validation.IsValid)
         {
-            foreach (var error in validation.Errors)
-                ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
-            return Page();
+            return new JsonResult(new
+            {
+                success = false,
+                errors = validation.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
+            });
         }
 
         await bookingService.CreateTestRideBookingAsync(dto, ct);
-        Success = true;
-        this.SetSeo(null, "Đặt lịch thành công | Xe Máy Hiếu Nga", "Cảm ơn bạn đã đặt lịch xem xe.");
-        return Page();
+
+        return new JsonResult(new
+        {
+            success = true,
+            message = "Đã gửi lịch xem xe thành công.",
+            motorcycleUrl = SelectedMotorcycle is null ? "/xe" : $"/xe/{SelectedMotorcycle.Slug}"
+        });
     }
 
-    private async Task<MotorcycleDetailDto?> ResolveBikeByIdAsync(Guid id, CancellationToken ct)
+    private async Task LoadAsync(Guid? xeId, string? source, CancellationToken ct)
     {
-        var related = await motorcycleService.GetCompareListAsync([id], ct);
-        var item = related.FirstOrDefault();
-        if (item is null) return null;
-        return await motorcycleService.GetBySlugAsync(item.Slug, ct);
+        MotorcycleOptions = await motorcycleService.GetPublishedOptionsAsync(ct);
+        LeadSource = string.IsNullOrWhiteSpace(source) ? "test-ride" : source.Trim().ToLowerInvariant();
+        MotorcycleId = xeId;
+        if (xeId.HasValue)
+            SelectedMotorcycle = await motorcycleService.GetListItemByIdAsync(xeId.Value, ct);
     }
 }

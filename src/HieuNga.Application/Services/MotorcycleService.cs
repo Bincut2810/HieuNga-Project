@@ -23,6 +23,23 @@ public class MotorcycleService(IMotorcycleRepository repository) : IMotorcycleSe
         return entity?.ToDetail();
     }
 
+    public async Task<MotorcycleListItemDto?> GetListItemByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        var entity = await repository.GetByIdAsync(id, ct);
+        if (entity is null || entity.IsDeleted || !entity.IsPublished)
+            return null;
+        return entity.ToListItem();
+    }
+
+    public async Task<IReadOnlyList<MotorcycleListItemDto>> GetPublishedOptionsAsync(CancellationToken ct = default)
+    {
+        var (items, _) = await repository.SearchAsync(null, 1, 200, ct);
+        return items
+            .OrderBy(m => m.Name)
+            .Select(m => m.ToListItem())
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<MotorcycleListItemDto>> GetCompareListAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
     {
         var idList = ids.ToList();

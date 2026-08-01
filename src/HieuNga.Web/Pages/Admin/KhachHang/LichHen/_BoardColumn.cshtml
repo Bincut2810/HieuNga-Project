@@ -1,0 +1,85 @@
+@using HieuNga.Application.DTOs
+@using HieuNga.Domain.Enums
+@model (string Title, string Tone, IReadOnlyList<TestRideBookingDto> Items, string Range, string? Q)
+@{
+    string StatusLabel(BookingStatus s) => s switch
+    {
+        BookingStatus.Pending => "Chờ xác nhận",
+        BookingStatus.Confirmed => "Đã xác nhận",
+        BookingStatus.Completed => "Hoàn thành",
+        BookingStatus.Cancelled => "Đã hủy",
+        _ => "—"
+    };
+    string DayKey(DateTime d)
+    {
+        var day = d.Date;
+        if (day == DateTime.Today) return "today";
+        if (day == DateTime.Today.AddDays(1)) return "tomorrow";
+        return "other";
+    }
+    string DayLabel(DateTime d)
+    {
+        var day = d.Date;
+        if (day == DateTime.Today) return "Hôm nay";
+        if (day == DateTime.Today.AddDays(1)) return "Ngày mai";
+        return d.ToString("dd/MM");
+    }
+}
+<section class="book-col book-col-@Model.Tone" data-ride-col>
+    <header class="book-col-head">
+        <h2>@Model.Title</h2>
+        <span class="book-col-count" data-ride-col-count>@Model.Items.Count</span>
+    </header>
+    <div class="book-col-body">
+        <p class="book-empty" data-ride-col-empty hidden>Không có lịch</p>
+        @foreach (var b in Model.Items)
+        {
+            var day = DayKey(b.PreferredDate);
+            <article class="book-card ride-card" data-ride-card data-day="@day">
+                <div class="book-card-top">
+                    <h3 class="book-card-name">
+                        <a href="/admin/khach-hang/lich-hen/@b.Id" class="ride-card-link">@b.CustomerName</a>
+                    </h3>
+                    <span class="book-badge book-badge-@Model.Tone">@StatusLabel(b.Status)</span>
+                </div>
+                <a class="book-card-phone" href="tel:@b.Phone" data-ride-call data-phone="@b.Phone">@b.Phone</a>
+                <p class="ride-card-bike">@(b.MotorcycleName ?? "Chưa chọn xe")</p>
+                <p class="ride-card-when">@DayLabel(b.PreferredDate) · @b.PreferredTime</p>
+                <div class="book-card-actions">
+                    <a class="book-action book-action-call" href="tel:@b.Phone"
+                       data-ride-call data-phone="@b.Phone">Gọi</a>
+                    @if (b.Status == BookingStatus.Pending)
+                    {
+                        <form method="post" asp-page-handler="Confirm"
+                              data-confirm="Bạn đã liên hệ khách và muốn xác nhận lịch này?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@b.Id" />
+                            <input type="hidden" name="range" value="@Model.Range" data-ride-form-range />
+                            <input type="hidden" name="q" value="@Model.Q" />
+                            <button type="submit" class="book-action book-action-confirm">Xác nhận</button>
+                        </form>
+                    }
+                    @if (b.Status is BookingStatus.Pending or BookingStatus.Confirmed)
+                    {
+                        <form method="post" asp-page-handler="Complete"
+                              data-confirm="Đánh dấu lịch này đã hoàn thành?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@b.Id" />
+                            <input type="hidden" name="range" value="@Model.Range" data-ride-form-range />
+                            <input type="hidden" name="q" value="@Model.Q" />
+                            <button type="submit" class="book-action book-action-done">Hoàn thành</button>
+                        </form>
+                        <form method="post" asp-page-handler="Cancel"
+                              data-confirm="Hủy lịch xem xe này?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@b.Id" />
+                            <input type="hidden" name="range" value="@Model.Range" data-ride-form-range />
+                            <input type="hidden" name="q" value="@Model.Q" />
+                            <button type="submit" class="book-action book-action-cancel">Hủy</button>
+                        </form>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+</section>
