@@ -49,14 +49,20 @@ public sealed class TestRideService(
 
         var phone = TestRidePhoneNormalizer.Normalize(request.PhoneNumber);
         var phoneVariants = TestRidePhoneNormalizer.LookupVariants(phone);
-        var day = request.AppointmentDate.Date;
-        var dayEnd = day.AddDays(1);
+        // Calendar Y-M-D for lock key / labels; UTC bounds for timestamptz (Npgsql requires Kind=Utc).
+        var appointmentCalendar = request.AppointmentDate;
+        var dayUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(appointmentCalendar);
+        var dayEndUtc = TestRideVietnamTime.ConvertLocalAppointmentDateEndExclusiveToUtc(appointmentCalendar);
         var since = TestRideVietnamTime.UtcNow.AddMinutes(-30);
         var motorcycleName = moto.Name;
         var motorcycleUrl = $"/xe/{moto.Slug}";
-        var dateLabel = day.ToString("dd/MM/yyyy");
+        var dateLabel = new DateTime(
+            appointmentCalendar.Year,
+            appointmentCalendar.Month,
+            appointmentCalendar.Day).ToString("dd/MM/yyyy");
         var timeLabel = request.AppointmentTime.Trim();
-        var lockKey = $"{phone}|{motorcycleId:D}|{day:yyyy-MM-dd}";
+        var lockKey =
+            $"{phone}|{motorcycleId:D}|{appointmentCalendar.Year:D4}-{appointmentCalendar.Month:D2}-{appointmentCalendar.Day:D2}";
 
         return await createSynchronizer.ExecuteAsync(lockKey, async ct =>
         {
@@ -65,8 +71,8 @@ public sealed class TestRideService(
                      && b.Type == BookingType.TestRide
                      && b.Status != BookingStatus.Cancelled
                      && phoneVariants.Contains(b.Phone)
-                     && b.PreferredDate >= day
-                     && b.PreferredDate < dayEnd
+                     && b.PreferredDate >= dayUtc
+                     && b.PreferredDate < dayEndUtc
                      && b.MotorcycleId == motorcycleId
                      && b.CreatedAt >= since,
                 ct);
@@ -104,7 +110,7 @@ public sealed class TestRideService(
                 Type = BookingType.TestRide,
                 CustomerName = request.CustomerName.Trim(),
                 Phone = phone,
-                PreferredDate = day,
+                PreferredDate = dayUtc,
                 PreferredTime = timeLabel,
                 Notes = string.IsNullOrWhiteSpace(notes) ? null : notes,
                 MotorcycleId = motorcycleId,
@@ -133,24 +139,26 @@ public sealed class TestRideService(
         string? search,
         CancellationToken cancellationToken = default)
     {
-        var today = TestRideVietnamTime.Today;
-        var tomorrow = today.AddDays(1);
-        var dayAfterTomorrow = tomorrow.AddDays(1);
+        // Vietnam business days → UTC day bounds (single conversion helper; Kind=Utc for Npgsql).
+        var todayVn = TestRideVietnamTime.Today;
+        var todayUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn);
+        var tomorrowUtc = TestRideVietnamTime.ConvertLocalAppointmentDateEndExclusiveToUtc(todayVn);
+        var dayAfterTomorrowUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn.AddDays(2));
 
         var todayCount = await bookingRepo.CountAsync(
             b => !b.IsDeleted
                  && b.Type == BookingType.TestRide
                  && b.Status != BookingStatus.Cancelled
-                 && b.PreferredDate >= today
-                 && b.PreferredDate < tomorrow,
+                 && b.PreferredDate >= todayUtc
+                 && b.PreferredDate < tomorrowUtc,
             cancellationToken);
 
         var tomorrowCount = await bookingRepo.CountAsync(
             b => !b.IsDeleted
                  && b.Type == BookingType.TestRide
                  && b.Status != BookingStatus.Cancelled
-                 && b.PreferredDate >= tomorrow
-                 && b.PreferredDate < dayAfterTomorrow,
+                 && b.PreferredDate >= tomorrowUtc
+                 && b.PreferredDate < dayAfterTomorrowUtc,
             cancellationToken);
 
         var allCount = await bookingRepo.CountAsync(
@@ -171,7 +179,7 @@ public sealed class TestRideService(
 
         var normalizedRange = (range ?? "today").ToLowerInvariant();
         var rows = await bookingRepo.FindAsync(
-            BuildBoardPredicate(normalizedRange, today, tomorrow, dayAfterTomorrow, q, matchingMotoIds),
+            BuildBoardPredicate(normalizedRange, todayUtc, tomorrowUtc, dayAfterTomorrowUtc, q, matchingMotoIds),
             cancellationToken);
 
         var motoIds = rows.Where(b => b.MotorcycleId.HasValue).Select(b => b.MotorcycleId!.Value).Distinct().ToList();
@@ -242,9 +250,9 @@ public sealed class TestRideService(
 
     private static System.Linq.Expressions.Expression<Func<Booking, bool>> BuildBoardPredicate(
         string range,
-        DateTime today,
-        DateTime tomorrow,
-        DateTime dayAfterTomorrow,
+        DateTime todayUtc,
+        DateTime tomorrowUtc,
+        DateTime dayAfterTomorrowUtc,
         string? q,
         List<Guid>? matchingMotoIds)
     {
@@ -256,8 +264,8 @@ public sealed class TestRideService(
             "tomorrow" when hasSearch => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
-                && b.PreferredDate >= tomorrow
-                && b.PreferredDate < dayAfterTomorrow
+                && b.PreferredDate >= tomorrowUtc
+                && b.PreferredDate < dayAfterTomorrowUtc
                 && (b.CustomerName.Contains(q!)
                     || b.Phone.Contains(q!)
                     || (b.Notes != null && b.Notes.Contains(q!))
@@ -265,8 +273,8 @@ public sealed class TestRideService(
             "tomorrow" => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
-                && b.PreferredDate >= tomorrow
-                && b.PreferredDate < dayAfterTomorrow,
+                && b.PreferredDate >= tomorrowUtc
+                && b.PreferredDate < dayAfterTomorrowUtc,
             "all" when hasSearch => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
@@ -280,8 +288,8 @@ public sealed class TestRideService(
             _ when hasSearch => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
-                && b.PreferredDate >= today
-                && b.PreferredDate < tomorrow
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < tomorrowUtc
                 && (b.CustomerName.Contains(q!)
                     || b.Phone.Contains(q!)
                     || (b.Notes != null && b.Notes.Contains(q!))
@@ -289,8 +297,8 @@ public sealed class TestRideService(
             _ => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
-                && b.PreferredDate >= today
-                && b.PreferredDate < tomorrow
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < tomorrowUtc
         };
     }
 
