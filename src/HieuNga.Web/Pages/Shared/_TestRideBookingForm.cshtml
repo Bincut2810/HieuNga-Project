@@ -1,0 +1,118 @@
+@using HieuNga.Application.TestRide
+@model HieuNga.Web.ViewModels.TestRide.TestRideBookingFormModel
+@{
+    var minDate = Model.MinDate;
+    var input = Model.Input;
+}
+<form class="tr-form@(Model.Compact ? " tr-form-compact" : "")" method="post" novalidate
+      data-tr-form hx-boost="false"
+      action="@Model.FormAction">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Input.Source" value="@input.Source" />
+
+    <div class="tr-errors" data-tr-summary hidden role="alert"></div>
+
+    <div class="tr-field">
+        <label class="tr-label" for="Input_MotorcycleId">Xe muốn xem</label>
+        <select name="Input.MotorcycleId" id="Input_MotorcycleId" class="tr-select" data-tr-field="MotorcycleId">
+            <option value="">— Chọn mẫu xe —</option>
+            @foreach (var bike in Model.MotorcycleOptions)
+            {
+                if (input.MotorcycleId == bike.Id)
+                {
+                    <option value="@bike.Id" data-slug="@bike.Slug" selected>@bike.Name</option>
+                }
+                else
+                {
+                    <option value="@bike.Id" data-slug="@bike.Slug">@bike.Name</option>
+                }
+            }
+        </select>
+        <p class="tr-field-error" data-tr-error="MotorcycleId" hidden></p>
+    </div>
+
+    <div class="tr-field">
+        <label class="tr-label" for="Input_CustomerName">Họ tên</label>
+        <input name="Input.CustomerName" id="Input_CustomerName" value="@input.CustomerName"
+               class="tr-input" autocomplete="name" placeholder="Nguyễn Văn A"
+               data-tr-field="CustomerName" />
+        <p class="tr-field-error" data-tr-error="CustomerName" hidden></p>
+    </div>
+
+    <div class="tr-field">
+        <label class="tr-label" for="Input_PhoneNumber">Số điện thoại</label>
+        <input name="Input.PhoneNumber" id="Input_PhoneNumber" value="@input.PhoneNumber"
+               class="tr-input" autocomplete="tel" inputmode="tel" placeholder="09…"
+               data-tr-field="PhoneNumber" />
+        <p class="tr-field-error" data-tr-error="PhoneNumber" hidden></p>
+    </div>
+
+    @if (Model.Branches is { Count: > 0 })
+    {
+        <div class="tr-field">
+            <label class="tr-label" for="Input_BranchId">Chi nhánh</label>
+            <select name="Input.BranchId" id="Input_BranchId" class="tr-select" data-tr-field="BranchId">
+                @foreach (var b in Model.Branches)
+                {
+                    if (input.BranchId == b.Id)
+                    {
+                        <option value="@b.Id" selected>@b.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@b.Id">@b.Name</option>
+                    }
+                }
+            </select>
+            <p class="tr-field-error" data-tr-error="BranchId" hidden></p>
+        </div>
+    }
+
+    <div class="tr-field">
+        <label class="tr-label" for="Input_AppointmentDate">Ngày hẹn</label>
+        <input name="Input.AppointmentDate" id="Input_AppointmentDate" type="date" class="tr-input"
+               value="@input.AppointmentDate.ToString("yyyy-MM-dd")" min="@minDate"
+               data-tr-field="AppointmentDate" />
+        <p class="tr-field-error" data-tr-error="AppointmentDate" hidden></p>
+    </div>
+
+    <div class="tr-field">
+        <span class="tr-label" id="tr-time-label">Giờ hẹn</span>
+        <div class="tr-slots" role="radiogroup" aria-labelledby="tr-time-label">
+            @foreach (var slot in TestRideValidator.AllowedAppointmentTimes)
+            {
+                <label class="tr-slot">
+                    @if (input.AppointmentTime == slot)
+                    {
+                        <input type="radio" name="Input.AppointmentTime" value="@slot" checked
+                               data-tr-field="AppointmentTime" />
+                    }
+                    else
+                    {
+                        <input type="radio" name="Input.AppointmentTime" value="@slot"
+                               data-tr-field="AppointmentTime" />
+                    }
+                    <span>@slot</span>
+                </label>
+            }
+        </div>
+        <p class="tr-field-error" data-tr-error="AppointmentTime" hidden></p>
+    </div>
+
+    <div class="tr-field">
+        <label class="tr-label" for="Input_Notes">
+            Ghi chú <span class="tr-hint">(tuỳ chọn)</span>
+        </label>
+        <textarea name="Input.Notes" id="Input_Notes" class="tr-textarea" rows="3"
+                  placeholder="VD: Muốn xem màu đỏ" data-tr-field="Notes">@input.Notes</textarea>
+        <p class="tr-field-error" data-tr-error="Notes" hidden></p>
+    </div>
+
+    <div class="tr-actions">
+        <button type="submit" class="tr-submit" data-tr-submit data-tr-idle-label="@Model.SubmitLabel">
+            <span data-tr-submit-label>@Model.SubmitLabel</span>
+            <span class="tr-spinner" data-tr-spinner hidden aria-hidden="true"></span>
+        </button>
+        <p class="tr-footnote">@Model.Footnote</p>
+    </div>
+</form>

@@ -8,4 +8,5 @@ public sealed record TestRideRequest(
     DateTime AppointmentDate,
     string AppointmentTime,
     string? Source,
-    string? Notes);
+    string? Notes,
+    Guid? BranchId = null);

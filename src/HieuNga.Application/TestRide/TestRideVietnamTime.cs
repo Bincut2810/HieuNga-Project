@@ -47,6 +47,18 @@ public static class TestRideVietnamTime
                 0, 0, 0,
                 DateTimeKind.Unspecified).AddDays(1));
 
+    /// <summary>Vietnam calendar date for display of a stored UTC appointment instant.</summary>
+    public static DateTime ToVietnamDate(DateTime storedUtc)
+    {
+        var utc = storedUtc.Kind switch
+        {
+            DateTimeKind.Utc => storedUtc,
+            DateTimeKind.Local => storedUtc.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(storedUtc, DateTimeKind.Utc)
+        };
+        return TimeZoneInfo.ConvertTimeFromUtc(utc, Vietnam).Date;
+    }
+
     private static TimeZoneInfo ResolveVietnamTimeZone()
     {
         foreach (var id in new[] { "SE Asia Standard Time", "Asia/Ho_Chi_Minh" })

@@ -671,3 +671,86 @@ body.tr-drawer-open {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* —— Shared booking platform —— */
+.tr-form-compact {
+  gap: 1rem;
+}
+
+.tr-embed .tr-form {
+  margin: 0;
+}
+
+.tr-type-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.tr-type-switch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--tr-line);
+  background: var(--tr-surface);
+  color: var(--tr-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tr-type-switch a.is-active {
+  border-color: transparent;
+  color: #fff;
+}
+
+.tr-type-switch a.is-testride.is-active {
+  background: #c41e3a;
+}
+
+.tr-type-switch a.is-maint.is-active {
+  background: #1d4ed8;
+}
+
+.tr-badge-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.tr-badge-testride {
+  background: #fde8ec;
+  color: #b01030;
+  border: 1px solid #f5b5c0;
+}
+
+.tr-badge-maint {
+  background: #e8eefc;
+  color: #1e40af;
+  border: 1px solid #b6c8f5;
+}
+
+.tr-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.tr-admin-maint .tr-row-bike {
+  color: var(--tr-muted);
+  font-size: 0.9rem;
+}
+

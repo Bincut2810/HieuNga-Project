@@ -376,12 +376,13 @@
 
   function bootTestRideModule(root) {
     const scope = root || document;
-    if (!scope.querySelector('[data-tr-page]') && !scope.querySelector('[data-tr-admin]')) {
+    const needsPublic = !!scope.querySelector('[data-tr-page]');
+    const needsAdmin = !!scope.querySelector('[data-tr-admin]');
+    const needsMaint = !!scope.querySelector('[data-maint-page]');
+    if (!needsPublic && !needsAdmin && !needsMaint) {
       return Promise.resolve();
     }
 
-    const needsPublic = !!scope.querySelector('[data-tr-page]');
-    const needsAdmin = !!scope.querySelector('[data-tr-admin]');
     const cssReady = loadStylesheetOnce('/css/test-ride.css');
     const tasks = [cssReady];
 
@@ -403,9 +404,18 @@
         })
       );
     }
+    if (needsMaint) {
+      tasks.push(
+        cssReady.then(() => loadScriptOnce('/js/maintenance-booking.js')).then(() => {
+          if (typeof window.bootMaintenanceBooking === 'function') {
+            try { window.bootMaintenanceBooking(); } catch (_) { /* already booted */ }
+          }
+        })
+      );
+    }
 
     return Promise.all(tasks).catch((err) => {
-      console.warn('TestRide module load:', err);
+      console.warn('Booking module load:', err);
     });
   }
 

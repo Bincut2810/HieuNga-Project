@@ -11,8 +11,8 @@
     var activePrice = finance.Price;
     var monthlyEstimate = finance.EstimatedMonthlyPayment;
     var relatedBikes = Model.Related.Take(6).ToList();
-    var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}";
-    var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}";
+    var viewBikeUrl = $"/dat-lich-lai-thu?xeId={m.Id}&source=detail";
+    var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}&source=detail";
     var categoryLabel = m.Category.ToDisplayName();
     var media = Model.Media;
     var engineLabel = m.EngineCc.HasValue ? $"{m.EngineCc} cc" : null;

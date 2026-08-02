@@ -1,19 +1,18 @@
 @page "/dat-lich-lai-thu"
 @model HieuNga.Web.Pages.TestRide.IndexModel
 @using HieuNga.Application.TestRide
+@using HieuNga.Web.ViewModels.TestRide
 @{
     ViewData["Title"] = Model.Success ? "Đặt lịch thành công" : "Đặt lịch xem xe";
     ViewData["MetaTitle"] = Model.Success
         ? "Đặt lịch thành công | Xe Máy Hiếu Nga"
         : "Đặt lịch xem xe | Xe Máy Hiếu Nga";
-    var minDate = TestRideVietnamTime.Today.ToString("yyyy-MM-dd");
 }
 
 @section Head {
     <link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" />
 }
 
-@* Also in body so hx-boost (#main-content) carries the stylesheet *@
 <link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" data-tr-css />
 
 <section class="tr-page" data-tr-page>
@@ -55,126 +54,14 @@
 
             <div asp-validation-summary="ModelOnly" class="tr-errors" role="alert"></div>
 
-            <form class="tr-form" method="post" novalidate
-                  data-tr-form hx-boost="false"
-                  action="/dat-lich-lai-thu">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Input.Source" />
-
-                <div class="tr-errors" data-tr-summary hidden role="alert"></div>
-
-                <div class="tr-field">
-                    <label class="tr-label" asp-for="Input.MotorcycleId">Xe muốn xem</label>
-                    <select asp-for="Input.MotorcycleId" class="tr-select" data-tr-field="MotorcycleId">
-                        <option value="">— Chọn mẫu xe —</option>
-                        @foreach (var bike in Model.MotorcycleOptions)
-                        {
-                            <option value="@bike.Id" data-slug="@bike.Slug">@bike.Name</option>
-                        }
-                    </select>
-                    <span asp-validation-for="Input.MotorcycleId" class="tr-field-error"></span>
-                    <p class="tr-field-error" data-tr-error="MotorcycleId" hidden></p>
-                </div>
-
-                <div class="tr-field">
-                    <label class="tr-label" asp-for="Input.CustomerName">Họ tên</label>
-                    <input asp-for="Input.CustomerName" class="tr-input" autocomplete="name"
-                           placeholder="Nguyễn Văn A" data-tr-field="CustomerName" />
-                    <span asp-validation-for="Input.CustomerName" class="tr-field-error"></span>
-                    <p class="tr-field-error" data-tr-error="CustomerName" hidden></p>
-                </div>
-
-                <div class="tr-field">
-                    <label class="tr-label" asp-for="Input.PhoneNumber">Số điện thoại</label>
-                    <input asp-for="Input.PhoneNumber" class="tr-input" autocomplete="tel"
-                           inputmode="tel" placeholder="09…" data-tr-field="PhoneNumber" />
-                    <span asp-validation-for="Input.PhoneNumber" class="tr-field-error"></span>
-                    <p class="tr-field-error" data-tr-error="PhoneNumber" hidden></p>
-                </div>
-
-                <div class="tr-field">
-                    <label class="tr-label" asp-for="Input.AppointmentDate">Ngày hẹn</label>
-                    <input asp-for="Input.AppointmentDate" type="date" class="tr-input"
-                           min="@minDate" data-tr-field="AppointmentDate" />
-                    <span asp-validation-for="Input.AppointmentDate" class="tr-field-error"></span>
-                    <p class="tr-field-error" data-tr-error="AppointmentDate" hidden></p>
-                </div>
-
-                <div class="tr-field">
-                    <span class="tr-label" id="tr-time-label">Giờ hẹn</span>
-                    <div class="tr-slots" role="radiogroup" aria-labelledby="tr-time-label">
-                        @foreach (var slot in TestRideValidator.AllowedAppointmentTimes)
-                        {
-                            <label class="tr-slot">
-                                <input type="radio" asp-for="Input.AppointmentTime" value="@slot"
-                                       data-tr-field="AppointmentTime" />
-                                <span>@slot</span>
-                            </label>
-                        }
-                    </div>
-                    <span asp-validation-for="Input.AppointmentTime" class="tr-field-error"></span>
-                    <p class="tr-field-error" data-tr-error="AppointmentTime" hidden></p>
-                </div>
-
-                <div class="tr-field">
-                    <label class="tr-label" asp-for="Input.Notes">
-                        Ghi chú <span class="tr-hint">(tuỳ chọn)</span>
-                    </label>
-                    <textarea asp-for="Input.Notes" class="tr-textarea" rows="3"
-                              placeholder="VD: Muốn xem màu đỏ" data-tr-field="Notes"></textarea>
-                    <span asp-validation-for="Input.Notes" class="tr-field-error"></span>
-                    <p class="tr-field-error" data-tr-error="Notes" hidden></p>
-                </div>
-
-                <div class="tr-actions">
-                    <button type="submit" class="tr-submit" data-tr-submit>
-                        <span data-tr-submit-label>Đặt lịch xem xe</span>
-                        <span class="tr-spinner" data-tr-spinner hidden aria-hidden="true"></span>
-                    </button>
-                    <p class="tr-footnote">
-                        Chúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.
-                    </p>
-                </div>
-            </form>
+            <partial name="_TestRideBookingForm" model="Model.Form" />
         }
     </div>
 </section>
 
 @if (!Model.Success)
 {
-<div class="tr-modal" data-tr-modal="success" hidden>
-    <div class="tr-modal-backdrop" data-tr-close></div>
-    <div class="tr-modal-card" role="dialog" aria-modal="true"
-         aria-labelledby="tr-success-title" tabindex="-1" data-tr-dialog>
-        <div class="tr-modal-icon tr-modal-icon-ok" aria-hidden="true">✓</div>
-        <h2 id="tr-success-title" class="tr-modal-title">Đặt lịch thành công</h2>
-        <p class="tr-received" data-tr-received></p>
-        <div class="tr-success-meta" data-tr-success-meta></div>
-        <p class="tr-modal-text" data-tr-success-msg>
-            Cảm ơn bạn đã đăng ký.<br />
-            Nhân viên sẽ sớm liên hệ xác nhận lịch hẹn.
-        </p>
-        <div class="tr-modal-actions">
-            <button type="button" class="tr-btn tr-btn-secondary" data-tr-close>Đóng</button>
-            <a href="/xe" class="tr-btn tr-btn-primary" data-tr-continue>Tiếp tục xem xe</a>
-        </div>
-    </div>
-</div>
-
-<div class="tr-modal" data-tr-modal="error" hidden>
-    <div class="tr-modal-backdrop" data-tr-close></div>
-    <div class="tr-modal-card" role="dialog" aria-modal="true"
-         aria-labelledby="tr-error-title" tabindex="-1" data-tr-dialog>
-        <div class="tr-modal-icon tr-modal-icon-err" aria-hidden="true">!</div>
-        <h2 id="tr-error-title" class="tr-modal-title">Không thể gửi yêu cầu</h2>
-        <p class="tr-modal-text" data-tr-error-body>
-            Đã xảy ra lỗi. Vui lòng thử lại hoặc gọi hotline.
-        </p>
-        <div class="tr-modal-actions">
-            <button type="button" class="tr-btn tr-btn-primary" data-tr-close>Thử lại</button>
-        </div>
-    </div>
-</div>
+    <partial name="_TestRideBookingModals" />
 }
 
 @section Scripts {

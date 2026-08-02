@@ -6,7 +6,6 @@ namespace HieuNga.Application.Interfaces;
 public interface IBookingService
 {
     Task<Guid> CreateMaintenanceBookingAsync(CreateMaintenanceBookingDto dto, CancellationToken ct = default);
-    Task<Guid> CreateConsultationAsync(CreateConsultationDto dto, CancellationToken ct = default);
 
     Task<MaintenanceBoardDto> GetMaintenanceBoardAsync(
         string? range,

@@ -1,0 +1,33 @@
+<div class="tr-modal" data-tr-modal="success" hidden>
+    <div class="tr-modal-backdrop" data-tr-close></div>
+    <div class="tr-modal-card" role="dialog" aria-modal="true"
+         aria-labelledby="tr-success-title" tabindex="-1" data-tr-dialog>
+        <div class="tr-modal-icon tr-modal-icon-ok" aria-hidden="true">✓</div>
+        <h2 id="tr-success-title" class="tr-modal-title">Đặt lịch thành công</h2>
+        <p class="tr-received" data-tr-received></p>
+        <div class="tr-success-meta" data-tr-success-meta></div>
+        <p class="tr-modal-text" data-tr-success-msg>
+            Cảm ơn bạn đã đăng ký.<br />
+            Nhân viên sẽ sớm liên hệ xác nhận lịch hẹn.
+        </p>
+        <div class="tr-modal-actions">
+            <button type="button" class="tr-btn tr-btn-secondary" data-tr-close>Đóng</button>
+            <a href="/xe" class="tr-btn tr-btn-primary" data-tr-continue>Tiếp tục xem xe</a>
+        </div>
+    </div>
+</div>
+
+<div class="tr-modal" data-tr-modal="error" hidden>
+    <div class="tr-modal-backdrop" data-tr-close></div>
+    <div class="tr-modal-card" role="dialog" aria-modal="true"
+         aria-labelledby="tr-error-title" tabindex="-1" data-tr-dialog>
+        <div class="tr-modal-icon tr-modal-icon-err" aria-hidden="true">!</div>
+        <h2 id="tr-error-title" class="tr-modal-title">Không thể gửi yêu cầu</h2>
+        <p class="tr-modal-text" data-tr-error-body>
+            Đã xảy ra lỗi. Vui lòng thử lại hoặc gọi hotline.
+        </p>
+        <div class="tr-modal-actions">
+            <button type="button" class="tr-btn tr-btn-primary" data-tr-close>Thử lại</button>
+        </div>
+    </div>
+</div>

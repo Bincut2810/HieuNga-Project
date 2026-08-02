@@ -1,0 +1,17 @@
+@* Category switcher between Test Ride and Maintenance admin boards *@
+@model string
+@{
+    var active = Model ?? "testride";
+}
+<nav class="tr-type-switch" aria-label="Loại lịch hẹn">
+    <a href="/admin/test-ride"
+       class="is-testride @(active == "testride" ? "is-active" : null)">
+        <span class="tr-badge-type tr-badge-testride">Test Ride</span>
+        Lịch xem xe
+    </a>
+    <a href="/admin/khach-hang/bao-duong"
+       class="is-maint @(active == "maint" ? "is-active" : null)">
+        <span class="tr-badge-type tr-badge-maint">Maintenance</span>
+        Lịch bảo dưỡng
+    </a>
+</nav>

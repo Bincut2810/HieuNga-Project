@@ -70,4 +70,12 @@ public class TestRidePhoneNormalizerTests
         Assert.Equal(a, c);
         Assert.Equal(DateTimeKind.Utc, a.Kind);
     }
+
+    [Fact]
+    public void ToVietnamDate_Maps_Utc_Midnight_Offset()
+    {
+        var stored = new DateTime(2026, 8, 1, 17, 0, 0, DateTimeKind.Utc);
+        var vn = TestRideVietnamTime.ToVietnamDate(stored);
+        Assert.Equal(new DateTime(2026, 8, 2), vn.Date);
+    }
 }

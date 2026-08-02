@@ -1,23 +1,27 @@
 @page "/lien-he"
 @model HieuNga.Web.Pages.LienHe.IndexModel
-@using HieuNga.Web.Filters
+@using HieuNga.Web.ViewModels.TestRide
 @{
     ViewData["CtaIntent"] = Model.Intent;
     ViewData["CtaXe"] = Model.SelectedMotorcycle?.Slug;
     ViewData["CtaXeId"] = Model.SelectedMotorcycle?.Id.ToString();
     ViewData["CtaService"] = Model.ServiceSlug;
     ViewData["CtaSource"] = Model.LeadSource;
-    ViewData["CtaShow"] = "consult,call,zalo,testride,messenger";
+    ViewData["CtaShow"] = "call,zalo,testride,messenger";
     ViewData["CtaLayout"] = "row";
-    ViewData["CtaConsultLabel"] = Model.SubmitLabel;
     ViewData["VehicleChangeUrl"] = $"/xe?from=lien-he&intent={Uri.EscapeDataString(Model.Intent)}";
     ViewData["BranchBookUrl"] = Model.Intent == "bao-duong"
         ? "/bao-duong#booking"
         : (Model.SelectedMotorcycle is null
-            ? "/dat-lich-lai-thu?source=contact"
-            : $"/dat-lich-lai-thu?xeId={Model.SelectedMotorcycle.Id}&source=contact");
-    ViewData["BranchBookLabel"] = Model.Intent == "bao-duong" ? "Đặt lịch dịch vụ" : "Đặt lịch hẹn";
+            ? "/dat-lich-lai-thu?source=ContactPage"
+            : $"/dat-lich-lai-thu?xeId={Model.SelectedMotorcycle.Id}&source=ContactPage");
+    ViewData["BranchBookLabel"] = Model.Intent == "bao-duong" ? "Đặt lịch dịch vụ" : "Đặt lịch xem xe";
 }
+
+@section Head {
+    <link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" />
+}
+<link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" data-tr-css />
 
 <section class="lead-page">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-10 pb-4">
@@ -36,79 +40,42 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 md:pb-16">
-        @if (Model.Success)
-        {
-            <partial name="_LeadSuccess" model='("Đã gửi yêu cầu tư vấn!", "Chúng tôi đã nhận thông tin của bạn.", "Tư vấn viên sẽ gọi lại theo số bạn đã để lại.")' />
-        }
-        else
-        {
-            <div class="grid lg:grid-cols-12 gap-8 lg:gap-10">
-                <div class="lg:col-span-5 space-y-6">
-                    @if (Model.SelectedMotorcycle is not null)
-                    {
-                        <partial name="_LeadVehicleCard" model="Model.SelectedMotorcycle" />
-                    }
+        <div class="grid lg:grid-cols-12 gap-8 lg:gap-10">
+            <div class="lg:col-span-5 space-y-6">
+                @if (Model.SelectedMotorcycle is not null)
+                {
+                    <partial name="_LeadVehicleCard" model="Model.SelectedMotorcycle" />
+                }
 
-                    <partial name="_LeadTrust" />
+                <partial name="_LeadTrust" />
 
-                    <partial name="_BranchCards" model="Model.Branches" />
-                </div>
+                <partial name="_BranchCards" model="Model.Branches" />
+            </div>
 
-                <div class="lg:col-span-7">
-                    <div class="lead-form-card">
-                        <h2 class="text-xl font-bold text-honda-dark">@Model.SubmitLabel</h2>
-                        <p class="text-sm text-gray-500 mt-1">Điền thông tin — phản hồi trong ~30 phút (giờ hành chính)</p>
+            <div class="lg:col-span-7">
+                @if (Model.Intent == "bao-duong")
+                {
+                    <div class="lead-form-card mb-4">
+                        <h2 class="text-xl font-bold text-honda-dark">Đặt lịch bảo dưỡng</h2>
+                        <p class="text-sm text-gray-500 mt-1">Dịch vụ bảo dưỡng dùng form chuyên dụng.</p>
+                        <a href="/bao-duong#booking" class="btn-primary touch-press mt-4 inline-flex">Đặt lịch bảo dưỡng</a>
+                    </div>
+                }
 
-                        <form method="post" class="mt-6 space-y-4" novalidate>
-                            <div asp-validation-summary="All" class="text-red-600 text-sm" role="alert"></div>
-                            <input type="hidden" asp-for="IntentField" value="@Model.Intent" />
-                            <input type="hidden" asp-for="SourceField" value="@Model.LeadSource" />
-                            <input type="hidden" asp-for="XeSlugField" value="@(Model.SelectedMotorcycle?.Slug)" />
-                            <input type="hidden" asp-for="ServiceField" value="@Model.ServiceSlug" />
-                            <input type="hidden" asp-for="MotorcycleId" />
-
-                            <div class="grid sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label asp-for="CustomerName" class="block text-sm font-medium mb-1">Họ tên *</label>
-                                    <input asp-for="CustomerName" autocomplete="name" class="lead-input" required />
-                                </div>
-                                <div>
-                                    <label asp-for="Phone" class="block text-sm font-medium mb-1">Số điện thoại *</label>
-                                    <input asp-for="Phone" autocomplete="tel" inputmode="tel" class="lead-input" required />
-                                </div>
-                            </div>
-                            <div>
-                                <label asp-for="Email" class="block text-sm font-medium mb-1">Email</label>
-                                <input asp-for="Email" type="email" autocomplete="email" class="lead-input" />
-                            </div>
-                            @if (Model.Branches.Count > 1)
-                            {
-                                <div>
-                                    <label asp-for="BranchId" class="block text-sm font-medium mb-1">Chi nhánh</label>
-                                    <select asp-for="BranchId" class="lead-input">
-                                        @foreach (var b in Model.Branches)
-                                        {
-                                            <option value="@b.Id">@b.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                            }
-                            <div>
-                                <label asp-for="Subject" class="block text-sm font-medium mb-1">Chủ đề</label>
-                                <input asp-for="Subject" class="lead-input" />
-                            </div>
-                            <div>
-                                <label asp-for="Message" class="block text-sm font-medium mb-1">Nội dung</label>
-                                <textarea asp-for="Message" rows="4" class="lead-input"></textarea>
-                            </div>
-                            <p class="text-xs text-gray-400">
-                                Bằng việc gửi form, bạn đồng ý để Xe Máy Hiếu Nga liên hệ tư vấn. Thông tin được bảo mật.
-                            </p>
-                            <button type="submit" class="btn-primary w-full touch-press justify-center">@Model.SubmitLabel</button>
-                        </form>
+                <div class="lead-form-card tr-embed" data-tr-page>
+                    <h2 class="text-xl font-bold text-honda-dark">Đặt lịch xem xe</h2>
+                    <p class="text-sm text-gray-500 mt-1">Chỉ mất khoảng 30 giây — cùng hệ thống đặt lịch Hiếu Nga.</p>
+                    <div class="mt-6">
+                        <partial name="_TestRideBookingForm" model="Model.BookingForm" />
                     </div>
                 </div>
             </div>
-        }
+        </div>
     </div>
 </section>
+
+<partial name="_TestRideBookingModals" />
+
+@section Scripts {
+    <script src="~/js/test-ride.js" asp-append-version="true"></script>
+}

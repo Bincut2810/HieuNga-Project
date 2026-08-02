@@ -1,96 +1,154 @@
 @page "/bao-duong"
 @model HieuNga.Web.Pages.BaoDuong.IndexModel
+@using HieuNga.Application.TestRide
 @using HieuNga.Web.Filters
 @{
     var site = SiteSettingsViewData.Get(ViewData);
     var telHref = SiteSettingsViewData.TelHref(site);
-    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
+    var minDate = TestRideVietnamTime.Today.ToString("yyyy-MM-dd");
 }
 
-<section class="book-page">
-    <div class="book-shell">
+@section Head {
+    <link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" />
+}
+<link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" data-tr-css />
+
+<section class="tr-page" data-maint-page id="booking">
+    <div class="tr-shell">
         @if (Model.Success)
         {
-            <div class="book-success" role="status">
-                <h1 class="book-success-title">Đã nhận lịch hẹn</h1>
-                <p class="book-success-text">Xe Máy Hiếu Nga sẽ gọi xác nhận trong giờ hành chính.</p>
-                <div class="book-success-actions">
-                    <a href="@telHref" hx-boost="false" class="btn-primary touch-press">Gọi @site.Hotline</a>
-                    <a href="/dich-vu" class="btn-secondary touch-press">Xem dịch vụ</a>
+            <div class="tr-success-static" role="status" aria-live="polite">
+                <div class="tr-modal-icon tr-modal-icon-ok" aria-hidden="true">✓</div>
+                <h1 class="tr-heading">Đặt lịch thành công</h1>
+                <p class="tr-sub">Xe Máy Hiếu Nga sẽ gọi xác nhận trong giờ hành chính.</p>
+                <div class="tr-actions" style="margin-top:1.25rem">
+                    <a href="@telHref" hx-boost="false" class="tr-btn tr-btn-primary">Gọi @site.Hotline</a>
+                    <a href="/dich-vu" class="tr-btn tr-btn-secondary">Xem dịch vụ</a>
                 </div>
             </div>
         }
         else
         {
-            <header class="book-header">
-                <p class="section-eyebrow">Đặt lịch</p>
-                <h1 class="book-title">Đặt lịch bảo dưỡng</h1>
-                <p class="book-sub">Chỉ mất khoảng 30 giây — chúng tôi sẽ gọi lại xác nhận.</p>
-            </header>
+            <h1 class="tr-heading">Đặt lịch bảo dưỡng</h1>
+            <p class="tr-sub">Chỉ mất khoảng 30 giây để hoàn tất.</p>
 
-            <form id="booking" method="post" class="book-form scroll-mt-24">
+            <div asp-validation-summary="ModelOnly" class="tr-errors" role="alert"></div>
+
+            <form class="tr-form" method="post" novalidate
+                  data-maint-form hx-boost="false" action="/bao-duong">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="book-error"></div>
+                <div class="tr-errors" data-maint-summary hidden role="alert"></div>
 
-                <div class="book-field">
-                    <label asp-for="CustomerName">Họ tên *</label>
-                    <input asp-for="CustomerName" class="book-input" autocomplete="name" required />
-                    <span asp-validation-for="CustomerName" class="book-field-error"></span>
+                <div class="tr-field">
+                    <label class="tr-label" asp-for="CustomerName">Họ tên</label>
+                    <input asp-for="CustomerName" class="tr-input" autocomplete="name"
+                           placeholder="Nguyễn Văn A" data-maint-field="CustomerName" />
+                    <span asp-validation-for="CustomerName" class="tr-field-error"></span>
+                    <p class="tr-field-error" data-maint-error="CustomerName" hidden></p>
                 </div>
 
-                <div class="book-field">
-                    <label asp-for="Phone">Số điện thoại *</label>
-                    <input asp-for="Phone" class="book-input" autocomplete="tel" inputmode="tel" required />
-                    <span asp-validation-for="Phone" class="book-field-error"></span>
+                <div class="tr-field">
+                    <label class="tr-label" asp-for="Phone">Số điện thoại</label>
+                    <input asp-for="Phone" class="tr-input" autocomplete="tel" inputmode="tel"
+                           placeholder="09…" data-maint-field="Phone" />
+                    <span asp-validation-for="Phone" class="tr-field-error"></span>
+                    <p class="tr-field-error" data-maint-error="Phone" hidden></p>
                 </div>
 
-                <div class="book-field">
-                    <label asp-for="MotorcycleModel">Dòng xe *</label>
-                    <input asp-for="MotorcycleModel" class="book-input" placeholder="VD: Vision, Wave, SH" required />
-                    <span asp-validation-for="MotorcycleModel" class="book-field-error"></span>
+                <div class="tr-field">
+                    <label class="tr-label" asp-for="MotorcycleModel">Dòng xe</label>
+                    <input asp-for="MotorcycleModel" class="tr-input"
+                           placeholder="VD: Vision, Wave, SH" data-maint-field="MotorcycleModel" />
+                    <span asp-validation-for="MotorcycleModel" class="tr-field-error"></span>
+                    <p class="tr-field-error" data-maint-error="MotorcycleModel" hidden></p>
                 </div>
 
-                <div class="book-field">
-                    <label asp-for="ServiceType">Dịch vụ *</label>
-                    <select asp-for="ServiceType" class="book-input" required>
+                <div class="tr-field">
+                    <label class="tr-label" asp-for="ServiceType">Dịch vụ</label>
+                    <select asp-for="ServiceType" class="tr-select" data-maint-field="ServiceType">
                         @foreach (var option in Model.BookingServiceOptions)
                         {
                             <option value="@option">@option</option>
                         }
                     </select>
-                    <span asp-validation-for="ServiceType" class="book-field-error"></span>
+                    <span asp-validation-for="ServiceType" class="tr-field-error"></span>
+                    <p class="tr-field-error" data-maint-error="ServiceType" hidden></p>
                 </div>
 
-                <div class="book-row">
-                    <div class="book-field">
-                        <label asp-for="PreferredDate">Ngày *</label>
-                        <input asp-for="PreferredDate" type="date" class="book-input" min="@minDate" required />
-                        <span asp-validation-for="PreferredDate" class="book-field-error"></span>
+                <div class="tr-field">
+                    <label class="tr-label" asp-for="PreferredDate">Ngày hẹn</label>
+                    <input asp-for="PreferredDate" type="date" class="tr-input"
+                           min="@minDate" data-maint-field="PreferredDate" />
+                    <span asp-validation-for="PreferredDate" class="tr-field-error"></span>
+                    <p class="tr-field-error" data-maint-error="PreferredDate" hidden></p>
+                </div>
+
+                <div class="tr-field">
+                    <span class="tr-label" id="maint-time-label">Giờ hẹn</span>
+                    <div class="tr-slots" role="radiogroup" aria-labelledby="maint-time-label">
+                        @foreach (var slot in Model.TimeSlots)
+                        {
+                            <label class="tr-slot">
+                                <input type="radio" asp-for="PreferredTime" value="@slot"
+                                       data-maint-field="PreferredTime" />
+                                <span>@slot</span>
+                            </label>
+                        }
                     </div>
-                    <div class="book-field">
-                        <label asp-for="PreferredTime">Giờ *</label>
-                        <select asp-for="PreferredTime" class="book-input" required>
-                            @foreach (var slot in Model.TimeSlots)
-                            {
-                                <option value="@slot">@slot</option>
-                            }
-                        </select>
-                        <span asp-validation-for="PreferredTime" class="book-field-error"></span>
-                    </div>
+                    <span asp-validation-for="PreferredTime" class="tr-field-error"></span>
+                    <p class="tr-field-error" data-maint-error="PreferredTime" hidden></p>
                 </div>
 
-                <div class="book-field">
-                    <label asp-for="Notes">Ghi chú (tuỳ chọn)</label>
-                    <input asp-for="Notes" class="book-input" maxlength="500" placeholder="Ví dụ: xe rung khi tăng tốc" />
+                <div class="tr-field">
+                    <label class="tr-label" asp-for="Notes">
+                        Ghi chú <span class="tr-hint">(tuỳ chọn)</span>
+                    </label>
+                    <textarea asp-for="Notes" class="tr-textarea" rows="3"
+                              placeholder="VD: xe rung khi tăng tốc" data-maint-field="Notes"></textarea>
                 </div>
 
-                <button type="submit" class="btn-primary book-submit touch-press">Gửi lịch hẹn</button>
-                <p class="book-footnote">
-                    Hoặc gọi ngay <a href="@telHref" hx-boost="false">@site.Hotline</a>
-                </p>
+                <div class="tr-actions">
+                    <button type="submit" class="tr-submit" data-maint-submit data-tr-idle-label="Đặt lịch bảo dưỡng">
+                        <span data-maint-submit-label>Đặt lịch bảo dưỡng</span>
+                        <span class="tr-spinner" data-maint-spinner hidden aria-hidden="true"></span>
+                    </button>
+                    <p class="tr-footnote">
+                        Hoặc gọi ngay <a href="@telHref" hx-boost="false">@site.Hotline</a>
+                    </p>
+                </div>
             </form>
         }
     </div>
 </section>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@if (!Model.Success)
+{
+<div class="tr-modal" data-maint-modal="success" hidden>
+    <div class="tr-modal-backdrop" data-maint-close></div>
+    <div class="tr-modal-card" role="dialog" aria-modal="true" tabindex="-1" data-maint-dialog>
+        <div class="tr-modal-icon tr-modal-icon-ok" aria-hidden="true">✓</div>
+        <h2 class="tr-modal-title">Đặt lịch thành công</h2>
+        <p class="tr-modal-text">Xe Máy Hiếu Nga sẽ gọi xác nhận trong giờ hành chính.</p>
+        <div class="tr-modal-actions">
+            <button type="button" class="tr-btn tr-btn-secondary" data-maint-close>Đóng</button>
+            <a href="/dich-vu" class="tr-btn tr-btn-primary">Xem dịch vụ</a>
+        </div>
+    </div>
+</div>
+
+<div class="tr-modal" data-maint-modal="error" hidden>
+    <div class="tr-modal-backdrop" data-maint-close></div>
+    <div class="tr-modal-card" role="dialog" aria-modal="true" tabindex="-1" data-maint-dialog>
+        <div class="tr-modal-icon tr-modal-icon-err" aria-hidden="true">!</div>
+        <h2 class="tr-modal-title">Không thể gửi yêu cầu</h2>
+        <p class="tr-modal-text" data-maint-error-body>Đã xảy ra lỗi. Vui lòng thử lại hoặc gọi hotline.</p>
+        <div class="tr-modal-actions">
+            <button type="button" class="tr-btn tr-btn-primary" data-maint-close>Thử lại</button>
+        </div>
+    </div>
+</div>
+}
+
+@section Scripts {
+    <script src="~/js/maintenance-booking.js" asp-append-version="true"></script>
+}

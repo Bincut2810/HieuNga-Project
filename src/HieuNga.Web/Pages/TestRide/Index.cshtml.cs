@@ -1,3 +1,4 @@
+using HieuNga.Application.Interfaces;
 using HieuNga.Application.TestRide;
 using HieuNga.Web.ViewModels.TestRide;
 using Microsoft.AspNetCore.Mvc;
@@ -5,7 +6,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HieuNga.Web.Pages.TestRide;
 
-public class IndexModel(ITestRideService bookingService, ILogger<IndexModel> logger) : PageModel
+public class IndexModel(
+    ITestRideService bookingService,
+    IBranchService branchService,
+    ILogger<IndexModel> logger) : PageModel
 {
     public const string DuplicateMessage =
         "Bạn đã gửi lịch hẹn trước đó. Nhân viên sẽ sớm liên hệ với bạn.";
@@ -13,7 +17,7 @@ public class IndexModel(ITestRideService bookingService, ILogger<IndexModel> log
     [BindProperty]
     public TestRideViewModel Input { get; set; } = new();
 
-    public IReadOnlyList<TestRideMotorcycleOption> MotorcycleOptions { get; private set; } = [];
+    public TestRideBookingFormModel Form { get; private set; } = new();
 
     public bool Success { get; private set; }
     public bool IsDuplicate { get; private set; }
@@ -30,11 +34,9 @@ public class IndexModel(ITestRideService bookingService, ILogger<IndexModel> log
         await LoadFormAsync(xeId, source, ct);
     }
 
-    /// <summary>Native POST fallback (no JS) — same create path as AJAX.</summary>
     public Task<IActionResult> OnPostAsync(CancellationToken ct) =>
         ProcessBookingAsync(jsonResponse: false, ct);
 
-    /// <summary>AJAX booking endpoint.</summary>
     public Task<IActionResult> OnPostBookAsync(CancellationToken ct) =>
         ProcessBookingAsync(jsonResponse: true, ct);
 
@@ -47,7 +49,8 @@ public class IndexModel(ITestRideService bookingService, ILogger<IndexModel> log
             Input.AppointmentDate,
             Input.AppointmentTime,
             Input.Source,
-            Input.Notes);
+            Input.Notes,
+            Input.BranchId);
 
         TestRideResponse result;
         try
@@ -123,7 +126,8 @@ public class IndexModel(ITestRideService bookingService, ILogger<IndexModel> log
 
     private async Task LoadFormAsync(Guid? xeId, string? source, CancellationToken ct)
     {
-        MotorcycleOptions = await bookingService.GetMotorcycleOptionsAsync(ct);
+        var options = await bookingService.GetMotorcycleOptionsAsync(ct);
+        var branches = await branchService.GetActiveAsync(ct);
         if (xeId.HasValue)
             Input.MotorcycleId = xeId;
         if (!string.IsNullOrWhiteSpace(source))
@@ -132,6 +136,19 @@ public class IndexModel(ITestRideService bookingService, ILogger<IndexModel> log
             Input.AppointmentTime = TestRideValidator.AllowedAppointmentTimes[0];
         if (Input.AppointmentDate == default)
             Input.AppointmentDate = TestRideVietnamTime.Today;
+        Input.BranchId ??= branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? branches.FirstOrDefault()?.Id;
+
+        Form = new TestRideBookingFormModel
+        {
+            Input = Input,
+            MotorcycleOptions = options,
+            Branches = branches,
+            MinDate = TestRideVietnamTime.Today.ToString("yyyy-MM-dd"),
+            FormAction = "/dat-lich-lai-thu",
+            SubmitLabel = "Đặt lịch xem xe",
+            Compact = false
+        };
+
         ViewData["Title"] = "Đặt lịch xem xe";
         ViewData["MetaTitle"] = "Đặt lịch xem xe | Xe Máy Hiếu Nga";
     }

@@ -21,6 +21,9 @@ public sealed class TestRideViewModel
     [Display(Name = "Giờ hẹn")]
     public string AppointmentTime { get; set; } = "";
 
+    [Display(Name = "Chi nhánh")]
+    public Guid? BranchId { get; set; }
+
     public string? Source { get; set; }
 
     [Display(Name = "Ghi chú")]

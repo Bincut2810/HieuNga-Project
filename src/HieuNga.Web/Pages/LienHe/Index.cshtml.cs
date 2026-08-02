@@ -1,6 +1,8 @@
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
+using HieuNga.Application.TestRide;
 using HieuNga.Web.Extensions;
+using HieuNga.Web.ViewModels.TestRide;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -8,9 +10,11 @@ namespace HieuNga.Web.Pages.LienHe;
 
 public class IndexModel(
     IBranchService branchService,
-    IBookingService bookingService,
-    IMotorcycleService motorcycleService) : PageModel
+    IMotorcycleService motorcycleService,
+    ITestRideService testRideService) : PageModel
 {
+    public const string ContactPageSource = "ContactPage";
+
     public IReadOnlyList<BranchDto> Branches { get; private set; } = [];
     public MotorcycleDetailDto? SelectedMotorcycle { get; private set; }
     public string Intent { get; private set; } = "mua-xe";
@@ -18,21 +22,8 @@ public class IndexModel(
     public string? ServiceSlug { get; private set; }
     public string PageHeading { get; private set; } = "Liên hệ tư vấn";
     public string PageSubheading { get; private set; } = "Showroom HEAD — tư vấn tận tâm, phản hồi nhanh";
-    public string SubmitLabel { get; private set; } = "Gửi yêu cầu tư vấn";
 
-    [BindProperty] public string CustomerName { get; set; } = "";
-    [BindProperty] public string Phone { get; set; } = "";
-    [BindProperty] public string? Email { get; set; }
-    [BindProperty] public string? Subject { get; set; }
-    [BindProperty] public string? Message { get; set; }
-    [BindProperty] public Guid? MotorcycleId { get; set; }
-    [BindProperty] public Guid? BranchId { get; set; }
-    [BindProperty] public string? IntentField { get; set; }
-    [BindProperty] public string? SourceField { get; set; }
-    [BindProperty] public string? XeSlugField { get; set; }
-    [BindProperty] public string? ServiceField { get; set; }
-
-    public bool Success { get; private set; }
+    public TestRideBookingFormModel BookingForm { get; private set; } = new();
 
     public async Task OnGetAsync(
         string? intent,
@@ -43,51 +34,34 @@ public class IndexModel(
     {
         Branches = await branchService.GetActiveAsync(ct);
         Intent = NormalizeIntent(intent);
-        LeadSource = string.IsNullOrWhiteSpace(source) ? InferSource() : source.Trim().ToLowerInvariant();
+        LeadSource = string.IsNullOrWhiteSpace(source) ? InferSource() : source.Trim();
         ServiceSlug = service;
         await LoadMotorcycleAsync(xe, ct);
         ApplyIntentCopy();
-        PrefillSubjectMessage();
-        BranchId ??= Branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? Branches.FirstOrDefault()?.Id;
-        MotorcycleId = SelectedMotorcycle?.Id;
+
+        var options = await testRideService.GetMotorcycleOptionsAsync(ct);
+        var input = new TestRideViewModel
+        {
+            Source = ContactPageSource,
+            MotorcycleId = SelectedMotorcycle?.Id,
+            AppointmentDate = TestRideVietnamTime.Today,
+            AppointmentTime = TestRideValidator.AllowedAppointmentTimes[0],
+            BranchId = Branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? Branches.FirstOrDefault()?.Id
+        };
+
+        BookingForm = new TestRideBookingFormModel
+        {
+            Input = input,
+            MotorcycleOptions = options,
+            Branches = Branches,
+            MinDate = TestRideVietnamTime.Today.ToString("yyyy-MM-dd"),
+            FormAction = "/dat-lich-lai-thu",
+            SubmitLabel = "Đặt lịch xem xe",
+            Footnote = "Chúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.",
+            Compact = true
+        };
 
         this.SetSeo(null, $"{PageHeading} | Xe Máy Hiếu Nga", PageSubheading);
-    }
-
-    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
-    {
-        Branches = await branchService.GetActiveAsync(ct);
-        Intent = NormalizeIntent(IntentField);
-        LeadSource = string.IsNullOrWhiteSpace(SourceField) ? "contact" : SourceField.Trim().ToLowerInvariant();
-        ServiceSlug = ServiceField;
-        await LoadMotorcycleAsync(XeSlugField, ct);
-        if (MotorcycleId is null) MotorcycleId = SelectedMotorcycle?.Id;
-        ApplyIntentCopy();
-
-        if (string.IsNullOrWhiteSpace(CustomerName) || string.IsNullOrWhiteSpace(Phone))
-        {
-            ModelState.AddModelError(string.Empty, "Vui lòng nhập họ tên và số điện thoại.");
-            return Page();
-        }
-
-        await bookingService.CreateConsultationAsync(
-            new CreateConsultationDto(
-                CustomerName,
-                Phone,
-                Email,
-                Subject,
-                Message,
-                BranchId ?? Branches.FirstOrDefault()?.Id,
-                MotorcycleId,
-                LeadSource,
-                Intent,
-                SelectedMotorcycle?.Slug ?? XeSlugField,
-                ServiceSlug),
-            ct);
-
-        Success = true;
-        this.SetSeo(null, "Đã gửi yêu cầu | Xe Máy Hiếu Nga", "Cảm ơn bạn đã liên hệ Xe Máy Hiếu Nga.");
-        return Page();
     }
 
     private async Task LoadMotorcycleAsync(string? slug, CancellationToken ct)
@@ -103,56 +77,27 @@ public class IndexModel(
         {
             case "tra-gop":
                 PageHeading = bikeName is null ? "Tư vấn trả góp" : $"Tư vấn trả góp — {bikeName}";
-                PageSubheading = "Để lại thông tin — tư vấn viên hỗ trợ hồ sơ trả góp";
-                SubmitLabel = "Gửi yêu cầu trả góp";
+                PageSubheading = "Đặt lịch xem xe — tư vấn viên hỗ trợ hồ sơ trả góp tại showroom";
                 break;
             case "bao-duong":
-                PageHeading = "Tư vấn bảo dưỡng";
+                PageHeading = "Liên hệ dịch vụ";
                 PageSubheading = string.IsNullOrWhiteSpace(ServiceSlug)
-                    ? "Đặt lịch / hỏi thông tin dịch vụ HEAD"
+                    ? "Đặt lịch bảo dưỡng hoặc đặt lịch xem xe tại showroom"
                     : $"Quan tâm dịch vụ: {ServiceSlug}";
-                SubmitLabel = "Gửi yêu cầu dịch vụ";
                 break;
             case "khuyen-mai":
                 PageHeading = "Nhận ưu đãi khuyến mãi";
-                PageSubheading = "Đăng ký nhận tư vấn ưu đãi đang áp dụng";
-                SubmitLabel = "Đăng ký nhận ưu đãi";
+                PageSubheading = "Đặt lịch xem xe để nhận tư vấn ưu đãi đang áp dụng";
                 break;
             case "lai-thu":
                 PageHeading = bikeName is null ? "Đặt lịch xem xe" : $"Đặt lịch xem — {bikeName}";
-                PageSubheading = "Hoặc dùng form đặt lịch xem xe chuyên dụng";
-                SubmitLabel = "Gửi yêu cầu xem xe";
+                PageSubheading = "Chỉ mất khoảng 30 giây — showroom sẽ gọi xác nhận";
                 break;
             default:
-                PageHeading = bikeName is null ? "Tư vấn mua xe" : $"Tư vấn mua — {bikeName}";
-                PageSubheading = "Showroom HEAD — tư vấn tận tâm, phản hồi nhanh";
-                SubmitLabel = "Gửi yêu cầu tư vấn";
+                PageHeading = bikeName is null ? "Liên hệ — đặt lịch xem xe" : $"Tư vấn mua — {bikeName}";
+                PageSubheading = "Showroom HEAD — đặt lịch xem xe, phản hồi nhanh";
                 Intent = "mua-xe";
                 break;
-        }
-    }
-
-    private void PrefillSubjectMessage()
-    {
-        if (!string.IsNullOrWhiteSpace(Subject)) return;
-        var bike = SelectedMotorcycle?.Name;
-        Subject = Intent switch
-        {
-            "tra-gop" => bike is null ? "Tư vấn trả góp" : $"Tư vấn trả góp {bike}",
-            "bao-duong" => string.IsNullOrWhiteSpace(ServiceSlug) ? "Tư vấn bảo dưỡng" : $"Tư vấn dịch vụ {ServiceSlug}",
-            "khuyen-mai" => "Đăng ký nhận khuyến mãi",
-            "lai-thu" => bike is null ? "Đặt lịch xem xe" : $"Đặt lịch xem {bike}",
-            _ => bike is null ? "Tư vấn mua xe" : $"Tư vấn mua {bike}"
-        };
-
-        if (string.IsNullOrWhiteSpace(Message) && bike is not null)
-        {
-            Message = Intent switch
-            {
-                "tra-gop" => $"Tôi quan tâm trả góp mẫu {bike}. Vui lòng tư vấn hồ sơ và khoản tháng.",
-                "lai-thu" => $"Tôi muốn đặt lịch xem mẫu {bike} tại showroom.",
-                _ => $"Tôi quan tâm mẫu {bike}. Vui lòng tư vấn thêm."
-            };
         }
     }
 

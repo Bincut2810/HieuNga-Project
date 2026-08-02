@@ -35,7 +35,8 @@
         submitBtn.setAttribute('aria-busy', on ? 'true' : 'false');
       }
       if (spinner) spinner.hidden = !on;
-      if (label) label.textContent = on ? 'Đang gửi…' : 'Đặt lịch xem xe';
+      var idle = (submitBtn && submitBtn.getAttribute('data-tr-idle-label')) || 'Đặt lịch xem xe';
+      if (label) label.textContent = on ? 'Đang gửi…' : idle;
     }
 
     function clearErrors() {
@@ -252,6 +253,11 @@
             return;
           }
           form.reset();
+          // Preserve lead source after reset (hidden field is wiped by reset).
+          var sourceInput = form.querySelector('input[name="Input.Source"]');
+          if (sourceInput && sourceInput.defaultValue) {
+            sourceInput.value = sourceInput.defaultValue;
+          }
           setBusy(false);
           showSuccess(data);
         })

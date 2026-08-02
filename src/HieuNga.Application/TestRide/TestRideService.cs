@@ -93,8 +93,17 @@ public sealed class TestRideService(
             }
 
             var branches = await branchRepo.FindAsync(b => !b.IsDeleted && b.IsActive, ct);
-            var branchId = branches.FirstOrDefault(b => b.IsHeadOffice)?.Id
-                ?? branches.FirstOrDefault()?.Id;
+            Guid? branchId = null;
+            if (request.BranchId is Guid requestedBranch
+                && branches.Any(b => b.Id == requestedBranch))
+            {
+                branchId = requestedBranch;
+            }
+            else
+            {
+                branchId = branches.FirstOrDefault(b => b.IsHeadOffice)?.Id
+                    ?? branches.FirstOrDefault()?.Id;
+            }
 
             var notes = LeadAttribution.BuildNotes(
                 request.Source,

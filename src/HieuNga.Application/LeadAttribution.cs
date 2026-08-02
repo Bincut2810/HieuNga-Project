@@ -83,7 +83,7 @@ public static class LeadAttribution
         "finance" or "tra-gop" => "Trả góp",
         "news" or "tin-tuc" => "Tin tức",
         "compare" or "so-sanh" => "So sánh",
-        "contact" or "lien-he" => "Liên hệ",
+        "contact" or "lien-he" or "contactpage" => "Liên hệ",
         "test-ride" or "lai-thu" => "Lái thử",
         _ => source
     };

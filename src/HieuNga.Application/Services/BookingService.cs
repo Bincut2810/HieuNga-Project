@@ -1,6 +1,7 @@
 using HieuNga.Application;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
+using HieuNga.Application.TestRide;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
 using HieuNga.Domain.Interfaces;
@@ -8,19 +9,21 @@ using HieuNga.Domain.Interfaces;
 namespace HieuNga.Application.Services;
 
 public class BookingService(
-    IRepository<Booking> bookingRepo,
     IRepository<MaintenanceBooking> maintenanceRepo,
     IUnitOfWork unitOfWork) : IBookingService
 {
     public async Task<Guid> CreateMaintenanceBookingAsync(CreateMaintenanceBookingDto dto, CancellationToken ct = default)
     {
+        var phone = TestRidePhoneNormalizer.Normalize(dto.Phone);
+        var dayUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(dto.PreferredDate);
+
         var booking = new MaintenanceBooking
         {
             CustomerName = dto.CustomerName.Trim(),
-            Phone = dto.Phone.Trim(),
+            Phone = phone,
             MotorcycleModel = dto.MotorcycleModel.Trim(),
             ServiceType = dto.ServiceType.Trim(),
-            PreferredDate = dto.PreferredDate.Date,
+            PreferredDate = dayUtc,
             PreferredTime = dto.PreferredTime.Trim(),
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
             Status = BookingStatus.Pending
@@ -31,49 +34,25 @@ public class BookingService(
         return booking.Id;
     }
 
-    public async Task<Guid> CreateConsultationAsync(CreateConsultationDto dto, CancellationToken ct = default)
-    {
-        var booking = new Booking
-        {
-            Type = BookingType.Consultation,
-            CustomerName = dto.CustomerName,
-            Phone = dto.Phone,
-            Email = dto.Email,
-            PreferredDate = DateTime.Today.AddDays(1),
-            Notes = LeadAttribution.BuildNotes(
-                dto.LeadSource,
-                dto.Intent,
-                dto.XeSlug,
-                dto.ServiceSlug,
-                dto.Subject,
-                dto.Message),
-            BranchId = dto.BranchId,
-            MotorcycleId = dto.MotorcycleId
-        };
-
-        await bookingRepo.AddAsync(booking, ct);
-        await unitOfWork.SaveChangesAsync(ct);
-        return booking.Id;
-    }
-
     public async Task<MaintenanceBoardDto> GetMaintenanceBoardAsync(
         string? range,
         string? search,
         CancellationToken ct = default)
     {
+        var todayVn = TestRideVietnamTime.Today;
+        var todayUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn);
+        var tomorrowUtc = TestRideVietnamTime.ConvertLocalAppointmentDateEndExclusiveToUtc(todayVn);
+        var weekEndUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn.AddDays(7));
+
         var all = await maintenanceRepo.FindAsync(b => !b.IsDeleted, ct);
-        var today = DateTime.Today;
-        var tomorrow = today.AddDays(1);
-        var weekEnd = today.AddDays(7);
 
-        var filtered = all.AsEnumerable();
-
-        filtered = (range ?? "today").ToLowerInvariant() switch
+        var filtered = (range ?? "today").ToLowerInvariant() switch
         {
-            "tomorrow" => filtered.Where(b => b.PreferredDate.Date == tomorrow),
-            "week" => filtered.Where(b => b.PreferredDate.Date >= today && b.PreferredDate.Date < weekEnd),
-            "all" => filtered,
-            _ => filtered.Where(b => b.PreferredDate.Date == today)
+            "tomorrow" => all.Where(b => b.PreferredDate >= tomorrowUtc
+                && b.PreferredDate < TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn.AddDays(2))),
+            "week" => all.Where(b => b.PreferredDate >= todayUtc && b.PreferredDate < weekEndUtc),
+            "all" => all.AsEnumerable(),
+            _ => all.Where(b => b.PreferredDate >= todayUtc && b.PreferredDate < tomorrowUtc)
         };
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -94,9 +73,11 @@ public class BookingService(
             .ToList();
 
         var counts = new MaintenanceBoardCounts(
-            all.Count(b => b.PreferredDate.Date == today && b.Status != BookingStatus.Cancelled),
+            all.Count(b => b.PreferredDate >= todayUtc && b.PreferredDate < tomorrowUtc
+                && b.Status != BookingStatus.Cancelled),
             all.Count(b => b.Status == BookingStatus.Pending),
-            all.Count(b => b.PreferredDate.Date == today && b.Status == BookingStatus.Completed),
+            all.Count(b => b.PreferredDate >= todayUtc && b.PreferredDate < tomorrowUtc
+                && b.Status == BookingStatus.Completed),
             all.Count(b => b.Status == BookingStatus.Cancelled));
 
         return new MaintenanceBoardDto(items, counts);
@@ -112,7 +93,7 @@ public class BookingService(
             throw new InvalidOperationException("Không thể chuyển trạng thái lịch hẹn.");
 
         entity.Status = status;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = TestRideVietnamTime.UtcNow;
         await maintenanceRepo.UpdateAsync(entity, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }

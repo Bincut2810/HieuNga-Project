@@ -1,52 +1,121 @@
 @page "/admin/khach-hang/bao-duong"
-@using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.KhachHang.BaoDuongIndexModel
+@using HieuNga.Domain.Enums
 @{
-    string RangeClass(string value) =>
-        string.Equals(Model.Range, value, StringComparison.OrdinalIgnoreCase) ? "book-chip is-active" : "book-chip";
+    ViewData["Title"] = "Lịch bảo dưỡng";
+    var range = string.IsNullOrWhiteSpace(Model.Range) ? "today" : Model.Range.ToLowerInvariant();
+    string StatusLabel(BookingStatus s) => s switch
+    {
+        BookingStatus.Pending => "Chờ xác nhận",
+        BookingStatus.Confirmed => "Đã xác nhận",
+        BookingStatus.Completed => "Hoàn thành",
+        BookingStatus.Cancelled => "Đã hủy",
+        _ => "—"
+    };
+    string PillClass(string value) =>
+        range == value ? "tr-pill is-active" : "tr-pill";
+    var columns = new (string Title, BookingStatus Status, IReadOnlyList<HieuNga.Application.DTOs.MaintenanceBookingDto> Items)[]
+    {
+        ("Chờ xác nhận", BookingStatus.Pending, Model.NewItems),
+        ("Đã xác nhận", BookingStatus.Confirmed, Model.ConfirmedItems),
+        ("Hoàn thành", BookingStatus.Completed, Model.CompletedItems),
+        ("Đã hủy", BookingStatus.Cancelled, Model.CancelledItems)
+    };
 }
 
-<partial name="Admin/Shared/_AdminPageHeader"
-         model='new AdminPageHeaderModel(
-             "Lịch bảo dưỡng",
-             "Bảng lịch trong ngày — xác nhận / hoàn thành / hủy bằng một chạm.")' />
+<link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" data-tr-css />
 
-<div class="book-dash">
-    <div class="book-dash-card">
-        <p class="book-dash-label">Hôm nay</p>
-        <p class="book-dash-value">@Model.Board.Counts.Today</p>
-    </div>
-    <div class="book-dash-card">
-        <p class="book-dash-label">Chờ xác nhận</p>
-        <p class="book-dash-value book-dash-warn">@Model.Board.Counts.Waiting</p>
-    </div>
-    <div class="book-dash-card">
-        <p class="book-dash-label">Hoàn thành hôm nay</p>
-        <p class="book-dash-value book-dash-ok">@Model.Board.Counts.CompletedToday</p>
-    </div>
-    <div class="book-dash-card">
-        <p class="book-dash-label">Đã hủy</p>
-        <p class="book-dash-value">@Model.Board.Counts.Cancelled</p>
-    </div>
-</div>
+<div class="tr-admin tr-admin-maint">
+    <partial name="Admin/Shared/_BookingTypeSwitch" model='"maint"' />
 
-<form method="get" class="book-filters">
-    <div class="book-chips">
-        <a class="@RangeClass("today")" href="?range=today&q=@Uri.EscapeDataString(Model.Q ?? "")">Hôm nay</a>
-        <a class="@RangeClass("tomorrow")" href="?range=tomorrow&q=@Uri.EscapeDataString(Model.Q ?? "")">Ngày mai</a>
-        <a class="@RangeClass("week")" href="?range=week&q=@Uri.EscapeDataString(Model.Q ?? "")">Tuần này</a>
-        <a class="@RangeClass("all")" href="?range=all&q=@Uri.EscapeDataString(Model.Q ?? "")">Tất cả</a>
-    </div>
-    <div class="book-search">
-        <input type="hidden" name="range" value="@Model.Range" />
-        <input name="q" value="@Model.Q" class="admin-input" placeholder="Tìm tên, SĐT, xe..." />
-        <button type="submit" class="admin-btn admin-btn-secondary">Tìm</button>
-    </div>
-</form>
+    <header class="tr-admin-header">
+        <h1 class="tr-admin-title">Lịch bảo dưỡng</h1>
+        <p class="tr-admin-count">
+            Hôm nay @Model.Board.Counts.Today · Chờ @Model.Board.Counts.Waiting · Hoàn thành @Model.Board.Counts.CompletedToday
+        </p>
+    </header>
 
-<div class="book-board">
-    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Mới", "new", Model.NewItems, Model.Range, Model.Q)' />
-    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Đã xác nhận", "confirmed", Model.ConfirmedItems, Model.Range, Model.Q)' />
-    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Hoàn thành", "done", Model.CompletedItems, Model.Range, Model.Q)' />
-    <partial name="Admin/KhachHang/BaoDuong/_BoardColumn" model='("Đã hủy", "cancel", Model.CancelledItems, Model.Range, Model.Q)' />
+    <div class="tr-pills" role="tablist" aria-label="Lọc theo ngày">
+        <a class="@PillClass("today")"
+           href="?range=today&q=@Uri.EscapeDataString(Model.Q ?? "")">Hôm nay</a>
+        <a class="@PillClass("tomorrow")"
+           href="?range=tomorrow&q=@Uri.EscapeDataString(Model.Q ?? "")">Ngày mai</a>
+        <a class="@PillClass("week")"
+           href="?range=week&q=@Uri.EscapeDataString(Model.Q ?? "")">Tuần này</a>
+        <a class="@PillClass("all")"
+           href="?range=all&q=@Uri.EscapeDataString(Model.Q ?? "")">Tất cả</a>
+    </div>
+
+    <form method="get" class="tr-admin-search">
+        <input type="hidden" name="range" value="@range" />
+        <input type="search" name="q" value="@Model.Q" class="tr-input"
+               placeholder="Tìm tên, SĐT, xe…" />
+        <button type="submit" class="tr-btn tr-btn-secondary">Tìm</button>
+    </form>
+
+    @foreach (var col in columns)
+    {
+        <section class="tr-maint-section" aria-label="@col.Title">
+            <h2 class="tr-admin-count" style="margin:1.25rem 0 0.65rem;">@col.Title (@col.Items.Count)</h2>
+            @if (col.Items.Count == 0)
+            {
+                <div class="tr-empty">Không có lịch.</div>
+            }
+            else
+            {
+                <div class="tr-schedule" aria-label="@col.Title">
+                    @foreach (var b in col.Items)
+                    {
+                        <article class="tr-row">
+                            <p class="tr-row-time">@(string.IsNullOrWhiteSpace(b.PreferredTime) ? "—" : b.PreferredTime)</p>
+                            <div class="tr-row-body">
+                                <div class="tr-row-meta">
+                                    <span class="tr-badge-type tr-badge-maint" title="Maintenance">🟦 Maintenance</span>
+                                </div>
+                                <p class="tr-row-name">@b.CustomerName</p>
+                                <p class="tr-row-bike">@b.MotorcycleModel · @b.ServiceType</p>
+                                <a class="tr-row-phone" href="tel:@b.Phone">@b.Phone</a>
+                                <p class="tr-row-status">
+                                    @HieuNga.Application.TestRide.TestRideVietnamTime.ToVietnamDate(b.PreferredDate).ToString("dd/MM") · @StatusLabel(b.Status)
+                                </p>
+                            </div>
+                            <div class="tr-row-actions">
+                                @if (b.Status == BookingStatus.Pending)
+                                {
+                                    <form method="post" asp-page-handler="Confirm"
+                                          onsubmit="return confirm('Xác nhận lịch này?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <input type="hidden" name="range" value="@range" />
+                                        <input type="hidden" name="q" value="@Model.Q" />
+                                        <button type="submit" class="tr-row-action">Xác nhận</button>
+                                    </form>
+                                }
+                                @if (b.Status is BookingStatus.Pending or BookingStatus.Confirmed)
+                                {
+                                    <form method="post" asp-page-handler="Complete"
+                                          onsubmit="return confirm('Đánh dấu hoàn thành?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <input type="hidden" name="range" value="@range" />
+                                        <input type="hidden" name="q" value="@Model.Q" />
+                                        <button type="submit" class="tr-row-action tr-row-action-done">Hoàn thành</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Cancel"
+                                          onsubmit="return confirm('Hủy lịch hẹn này?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <input type="hidden" name="range" value="@range" />
+                                        <input type="hidden" name="q" value="@Model.Q" />
+                                        <button type="submit" class="tr-row-action tr-row-action-muted">Hủy</button>
+                                    </form>
+                                }
+                                <a class="tr-row-action" href="tel:@b.Phone">Gọi</a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
 </div>

@@ -31,16 +31,3 @@ public record BlogDetailDto(
     SeoMetadataDto Seo);
 
 public record BlogCategoryDto(Guid Id, string Name, string Slug);
-
-public record CreateConsultationDto(
-    string CustomerName,
-    string Phone,
-    string? Email,
-    string? Subject,
-    string? Message,
-    Guid? BranchId,
-    Guid? MotorcycleId = null,
-    string? LeadSource = null,
-    string? Intent = null,
-    string? XeSlug = null,
-    string? ServiceSlug = null);

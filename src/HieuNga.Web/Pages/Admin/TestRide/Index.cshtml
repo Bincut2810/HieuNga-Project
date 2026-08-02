@@ -31,6 +31,8 @@
 <link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" data-tr-css />
 
 <div class="tr-admin" data-tr-admin>
+    <partial name="Admin/Shared/_BookingTypeSwitch" model='"testride"' />
+
     <header class="tr-admin-header">
         <h1 class="tr-admin-title">@title</h1>
         <p class="tr-admin-count">@countLabel</p>
@@ -64,6 +66,9 @@
                 <article class="tr-row" data-tr-row data-id="@b.Id">
                     <p class="tr-row-time">@(string.IsNullOrWhiteSpace(b.AppointmentTime) ? "—" : b.AppointmentTime)</p>
                     <div class="tr-row-body">
+                        <div class="tr-row-meta">
+                            <span class="tr-badge-type tr-badge-testride" title="Test Ride">🟥 Test Ride</span>
+                        </div>
                         <p class="tr-row-name">
                             <button type="button" class="tr-row-link" data-tr-open="@b.Id">@b.CustomerName</button>
                         </p>
