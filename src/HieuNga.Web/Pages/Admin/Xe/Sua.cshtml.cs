@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HieuNga.Web.Pages.Admin.Xe;
 
-/// <summary>Legacy edit URL — redirects to unified Editor (Sprint 2.1).</summary>
+/// <summary>Previous edit URL — redirects to unified Editor.</summary>
 public class SuaModel : PageModel
 {
     public IActionResult OnGet(Guid id) =>

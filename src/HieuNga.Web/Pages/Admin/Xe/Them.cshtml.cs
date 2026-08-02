@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HieuNga.Web.Pages.Admin.Xe;
 
-/// <summary>Legacy create URL — redirects to unified Editor create mode.</summary>
+/// <summary>Previous create URL — redirects to unified Editor create mode.</summary>
 public class ThemModel : PageModel
 {
     public IActionResult OnGet() =>

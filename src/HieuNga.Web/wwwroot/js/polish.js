@@ -297,7 +297,24 @@
     });
   }
 
-  /** HTMX boost strips/ignores @section Scripts (outside #main-content) — load page modules when needed. */
+  /** HTMX boost strips/ignores @section Head/Scripts (outside #main-content) — load assets when needed. */
+  function loadStylesheetOnce(href) {
+    return new Promise((resolve) => {
+      if (document.querySelector('link[data-hn-href="' + href + '"]') ||
+          document.querySelector('link[href*="' + href + '"]')) {
+        resolve();
+        return;
+      }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      link.dataset.hnHref = href;
+      link.onload = () => resolve();
+      link.onerror = () => resolve();
+      document.head.appendChild(link);
+    });
+  }
+
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
       if (src.indexOf('detail-viewer') >= 0 && typeof window.registerMotorcycleDetailUi === 'function') {
@@ -308,7 +325,11 @@
         resolve();
         return;
       }
-      if (src.indexOf('test-ride-booking') >= 0 && typeof window.bootTestRideBooking === 'function') {
+      if (src.indexOf('test-ride-admin') >= 0 && typeof window.bootTestRideAdmin === 'function') {
+        resolve();
+        return;
+      }
+      if (src.indexOf('test-ride') >= 0 && typeof window.bootTestRide === 'function') {
         resolve();
         return;
       }
@@ -327,7 +348,10 @@
   }
 
   function bootPageModules(root) {
-    return Promise.all([bootDetailPageModules(root), bootTestRideBookingModule(root)]);
+    return Promise.all([
+      bootDetailPageModules(root),
+      bootTestRideModule(root)
+    ]);
   }
 
   function bootDetailPageModules(root) {
@@ -350,19 +374,39 @@
       });
   }
 
-  function bootTestRideBookingModule(root) {
+  function bootTestRideModule(root) {
     const scope = root || document;
-    if (!scope.querySelector('[data-trb-form]')) return Promise.resolve();
+    if (!scope.querySelector('[data-tr-page]') && !scope.querySelector('[data-tr-admin]')) {
+      return Promise.resolve();
+    }
 
-    return loadScriptOnce('/js/test-ride-booking.js')
-      .then(() => {
-        if (typeof window.bootTestRideBooking === 'function') {
-          try { window.bootTestRideBooking(); } catch (_) { /* already booted */ }
-        }
-      })
-      .catch((err) => {
-        console.warn('Test-ride booking module load:', err);
-      });
+    const needsPublic = !!scope.querySelector('[data-tr-page]');
+    const needsAdmin = !!scope.querySelector('[data-tr-admin]');
+    const cssReady = loadStylesheetOnce('/css/test-ride.css');
+    const tasks = [cssReady];
+
+    if (needsPublic) {
+      tasks.push(
+        cssReady.then(() => loadScriptOnce('/js/test-ride.js')).then(() => {
+          if (typeof window.bootTestRide === 'function') {
+            try { window.bootTestRide(); } catch (_) { /* already booted */ }
+          }
+        })
+      );
+    }
+    if (needsAdmin) {
+      tasks.push(
+        cssReady.then(() => loadScriptOnce('/js/test-ride-admin.js')).then(() => {
+          if (typeof window.bootTestRideAdmin === 'function') {
+            try { window.bootTestRideAdmin(); } catch (_) { /* already booted */ }
+          }
+        })
+      );
+    }
+
+    return Promise.all(tasks).catch((err) => {
+      console.warn('TestRide module load:', err);
+    });
   }
 
   document.body.addEventListener('htmx:afterSwap', (e) => {

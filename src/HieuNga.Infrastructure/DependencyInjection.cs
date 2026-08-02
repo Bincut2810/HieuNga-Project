@@ -4,8 +4,10 @@ using HieuNga.Application.Options;
 using HieuNga.Domain.Interfaces;
 using HieuNga.Infrastructure.Identity;
 using HieuNga.Infrastructure.Persistence;
+using HieuNga.Application.TestRide;
 using HieuNga.Infrastructure.Repositories;
 using HieuNga.Infrastructure.Services;
+using HieuNga.Infrastructure.TestRide;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -62,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IBlogRepository, BlogRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ITestRideCreateSynchronizer, NpgsqlTestRideCreateSynchronizer>();
 
         services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
         services.AddScoped<IFinanceConfigService, FinanceConfigService>();

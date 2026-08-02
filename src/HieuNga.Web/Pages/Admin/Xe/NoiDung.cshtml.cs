@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HieuNga.Web.Pages.Admin.Xe;
 
-/// <summary>Legacy content URL — redirects to Editor Media tab.</summary>
+/// <summary>Previous content URL — redirects to Editor Media tab.</summary>
 public class NoiDungModel : PageModel
 {
     public IActionResult OnGet(Guid id) =>

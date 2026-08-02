@@ -19,6 +19,9 @@ public class Repository<T>(HieuNgaDbContext context) : IRepository<T> where T : 
     public async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
         await DbSet.AsNoTracking().Where(predicate).ToListAsync(ct);
 
+    public Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
+        DbSet.AsNoTracking().CountAsync(predicate, ct);
+
     public async Task<T> AddAsync(T entity, CancellationToken ct = default)
     {
         await DbSet.AddAsync(entity, ct);

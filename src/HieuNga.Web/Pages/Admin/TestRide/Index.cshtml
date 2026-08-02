@@ -1,0 +1,141 @@
+@page "/admin/test-ride"
+@model HieuNga.Web.Pages.Admin.TestRide.IndexModel
+@using HieuNga.Domain.Enums
+@{
+    ViewData["Title"] = "Lịch xem xe";
+    var range = Model.ActiveRange;
+    string StatusLabel(BookingStatus s) => s switch
+    {
+        BookingStatus.Pending => "Chờ xác nhận",
+        BookingStatus.Confirmed => "Đã xác nhận",
+        BookingStatus.Completed => "Hoàn thành",
+        BookingStatus.Cancelled => "Đã hủy",
+        _ => "—"
+    };
+    string PillClass(string value) =>
+        range == value ? "tr-pill is-active" : "tr-pill";
+    var countLabel = range switch
+    {
+        "tomorrow" => $"{Model.Board.TomorrowCount} lịch hẹn",
+        "all" => $"{Model.Board.AllCount} lịch hẹn",
+        _ => $"{Model.Board.TodayCount} lịch hẹn"
+    };
+    var title = range switch
+    {
+        "tomorrow" => "Lịch xem xe ngày mai",
+        "all" => "Tất cả lịch xem xe",
+        _ => "Lịch xem xe hôm nay"
+    };
+}
+
+<link rel="stylesheet" href="~/css/test-ride.css" asp-append-version="true" data-tr-css />
+
+<div class="tr-admin" data-tr-admin>
+    <header class="tr-admin-header">
+        <h1 class="tr-admin-title">@title</h1>
+        <p class="tr-admin-count">@countLabel</p>
+    </header>
+
+    <div class="tr-pills" role="tablist" aria-label="Lọc theo ngày">
+        <a class="@PillClass("today")"
+           href="?range=today&q=@Uri.EscapeDataString(Model.Q ?? "")">Hôm nay (@Model.Board.TodayCount)</a>
+        <a class="@PillClass("tomorrow")"
+           href="?range=tomorrow&q=@Uri.EscapeDataString(Model.Q ?? "")">Ngày mai (@Model.Board.TomorrowCount)</a>
+        <a class="@PillClass("all")"
+           href="?range=all&q=@Uri.EscapeDataString(Model.Q ?? "")">Tất cả (@Model.Board.AllCount)</a>
+    </div>
+
+    <form method="get" class="tr-admin-search">
+        <input type="hidden" name="range" value="@range" />
+        <input type="search" name="q" value="@Model.Q" class="tr-input"
+               placeholder="Tìm tên, SĐT, xe…" />
+        <button type="submit" class="tr-btn tr-btn-secondary">Tìm</button>
+    </form>
+
+    @if (Model.Board.Items.Count == 0)
+    {
+        <div class="tr-empty">Không có lịch hẹn.</div>
+    }
+    else
+    {
+        <div class="tr-schedule" aria-label="Lịch hẹn">
+            @foreach (var b in Model.Board.Items)
+            {
+                <article class="tr-row" data-tr-row data-id="@b.Id">
+                    <p class="tr-row-time">@(string.IsNullOrWhiteSpace(b.AppointmentTime) ? "—" : b.AppointmentTime)</p>
+                    <div class="tr-row-body">
+                        <p class="tr-row-name">
+                            <button type="button" class="tr-row-link" data-tr-open="@b.Id">@b.CustomerName</button>
+                        </p>
+                        <p class="tr-row-bike">@b.MotorcycleName</p>
+                        <a class="tr-row-phone" href="tel:@b.PhoneNumber">@b.PhoneNumber</a>
+                        <p class="tr-row-status">@StatusLabel(b.Status)</p>
+                    </div>
+                    <div class="tr-row-actions">
+                        @if (b.Status == BookingStatus.Pending)
+                        {
+                            <form method="post" asp-page-handler="Confirm"
+                                  onsubmit="return confirm('Xác nhận lịch này?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <input type="hidden" name="range" value="@range" />
+                                <input type="hidden" name="q" value="@Model.Q" />
+                                <button type="submit" class="tr-row-action">Xác nhận</button>
+                            </form>
+                        }
+                        else if (b.Status == BookingStatus.Confirmed)
+                        {
+                            <form method="post" asp-page-handler="Complete"
+                                  onsubmit="return confirm('Đánh dấu hoàn thành?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <input type="hidden" name="range" value="@range" />
+                                <input type="hidden" name="q" value="@Model.Q" />
+                                <button type="submit" class="tr-row-action tr-row-action-done">Hoàn thành</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="tr-row-action tr-row-action-muted"
+                                    data-tr-open="@b.Id">Chi tiết</button>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@* Detail drawer *@
+<div class="tr-drawer" data-tr-drawer hidden>
+    <div class="tr-drawer-backdrop" data-tr-drawer-close></div>
+    <aside class="tr-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="tr-drawer-title">
+        <header class="tr-drawer-head">
+            <h2 id="tr-drawer-title" class="tr-drawer-title">Chi tiết lịch</h2>
+            <button type="button" class="tr-drawer-x" data-tr-drawer-close aria-label="Đóng">×</button>
+        </header>
+        <div class="tr-drawer-body" data-tr-drawer-body>
+            <p class="tr-muted">Đang tải…</p>
+        </div>
+        <form method="post" asp-page-handler="SaveDetail" class="tr-drawer-form" data-tr-drawer-form>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" data-tr-drawer-id />
+            <input type="hidden" name="range" value="@range" />
+            <input type="hidden" name="q" value="@Model.Q" />
+            <div class="tr-field">
+                <label class="tr-label" for="tr-drawer-status">Trạng thái</label>
+                <select id="tr-drawer-status" name="status" class="tr-select" data-tr-drawer-status></select>
+            </div>
+            <div class="tr-field">
+                <label class="tr-label" for="tr-drawer-notes">Ghi chú nội bộ</label>
+                <textarea id="tr-drawer-notes" name="adminNotes" class="tr-textarea" rows="3"
+                          data-tr-drawer-notes placeholder="VD: Đã gọi, khách đến lúc 14h…"></textarea>
+            </div>
+            <button type="submit" class="tr-btn tr-btn-primary" style="width:100%;">Lưu</button>
+        </form>
+    </aside>
+</div>
+
+@section Scripts {
+    <script src="~/js/test-ride-admin.js" asp-append-version="true"></script>
+}
