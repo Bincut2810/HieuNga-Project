@@ -1,0 +1,65 @@
+@model HieuNga.Web.ViewModels.Admin.BookingCenter.BookingCenterItemVm
+@using HieuNga.Web.ViewModels.Admin.BookingCenter
+@{
+    var kindKey = Model.Kind == BookingCenterKind.TestRide ? "testride" : "maint";
+    var type = ViewData["BcType"] as string ?? "all";
+    var range = ViewData["BcRange"] as string ?? "today";
+    var search = ViewData["BcSearch"] as string;
+}
+<div class="bc-actions" role="group" aria-label="Thao tác lịch hẹn">
+    <a class="bc-action" href="tel:@Model.Phone" hx-boost="false">Gọi</a>
+    <button type="button" class="bc-action" data-bc-open>Chi tiết</button>
+
+    <form method="post" asp-page-handler="Confirm" class="bc-action-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <input type="hidden" name="kind" value="@kindKey" />
+        <input type="hidden" name="type" value="@type" />
+        <input type="hidden" name="range" value="@range" />
+        <input type="hidden" name="search" value="@search" />
+        @if (Model.CanMarkArrived)
+        {
+            <button type="submit" class="bc-action bc-action-primary" title="Đánh dấu khách đã đến">Đã đến</button>
+        }
+        else
+        {
+            <button type="button" class="bc-action bc-action-primary" disabled aria-disabled="true" title="Không khả dụng">Đã đến</button>
+        }
+    </form>
+
+    <form method="post" asp-page-handler="Complete" class="bc-action-form"
+          onsubmit="return @(Model.CanComplete ? "confirm('Đánh dấu hoàn thành?')" : "false");">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <input type="hidden" name="kind" value="@kindKey" />
+        <input type="hidden" name="type" value="@type" />
+        <input type="hidden" name="range" value="@range" />
+        <input type="hidden" name="search" value="@search" />
+        @if (Model.CanComplete)
+        {
+            <button type="submit" class="bc-action bc-action-done">Hoàn thành</button>
+        }
+        else
+        {
+            <button type="button" class="bc-action bc-action-done" disabled aria-disabled="true">Hoàn thành</button>
+        }
+    </form>
+
+    <form method="post" asp-page-handler="Cancel" class="bc-action-form"
+          onsubmit="return @(Model.CanCancel ? "confirm('Hủy lịch hẹn này?')" : "false");">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <input type="hidden" name="kind" value="@kindKey" />
+        <input type="hidden" name="type" value="@type" />
+        <input type="hidden" name="range" value="@range" />
+        <input type="hidden" name="search" value="@search" />
+        @if (Model.CanCancel)
+        {
+            <button type="submit" class="bc-action bc-action-danger">Hủy</button>
+        }
+        else
+        {
+            <button type="button" class="bc-action bc-action-danger" disabled aria-disabled="true">Hủy</button>
+        }
+    </form>
+</div>

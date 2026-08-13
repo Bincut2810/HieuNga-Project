@@ -1,0 +1,83 @@
+@page "/admin/bookings"
+@model HieuNga.Web.Pages.Admin.Bookings.IndexModel
+@{
+    ViewData["Title"] = "Booking Center";
+    ViewData["BcType"] = Model.ActiveType;
+    ViewData["BcRange"] = Model.ActiveRange;
+    ViewData["BcSearch"] = Model.Search;
+    ViewData["BcEmpty"] = Model.EmptyMessage;
+
+    string TypeClass(string t) => Model.ActiveType == t ? "is-active" : "";
+    string RangeClass(string r) => Model.ActiveRange == r ? "is-active" : "";
+    string Qs(string type, string range)
+    {
+        var s = Model.Search ?? "";
+        var qs = $"?type={Uri.EscapeDataString(type)}&range={Uri.EscapeDataString(range)}&search={Uri.EscapeDataString(s)}";
+        if (Model.PageNumber is int p && p > 0)
+            qs += $"&page={p}";
+        if (Model.PageSize is int ps && ps > 0)
+            qs += $"&pageSize={ps}";
+        return qs;
+    }
+}
+
+<link rel="stylesheet" href="~/css/booking-center.css" asp-append-version="true" data-bc-css />
+
+<div class="bc-page" data-bc-page>
+    <header class="bc-header">
+        <div>
+            <h1 class="bc-title">Booking Center</h1>
+            <p class="bc-subtitle">Lịch tiếp khách theo giờ — xem xe &amp; bảo dưỡng</p>
+        </div>
+        <p class="bc-visible-count" aria-live="polite">@Model.VisibleCount lịch hiển thị</p>
+    </header>
+
+    <nav class="bc-type-tabs" role="tablist" aria-label="Loại lịch">
+        <a role="tab" aria-selected="@(Model.ActiveType == "all")" class="bc-tab @TypeClass("all")"
+           href="@Qs("all", Model.ActiveRange)">Tất cả</a>
+        <a role="tab" aria-selected="@(Model.ActiveType == "testride")" class="bc-tab bc-tab-tr @TypeClass("testride")"
+           href="@Qs("testride", Model.ActiveRange)">Test Ride</a>
+        <a role="tab" aria-selected="@(Model.ActiveType == "maint")" class="bc-tab bc-tab-maint @TypeClass("maint")"
+           href="@Qs("maint", Model.ActiveRange)">Maintenance</a>
+    </nav>
+
+    <partial name="Admin/Bookings/_BookingSummary" model="Model.Summary" />
+
+    <div class="bc-toolbar">
+        <nav class="bc-filters" aria-label="Bộ lọc">
+            <a class="bc-filter @RangeClass("today")" href="@Qs(Model.ActiveType, "today")">Hôm nay</a>
+            <a class="bc-filter @RangeClass("tomorrow")" href="@Qs(Model.ActiveType, "tomorrow")">Ngày mai</a>
+            <a class="bc-filter @RangeClass("week")" href="@Qs(Model.ActiveType, "week")">Tuần này</a>
+            <a class="bc-filter @RangeClass("late")" href="@Qs(Model.ActiveType, "late")">Trễ giờ</a>
+            <a class="bc-filter @RangeClass("completed")" href="@Qs(Model.ActiveType, "completed")">Hoàn thành</a>
+            <a class="bc-filter @RangeClass("cancelled")" href="@Qs(Model.ActiveType, "cancelled")">Đã hủy</a>
+            <a class="bc-filter @RangeClass("all")" href="@Qs(Model.ActiveType, "all")">Tất cả ngày</a>
+        </nav>
+
+        <form method="get" class="bc-search" role="search">
+            <input type="hidden" name="type" value="@Model.ActiveType" />
+            <input type="hidden" name="range" value="@Model.ActiveRange" />
+            @if (Model.PageNumber is int p && p > 0)
+            {
+                <input type="hidden" name="page" value="@p" />
+            }
+            @if (Model.PageSize is int ps && ps > 0)
+            {
+                <input type="hidden" name="pageSize" value="@ps" />
+            }
+            <label class="sr-only" for="bc-search">Tìm kiếm</label>
+            <input id="bc-search" name="search" value="@Model.Search" class="bc-input"
+                   placeholder="Tên, SĐT, xe, dịch vụ, ghi chú…"
+                   autocomplete="off" />
+            <button type="submit" class="bc-btn bc-btn-secondary">Tìm</button>
+        </form>
+    </div>
+
+    <partial name="Admin/Bookings/_BookingTimeline" model="Model.Timeline" />
+</div>
+
+<partial name="Admin/Bookings/_BookingDrawer" />
+
+@section Scripts {
+    <script src="~/js/booking-center.js" asp-append-version="true"></script>
+}

@@ -19,6 +19,21 @@ public class Repository<T>(HieuNgaDbContext context) : IRepository<T> where T : 
     public async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
         await DbSet.AsNoTracking().Where(predicate).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<T>> FindAsync(
+        Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IOrderedQueryable<T>> orderBy,
+        int? skip = null,
+        int? take = null,
+        CancellationToken ct = default)
+    {
+        IQueryable<T> query = orderBy(DbSet.AsNoTracking().Where(predicate));
+        if (skip is > 0)
+            query = query.Skip(skip.Value);
+        if (take is > 0)
+            query = query.Take(take.Value);
+        return await query.ToListAsync(ct);
+    }
+
     public Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
         DbSet.AsNoTracking().CountAsync(predicate, ct);
 

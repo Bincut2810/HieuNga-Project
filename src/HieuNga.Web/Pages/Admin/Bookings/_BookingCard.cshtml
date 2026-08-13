@@ -1,0 +1,35 @@
+@model HieuNga.Web.ViewModels.Admin.BookingCenter.BookingCenterItemVm
+@using HieuNga.Web.ViewModels.Admin.BookingCenter
+@{
+    var kindKey = Model.Kind == BookingCenterKind.TestRide ? "testride" : "maint";
+    var typeClass = Model.Kind == BookingCenterKind.TestRide ? "bc-card-tr" : "bc-card-maint";
+}
+<article class="bc-card @typeClass"
+         data-bc-card
+         data-id="@Model.Id"
+         data-kind="@kindKey">
+    <div class="bc-card-time" aria-hidden="true">@Model.TimeLabel</div>
+    <div class="bc-card-main">
+        <div class="bc-card-top">
+            <h3 class="bc-card-name">
+                <button type="button" class="bc-card-name-btn" data-bc-open
+                        aria-label="Chi tiết @Model.CustomerName">@Model.CustomerName</button>
+            </h3>
+            <partial name="Admin/Bookings/_BookingStatusChip" model="Model" />
+        </div>
+        <p class="bc-card-line">
+            <a class="bc-card-phone" href="tel:@Model.Phone">@Model.Phone</a>
+        </p>
+        <p class="bc-card-line bc-card-vehicle">@Model.Vehicle@(string.IsNullOrWhiteSpace(Model.Service) ? "" : $" · {Model.Service}")</p>
+        <div class="bc-card-meta">
+            <span class="bc-type-badge @(Model.Kind == BookingCenterKind.TestRide ? "is-tr" : "is-maint")"
+                  title="@Model.KindLabel">@Model.KindLabel</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Branch))
+            {
+                <span class="bc-meta-muted">@Model.Branch</span>
+            }
+            <span class="bc-meta-muted">@Model.DateLabel</span>
+        </div>
+        <partial name="Admin/Bookings/_BookingActions" model="Model" />
+    </div>
+</article>

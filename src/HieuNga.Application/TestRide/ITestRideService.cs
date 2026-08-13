@@ -1,3 +1,4 @@
+using HieuNga.Application.Bookings;
 using HieuNga.Domain.Enums;
 
 namespace HieuNga.Application.TestRide;
@@ -12,6 +13,12 @@ public interface ITestRideService
         TestRideRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>SQL-first board query. Prefer this overload for admin surfaces.</summary>
+    Task<TestRideBoardResult> GetBoardAsync(
+        BookingQuery query,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Legacy string range/search — wraps <see cref="BookingQuery"/>.</summary>
     Task<TestRideBoardResult> GetBoardAsync(
         string range,
         string? search,

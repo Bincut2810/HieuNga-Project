@@ -1,4 +1,6 @@
+using System.Linq.Expressions;
 using HieuNga.Application;
+using HieuNga.Application.Bookings;
 using HieuNga.Application.DTOs;
 using HieuNga.Application.Interfaces;
 using HieuNga.Application.TestRide;
@@ -34,53 +36,70 @@ public class BookingService(
         return booking.Id;
     }
 
-    public async Task<MaintenanceBoardDto> GetMaintenanceBoardAsync(
+    public Task<MaintenanceBoardDto> GetMaintenanceBoardAsync(
         string? range,
         string? search,
-        CancellationToken ct = default)
+        CancellationToken ct = default) =>
+        GetMaintenanceBoardAsync(
+            BookingQuery.FromAdmin(range, search),
+            includeLegacyCounts: true,
+            ct);
+
+    public Task<MaintenanceBoardDto> GetMaintenanceBoardAsync(
+        BookingQuery query,
+        CancellationToken ct = default) =>
+        GetMaintenanceBoardAsync(query, includeLegacyCounts: false, ct);
+
+    private async Task<MaintenanceBoardDto> GetMaintenanceBoardAsync(
+        BookingQuery query,
+        bool includeLegacyCounts,
+        CancellationToken ct)
     {
-        var todayVn = TestRideVietnamTime.Today;
-        var todayUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn);
-        var tomorrowUtc = TestRideVietnamTime.ConvertLocalAppointmentDateEndExclusiveToUtc(todayVn);
-        var weekEndUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn.AddDays(7));
+        var bounds = BookingDateBounds.ForVietnamToday();
+        var predicate = BuildBoardPredicate(query, bounds);
+        var rows = await maintenanceRepo.FindAsync(
+            predicate,
+            ordered => ordered
+                .OrderBy(b => b.PreferredDate)
+                .ThenBy(b => b.PreferredTime)
+                .ThenByDescending(b => b.CreatedAt),
+            query.Skip > 0 ? query.Skip : null,
+            query.Take,
+            ct);
 
-        var all = await maintenanceRepo.FindAsync(b => !b.IsDeleted, ct);
+        var items = rows.Select(MapMaintenance).ToList();
 
-        var filtered = (range ?? "today").ToLowerInvariant() switch
-        {
-            "tomorrow" => all.Where(b => b.PreferredDate >= tomorrowUtc
-                && b.PreferredDate < TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn.AddDays(2))),
-            "week" => all.Where(b => b.PreferredDate >= todayUtc && b.PreferredDate < weekEndUtc),
-            "all" => all.AsEnumerable(),
-            _ => all.Where(b => b.PreferredDate >= todayUtc && b.PreferredDate < tomorrowUtc)
-        };
+        if (!includeLegacyCounts)
+            return new MaintenanceBoardDto(items, new MaintenanceBoardCounts(0, 0, 0, 0));
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var q = search.Trim();
-            filtered = filtered.Where(b =>
-                b.CustomerName.Contains(q, StringComparison.OrdinalIgnoreCase)
-                || b.Phone.Contains(q, StringComparison.OrdinalIgnoreCase)
-                || b.MotorcycleModel.Contains(q, StringComparison.OrdinalIgnoreCase)
-                || b.ServiceType.Contains(q, StringComparison.OrdinalIgnoreCase));
-        }
+        var today = await maintenanceRepo.CountAsync(
+            b => !b.IsDeleted
+                 && b.PreferredDate >= bounds.TodayUtc
+                 && b.PreferredDate < bounds.TomorrowUtc
+                 && b.Status != BookingStatus.Cancelled,
+            ct);
+        var waiting = await maintenanceRepo.CountAsync(
+            b => !b.IsDeleted && b.Status == BookingStatus.Pending,
+            ct);
+        var completedToday = await maintenanceRepo.CountAsync(
+            b => !b.IsDeleted
+                 && b.PreferredDate >= bounds.TodayUtc
+                 && b.PreferredDate < bounds.TomorrowUtc
+                 && b.Status == BookingStatus.Completed,
+            ct);
+        var cancelled = await maintenanceRepo.CountAsync(
+            b => !b.IsDeleted && b.Status == BookingStatus.Cancelled,
+            ct);
 
-        var items = filtered
-            .OrderBy(b => b.PreferredDate)
-            .ThenBy(b => b.PreferredTime)
-            .ThenByDescending(b => b.CreatedAt)
-            .Select(MapMaintenance)
-            .ToList();
+        return new MaintenanceBoardDto(items, new MaintenanceBoardCounts(today, waiting, completedToday, cancelled));
+    }
 
-        var counts = new MaintenanceBoardCounts(
-            all.Count(b => b.PreferredDate >= todayUtc && b.PreferredDate < tomorrowUtc
-                && b.Status != BookingStatus.Cancelled),
-            all.Count(b => b.Status == BookingStatus.Pending),
-            all.Count(b => b.PreferredDate >= todayUtc && b.PreferredDate < tomorrowUtc
-                && b.Status == BookingStatus.Completed),
-            all.Count(b => b.Status == BookingStatus.Cancelled));
-
-        return new MaintenanceBoardDto(items, counts);
+    public async Task<MaintenanceBookingDto?> GetMaintenanceByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        var b = await maintenanceRepo.GetByIdAsync(id, ct);
+        if (b is null || b.IsDeleted)
+            return null;
+        return MapMaintenance(b);
     }
 
     public async Task UpdateMaintenanceStatusAsync(Guid id, BookingStatus status, CancellationToken ct = default)
@@ -96,6 +115,111 @@ public class BookingService(
         entity.UpdatedAt = TestRideVietnamTime.UtcNow;
         await maintenanceRepo.UpdateAsync(entity, ct);
         await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    private static Expression<Func<MaintenanceBooking, bool>> BuildBoardPredicate(
+        BookingQuery query,
+        BookingDateBounds bounds)
+    {
+        var q = query.NormalizedSearch;
+        var hasSearch = q is not null;
+        var range = query.NormalizedRange;
+        var status = query.Status;
+        var todayUtc = bounds.TodayUtc;
+        var tomorrowUtc = bounds.TomorrowUtc;
+        var dayAfterTomorrowUtc = bounds.DayAfterTomorrowUtc;
+        var weekEndUtc = bounds.WeekEndUtc;
+
+        if (status is BookingStatus.Completed)
+        {
+            return hasSearch
+                ? b => !b.IsDeleted && b.Status == BookingStatus.Completed
+                       && (b.CustomerName.Contains(q!)
+                           || b.Phone.Contains(q!)
+                           || b.MotorcycleModel.Contains(q!)
+                           || b.ServiceType.Contains(q!)
+                           || (b.Notes != null && b.Notes.Contains(q!)))
+                : b => !b.IsDeleted && b.Status == BookingStatus.Completed;
+        }
+
+        if (status is BookingStatus.Cancelled)
+        {
+            return hasSearch
+                ? b => !b.IsDeleted && b.Status == BookingStatus.Cancelled
+                       && (b.CustomerName.Contains(q!)
+                           || b.Phone.Contains(q!)
+                           || b.MotorcycleModel.Contains(q!)
+                           || b.ServiceType.Contains(q!)
+                           || (b.Notes != null && b.Notes.Contains(q!)))
+                : b => !b.IsDeleted && b.Status == BookingStatus.Cancelled;
+        }
+
+        if (range == "late")
+        {
+            return hasSearch
+                ? b => !b.IsDeleted
+                       && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Confirmed)
+                       && b.PreferredDate < tomorrowUtc
+                       && (b.CustomerName.Contains(q!)
+                           || b.Phone.Contains(q!)
+                           || b.MotorcycleModel.Contains(q!)
+                           || b.ServiceType.Contains(q!)
+                           || (b.Notes != null && b.Notes.Contains(q!)))
+                : b => !b.IsDeleted
+                       && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Confirmed)
+                       && b.PreferredDate < tomorrowUtc;
+        }
+
+        return range switch
+        {
+            "tomorrow" when hasSearch => b =>
+                !b.IsDeleted
+                && b.PreferredDate >= tomorrowUtc
+                && b.PreferredDate < dayAfterTomorrowUtc
+                && (b.CustomerName.Contains(q!)
+                    || b.Phone.Contains(q!)
+                    || b.MotorcycleModel.Contains(q!)
+                    || b.ServiceType.Contains(q!)
+                    || (b.Notes != null && b.Notes.Contains(q!))),
+            "tomorrow" => b =>
+                !b.IsDeleted
+                && b.PreferredDate >= tomorrowUtc
+                && b.PreferredDate < dayAfterTomorrowUtc,
+            "week" when hasSearch => b =>
+                !b.IsDeleted
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < weekEndUtc
+                && (b.CustomerName.Contains(q!)
+                    || b.Phone.Contains(q!)
+                    || b.MotorcycleModel.Contains(q!)
+                    || b.ServiceType.Contains(q!)
+                    || (b.Notes != null && b.Notes.Contains(q!))),
+            "week" => b =>
+                !b.IsDeleted
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < weekEndUtc,
+            "all" when hasSearch => b =>
+                !b.IsDeleted
+                && (b.CustomerName.Contains(q!)
+                    || b.Phone.Contains(q!)
+                    || b.MotorcycleModel.Contains(q!)
+                    || b.ServiceType.Contains(q!)
+                    || (b.Notes != null && b.Notes.Contains(q!))),
+            "all" => b => !b.IsDeleted,
+            _ when hasSearch => b =>
+                !b.IsDeleted
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < tomorrowUtc
+                && (b.CustomerName.Contains(q!)
+                    || b.Phone.Contains(q!)
+                    || b.MotorcycleModel.Contains(q!)
+                    || b.ServiceType.Contains(q!)
+                    || (b.Notes != null && b.Notes.Contains(q!))),
+            _ => b =>
+                !b.IsDeleted
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < tomorrowUtc
+        };
     }
 
     private static bool CanTransition(BookingStatus from, BookingStatus to) => (from, to) switch

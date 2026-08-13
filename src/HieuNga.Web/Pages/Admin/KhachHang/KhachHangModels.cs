@@ -11,52 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HieuNga.Web.Pages.Admin.KhachHang;
 
-public class BaoDuongIndexModel(IBookingService bookingService) : PageModel
+public class BaoDuongIndexModel : PageModel
 {
-    [BindProperty(SupportsGet = true)]
-    public string Range { get; set; } = "today";
-
-    [BindProperty(SupportsGet = true)]
-    public string? Q { get; set; }
-
-    public MaintenanceBoardDto Board { get; private set; } =
-        new([], new MaintenanceBoardCounts(0, 0, 0, 0));
-
-    public IReadOnlyList<MaintenanceBookingDto> NewItems =>
-        Board.Items.Where(b => b.Status == BookingStatus.Pending).ToList();
-    public IReadOnlyList<MaintenanceBookingDto> ConfirmedItems =>
-        Board.Items.Where(b => b.Status == BookingStatus.Confirmed).ToList();
-    public IReadOnlyList<MaintenanceBookingDto> CompletedItems =>
-        Board.Items.Where(b => b.Status == BookingStatus.Completed).ToList();
-    public IReadOnlyList<MaintenanceBookingDto> CancelledItems =>
-        Board.Items.Where(b => b.Status == BookingStatus.Cancelled).ToList();
-
-    public async Task OnGetAsync(CancellationToken ct)
-    {
-        ViewData["Title"] = "Lịch bảo dưỡng";
-        Board = await bookingService.GetMaintenanceBoardAsync(Range, Q, ct);
-    }
-
-    public async Task<IActionResult> OnPostConfirmAsync(Guid id, string range, string? q, CancellationToken ct)
-    {
-        await bookingService.UpdateMaintenanceStatusAsync(id, BookingStatus.Confirmed, ct);
-        this.SetSuccess("Đã xác nhận lịch hẹn.");
-        return RedirectToPage(new { range, q });
-    }
-
-    public async Task<IActionResult> OnPostCompleteAsync(Guid id, string range, string? q, CancellationToken ct)
-    {
-        await bookingService.UpdateMaintenanceStatusAsync(id, BookingStatus.Completed, ct);
-        this.SetSuccess("Đã hoàn thành.");
-        return RedirectToPage(new { range, q });
-    }
-
-    public async Task<IActionResult> OnPostCancelAsync(Guid id, string range, string? q, CancellationToken ct)
-    {
-        await bookingService.UpdateMaintenanceStatusAsync(id, BookingStatus.Cancelled, ct);
-        this.SetSuccess("Đã hủy lịch hẹn.");
-        return RedirectToPage(new { range, q });
-    }
+    public IActionResult OnGet() =>
+        HieuNga.Web.Pages.Admin.Bookings.BookingCenterRedirect.ToCenter(Request, "maint");
 }
 
 public class TraGopLeadIndexModel(HieuNgaDbContext db) : PageModel

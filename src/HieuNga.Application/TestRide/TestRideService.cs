@@ -1,5 +1,6 @@
 using FluentValidation;
 using HieuNga.Application;
+using HieuNga.Application.Bookings;
 using HieuNga.Domain.Entities;
 using HieuNga.Domain.Enums;
 using HieuNga.Domain.Interfaces;
@@ -143,42 +144,29 @@ public sealed class TestRideService(
         }, cancellationToken);
     }
 
-    public async Task<TestRideBoardResult> GetBoardAsync(
+    public Task<TestRideBoardResult> GetBoardAsync(
         string range,
         string? search,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        GetBoardAsync(
+            BookingQuery.FromAdmin(range, search, BookingType.TestRide),
+            includeTabCounts: true,
+            cancellationToken);
+
+    public Task<TestRideBoardResult> GetBoardAsync(
+        BookingQuery query,
+        CancellationToken cancellationToken = default) =>
+        GetBoardAsync(query, includeTabCounts: false, cancellationToken);
+
+    private async Task<TestRideBoardResult> GetBoardAsync(
+        BookingQuery query,
+        bool includeTabCounts,
+        CancellationToken cancellationToken)
     {
-        // Vietnam business days → UTC day bounds (single conversion helper; Kind=Utc for Npgsql).
-        var todayVn = TestRideVietnamTime.Today;
-        var todayUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn);
-        var tomorrowUtc = TestRideVietnamTime.ConvertLocalAppointmentDateEndExclusiveToUtc(todayVn);
-        var dayAfterTomorrowUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn.AddDays(2));
-
-        var todayCount = await bookingRepo.CountAsync(
-            b => !b.IsDeleted
-                 && b.Type == BookingType.TestRide
-                 && b.Status != BookingStatus.Cancelled
-                 && b.PreferredDate >= todayUtc
-                 && b.PreferredDate < tomorrowUtc,
-            cancellationToken);
-
-        var tomorrowCount = await bookingRepo.CountAsync(
-            b => !b.IsDeleted
-                 && b.Type == BookingType.TestRide
-                 && b.Status != BookingStatus.Cancelled
-                 && b.PreferredDate >= tomorrowUtc
-                 && b.PreferredDate < dayAfterTomorrowUtc,
-            cancellationToken);
-
-        var allCount = await bookingRepo.CountAsync(
-            b => !b.IsDeleted
-                 && b.Type == BookingType.TestRide
-                 && b.Status != BookingStatus.Cancelled,
-            cancellationToken);
-
-        var q = search?.Trim();
+        var bounds = BookingDateBounds.ForVietnamToday();
+        var q = query.NormalizedSearch;
         List<Guid>? matchingMotoIds = null;
-        if (!string.IsNullOrEmpty(q))
+        if (q is not null)
         {
             var motos = await motorcycleRepo.FindAsync(
                 m => m.Name.Contains(q),
@@ -186,9 +174,15 @@ public sealed class TestRideService(
             matchingMotoIds = motos.Select(m => m.Id).ToList();
         }
 
-        var normalizedRange = (range ?? "today").ToLowerInvariant();
+        var predicate = BuildBoardPredicate(query, bounds, q, matchingMotoIds);
         var rows = await bookingRepo.FindAsync(
-            BuildBoardPredicate(normalizedRange, todayUtc, tomorrowUtc, dayAfterTomorrowUtc, q, matchingMotoIds),
+            predicate,
+            ordered => ordered
+                .OrderBy(b => b.PreferredDate)
+                .ThenBy(b => b.PreferredTime)
+                .ThenBy(b => b.CreatedAt),
+            query.Skip > 0 ? query.Skip : null,
+            query.Take,
             cancellationToken);
 
         var motoIds = rows.Where(b => b.MotorcycleId.HasValue).Select(b => b.MotorcycleId!.Value).Distinct().ToList();
@@ -203,12 +197,32 @@ public sealed class TestRideService(
         string MotoName(Booking b) =>
             b.MotorcycleId is Guid id && motoNames.TryGetValue(id, out var n) ? n : "Chưa chọn xe";
 
-        var items = rows
-            .OrderBy(b => b.PreferredDate)
-            .ThenBy(b => b.PreferredTime ?? "")
-            .ThenBy(b => b.CreatedAt)
-            .Select(b => MapItem(b, MotoName(b)))
-            .ToList();
+        var items = rows.Select(b => MapItem(b, MotoName(b))).ToList();
+
+        if (!includeTabCounts)
+            return new TestRideBoardResult(items, 0, 0, 0);
+
+        var todayCount = await bookingRepo.CountAsync(
+            b => !b.IsDeleted
+                 && b.Type == BookingType.TestRide
+                 && b.Status != BookingStatus.Cancelled
+                 && b.PreferredDate >= bounds.TodayUtc
+                 && b.PreferredDate < bounds.TomorrowUtc,
+            cancellationToken);
+
+        var tomorrowCount = await bookingRepo.CountAsync(
+            b => !b.IsDeleted
+                 && b.Type == BookingType.TestRide
+                 && b.Status != BookingStatus.Cancelled
+                 && b.PreferredDate >= bounds.TomorrowUtc
+                 && b.PreferredDate < bounds.DayAfterTomorrowUtc,
+            cancellationToken);
+
+        var allCount = await bookingRepo.CountAsync(
+            b => !b.IsDeleted
+                 && b.Type == BookingType.TestRide
+                 && b.Status != BookingStatus.Cancelled,
+            cancellationToken);
 
         return new TestRideBoardResult(items, todayCount, tomorrowCount, allCount);
     }
@@ -258,15 +272,65 @@ public sealed class TestRideService(
     }
 
     private static System.Linq.Expressions.Expression<Func<Booking, bool>> BuildBoardPredicate(
-        string range,
-        DateTime todayUtc,
-        DateTime tomorrowUtc,
-        DateTime dayAfterTomorrowUtc,
+        BookingQuery query,
+        BookingDateBounds bounds,
         string? q,
         List<Guid>? matchingMotoIds)
     {
-        var hasSearch = !string.IsNullOrEmpty(q);
+        var hasSearch = q is not null;
         var motoIds = matchingMotoIds ?? [];
+        var range = query.NormalizedRange;
+        var status = query.Status;
+        var todayUtc = bounds.TodayUtc;
+        var tomorrowUtc = bounds.TomorrowUtc;
+        var dayAfterTomorrowUtc = bounds.DayAfterTomorrowUtc;
+        var weekEndUtc = bounds.WeekEndUtc;
+
+        // Status-only boards (completed / cancelled) — all dates.
+        if (status is BookingStatus.Completed)
+        {
+            return hasSearch
+                ? b => !b.IsDeleted && b.Type == BookingType.TestRide
+                       && b.Status == BookingStatus.Completed
+                       && (b.CustomerName.Contains(q!)
+                           || b.Phone.Contains(q!)
+                           || (b.Notes != null && b.Notes.Contains(q!))
+                           || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
+                           || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value)))
+                : b => !b.IsDeleted && b.Type == BookingType.TestRide
+                       && b.Status == BookingStatus.Completed;
+        }
+
+        if (status is BookingStatus.Cancelled)
+        {
+            return hasSearch
+                ? b => !b.IsDeleted && b.Type == BookingType.TestRide
+                       && b.Status == BookingStatus.Cancelled
+                       && (b.CustomerName.Contains(q!)
+                           || b.Phone.Contains(q!)
+                           || (b.Notes != null && b.Notes.Contains(q!))
+                           || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
+                           || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value)))
+                : b => !b.IsDeleted && b.Type == BookingType.TestRide
+                       && b.Status == BookingStatus.Cancelled;
+        }
+
+        // Late: open appointments through end of today (time-of-day lateness applied after SQL).
+        if (range == "late")
+        {
+            return hasSearch
+                ? b => !b.IsDeleted && b.Type == BookingType.TestRide
+                       && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Confirmed)
+                       && b.PreferredDate < tomorrowUtc
+                       && (b.CustomerName.Contains(q!)
+                           || b.Phone.Contains(q!)
+                           || (b.Notes != null && b.Notes.Contains(q!))
+                           || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
+                           || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value)))
+                : b => !b.IsDeleted && b.Type == BookingType.TestRide
+                       && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Confirmed)
+                       && b.PreferredDate < tomorrowUtc;
+        }
 
         return range switch
         {
@@ -278,18 +342,35 @@ public sealed class TestRideService(
                 && (b.CustomerName.Contains(q!)
                     || b.Phone.Contains(q!)
                     || (b.Notes != null && b.Notes.Contains(q!))
+                    || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
                     || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value))),
             "tomorrow" => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
                 && b.PreferredDate >= tomorrowUtc
                 && b.PreferredDate < dayAfterTomorrowUtc,
+            "week" when hasSearch => b =>
+                !b.IsDeleted
+                && b.Type == BookingType.TestRide
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < weekEndUtc
+                && (b.CustomerName.Contains(q!)
+                    || b.Phone.Contains(q!)
+                    || (b.Notes != null && b.Notes.Contains(q!))
+                    || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
+                    || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value))),
+            "week" => b =>
+                !b.IsDeleted
+                && b.Type == BookingType.TestRide
+                && b.PreferredDate >= todayUtc
+                && b.PreferredDate < weekEndUtc,
             "all" when hasSearch => b =>
                 !b.IsDeleted
                 && b.Type == BookingType.TestRide
                 && (b.CustomerName.Contains(q!)
                     || b.Phone.Contains(q!)
                     || (b.Notes != null && b.Notes.Contains(q!))
+                    || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
                     || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value))),
             "all" => b =>
                 !b.IsDeleted
@@ -302,6 +383,7 @@ public sealed class TestRideService(
                 && (b.CustomerName.Contains(q!)
                     || b.Phone.Contains(q!)
                     || (b.Notes != null && b.Notes.Contains(q!))
+                    || (b.AdminNotes != null && b.AdminNotes.Contains(q!))
                     || (b.MotorcycleId.HasValue && motoIds.Contains(b.MotorcycleId.Value))),
             _ => b =>
                 !b.IsDeleted

@@ -1135,52 +1135,81 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
   outline-offset: -2px;
 }
 
-/* Image track — CSS owns all aspect ratios, no JS height calculation */
+/*
+ * Image track
+ * Mobile: height follows the CMS image (full artwork visible, no cover crop).
+ * md+: fixed aspect + cover (existing desktop behavior).
+ */
 .home-hero-track {
   position: relative;
   width: 100%;
   overflow: hidden;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: auto;
 }
+
+/* Slides — mobile: active slide is in-flow so the track sizes to the image */
+.home-hero-slide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: none;
+  transition: opacity 0.6s var(--ease-premium);
+  pointer-events: none;
+  z-index: 0;
+}
+.home-hero-slide.is-active {
+  position: relative;
+  height: auto;
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+.home-hero-media {
+  position: relative;
+}
+.home-hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 @media (min-width: 768px) {
   .home-hero-track {
     aspect-ratio: 16 / 8;
+  }
+  .home-hero-slide {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    transform: scale(1.04);
+    transition:
+      opacity 0.6s var(--ease-premium),
+      transform 0.6s var(--ease-premium);
+  }
+  .home-hero-slide.is-active {
+    position: absolute;
+    inset: 0;
+    transform: scale(1);
+  }
+  .home-hero-media {
+    position: absolute;
+    inset: 0;
+  }
+  .home-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
   }
 }
 @media (min-width: 1024px) {
   .home-hero-track {
     aspect-ratio: 16 / 6;
   }
-}
-
-/* Slides */
-.home-hero-slide {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transform: scale(1.04);
-  transition:
-    opacity 0.6s var(--ease-premium),
-    transform 0.6s var(--ease-premium);
-  pointer-events: none;
-  z-index: 0;
-}
-.home-hero-slide.is-active {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
-  z-index: 1;
-}
-.home-hero-media {
-  position: absolute;
-  inset: 0;
-}
-.home-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  display: block;
 }
 
 /* Gradient shade — light bottom scrim only, lets CMS images breathe */
@@ -1469,56 +1498,6 @@ input[type="range"].detail-range:active::-webkit-slider-thumb { transform: scale
 .home-featured-icon-btn:focus-visible {
   outline: 2px solid var(--honda-red);
   outline-offset: 2px;
-}
-
-/* Why Hiếu Nga */
-.home-why-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.85rem;
-}
-@media (min-width: 640px) {
-  .home-why-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1024px) {
-  .home-why-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-}
-@media (min-width: 1280px) {
-  .home-why-grid { grid-template-columns: repeat(4, 1fr); }
-}
-.home-why-card {
-  padding: 1.35rem 1.25rem;
-  border-radius: 1.1rem;
-  border: 1px solid #f3f4f6;
-  background: #fff;
-  box-shadow: var(--shadow-card);
-  transition: transform var(--motion-base), box-shadow var(--motion-base);
-}
-.home-why-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover);
-}
-.home-why-icon {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.85rem;
-  background: #fef2f2;
-  color: var(--honda-red);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.85rem;
-}
-.home-why-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--honda-dark);
-}
-.home-why-desc {
-  margin-top: 0.45rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-  line-height: 1.55;
 }
 
 .home-service-card {

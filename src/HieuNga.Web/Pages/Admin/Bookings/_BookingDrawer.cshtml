@@ -1,0 +1,37 @@
+@* Shared Booking Center drawer — both kinds load via GET Detail → BookingDetailViewModel. *@
+@{
+    var type = ViewData["BcType"] as string ?? "all";
+    var range = ViewData["BcRange"] as string ?? "today";
+    var search = ViewData["BcSearch"] as string;
+}
+<div class="bc-drawer" data-bc-drawer hidden>
+    <div class="bc-drawer-backdrop" data-bc-drawer-close></div>
+    <aside class="bc-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="bc-drawer-title" tabindex="-1" data-bc-drawer-panel>
+        <header class="bc-drawer-head">
+            <h2 id="bc-drawer-title" class="bc-drawer-title">Chi tiết lịch</h2>
+            <button type="button" class="bc-drawer-x" data-bc-drawer-close aria-label="Đóng">×</button>
+        </header>
+        <div class="bc-drawer-body" data-bc-drawer-body>
+            <p class="bc-muted">Chọn một lịch để xem chi tiết.</p>
+        </div>
+        <form method="post" asp-page-handler="SaveDetail"
+              class="bc-drawer-form" data-bc-drawer-form hidden>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" data-bc-drawer-id />
+            <input type="hidden" name="type" value="@type" />
+            <input type="hidden" name="range" value="@range" />
+            <input type="hidden" name="search" value="@search" />
+            <div class="bc-field">
+                <label class="bc-label" for="bc-drawer-status">Trạng thái</label>
+                <select id="bc-drawer-status" name="status" class="bc-select" data-bc-drawer-status></select>
+            </div>
+            <div class="bc-field">
+                <label class="bc-label" for="bc-drawer-notes">Ghi chú nội bộ</label>
+                <textarea id="bc-drawer-notes" name="adminNotes" class="bc-textarea" rows="3"
+                          data-bc-drawer-notes placeholder="VD: Đã gọi, khách đến lúc 14h…"></textarea>
+            </div>
+            <button type="submit" class="bc-btn bc-btn-primary">Lưu</button>
+        </form>
+        <div class="bc-drawer-actions" data-bc-drawer-actions></div>
+    </aside>
+</div>

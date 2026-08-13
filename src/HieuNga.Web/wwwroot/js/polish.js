@@ -325,10 +325,6 @@
         resolve();
         return;
       }
-      if (src.indexOf('test-ride-admin') >= 0 && typeof window.bootTestRideAdmin === 'function') {
-        resolve();
-        return;
-      }
       if (src.indexOf('test-ride') >= 0 && typeof window.bootTestRide === 'function') {
         resolve();
         return;
@@ -377,14 +373,18 @@
   function bootTestRideModule(root) {
     const scope = root || document;
     const needsPublic = !!scope.querySelector('[data-tr-page]');
-    const needsAdmin = !!scope.querySelector('[data-tr-admin]');
     const needsMaint = !!scope.querySelector('[data-maint-page]');
-    if (!needsPublic && !needsAdmin && !needsMaint) {
+    const needsBc = !!scope.querySelector('[data-bc-page]');
+    if (!needsPublic && !needsMaint && !needsBc) {
       return Promise.resolve();
     }
 
     const cssReady = loadStylesheetOnce('/css/test-ride.css');
-    const tasks = [cssReady];
+    const tasks = [];
+
+    if (needsPublic || needsMaint) {
+      tasks.push(cssReady);
+    }
 
     if (needsPublic) {
       tasks.push(
@@ -395,20 +395,21 @@
         })
       );
     }
-    if (needsAdmin) {
-      tasks.push(
-        cssReady.then(() => loadScriptOnce('/js/test-ride-admin.js')).then(() => {
-          if (typeof window.bootTestRideAdmin === 'function') {
-            try { window.bootTestRideAdmin(); } catch (_) { /* already booted */ }
-          }
-        })
-      );
-    }
     if (needsMaint) {
       tasks.push(
         cssReady.then(() => loadScriptOnce('/js/maintenance-booking.js')).then(() => {
           if (typeof window.bootMaintenanceBooking === 'function') {
             try { window.bootMaintenanceBooking(); } catch (_) { /* already booted */ }
+          }
+        })
+      );
+    }
+    if (needsBc) {
+      const bcCss = loadStylesheetOnce('/css/booking-center.css');
+      tasks.push(
+        bcCss.then(() => loadScriptOnce('/js/booking-center.js')).then(() => {
+          if (typeof window.bootBookingCenter === 'function') {
+            try { window.bootBookingCenter(); } catch (_) { /* already booted */ }
           }
         })
       );

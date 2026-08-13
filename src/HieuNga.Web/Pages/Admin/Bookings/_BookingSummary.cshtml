@@ -1,0 +1,27 @@
+@model HieuNga.Web.ViewModels.Admin.BookingCenter.BookingCenterSummaryVm
+<div class="bc-summary" role="region" aria-label="Tóm tắt hôm nay">
+    <div class="bc-summary-card">
+        <p class="bc-summary-label">Lịch hôm nay</p>
+        <p class="bc-summary-value">@Model.TodayTotal</p>
+    </div>
+    <div class="bc-summary-card">
+        <p class="bc-summary-label">Đã đến</p>
+        <p class="bc-summary-value bc-summary-arrived">@Model.Arrived</p>
+    </div>
+    <div class="bc-summary-card">
+        <p class="bc-summary-label">Đang chờ</p>
+        <p class="bc-summary-value bc-summary-waiting">@Model.Waiting</p>
+    </div>
+    <div class="bc-summary-card">
+        <p class="bc-summary-label">Hoàn thành</p>
+        <p class="bc-summary-value bc-summary-done">@Model.Completed</p>
+    </div>
+    <div class="bc-summary-card">
+        <p class="bc-summary-label">Đã hủy</p>
+        <p class="bc-summary-value">@Model.Cancelled</p>
+    </div>
+    <div class="bc-summary-card">
+        <p class="bc-summary-label">Trễ giờ</p>
+        <p class="bc-summary-value bc-summary-late">@Model.Late</p>
+    </div>
+</div>
