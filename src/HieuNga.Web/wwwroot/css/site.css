@@ -851,10 +851,6 @@ textarea.lead-input {
   transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 .detail-ghost-btn:hover { border-color: rgba(228,5,33,0.35); color: var(--honda-red); }
-.detail-compare-link {
-  display: inline-flex; justify-content: center; font-size: 0.8125rem; font-weight: 600; color: #6b7280; padding: 0.35rem;
-}
-.detail-compare-link:hover { color: var(--honda-red); }
 [data-media-angle-img], [data-media-hero] {
   transition: opacity 0.2s ease;
 }

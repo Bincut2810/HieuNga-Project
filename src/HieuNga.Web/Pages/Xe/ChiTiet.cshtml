@@ -112,7 +112,7 @@
                         {
                             <p class="text-sm text-gray-600 mt-2">
                                 Trả góp từ ~
-                                <span class="font-semibold text-honda-red tabular-nums">@((long)monthlyEstimate).ToString("N0")</span> ₫/tháng
+                                <span class="font-semibold text-honda-red tabular-nums">@(((long)monthlyEstimate).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")))</span> ₫/tháng
                             </p>
                         }
                     </div>
@@ -164,13 +164,6 @@
                             <a href="@telHref" hx-boost="false" class="detail-ghost-btn touch-press">Gọi ngay</a>
                             <a href="@zaloUrl" target="_blank" rel="noopener noreferrer" hx-boost="false" class="detail-ghost-btn touch-press">Chat Zalo</a>
                         </div>
-                        <a href="/so-sanh?handler=Add&amp;id=@m.Id"
-                           hx-get="/so-sanh?handler=Add&amp;id=@m.Id"
-                           hx-target="#compare-toast"
-                           hx-swap="innerHTML"
-                           hx-push-url="false"
-                           hx-boost="false"
-                           class="detail-compare-link touch-press">+ Thêm vào so sánh</a>
                     </div>
                 </div>
             </div>
