@@ -77,25 +77,13 @@
     </div>
 
     <div class="tr-field">
-        <span class="tr-label" id="tr-time-label">Giờ hẹn</span>
-        <div class="tr-slots" role="radiogroup" aria-labelledby="tr-time-label">
-            @foreach (var slot in TestRideValidator.AllowedAppointmentTimes)
-            {
-                <label class="tr-slot">
-                    @if (input.AppointmentTime == slot)
-                    {
-                        <input type="radio" name="Input.AppointmentTime" value="@slot" checked
-                               data-tr-field="AppointmentTime" />
-                    }
-                    else
-                    {
-                        <input type="radio" name="Input.AppointmentTime" value="@slot"
-                               data-tr-field="AppointmentTime" />
-                    }
-                    <span>@slot</span>
-                </label>
-            }
-        </div>
+        <label class="tr-label" for="Input_AppointmentTime">Giờ hẹn</label>
+        <input name="Input.AppointmentTime" id="Input_AppointmentTime" type="time" class="tr-input tr-input-time"
+               value="@(string.IsNullOrWhiteSpace(input.AppointmentTime) ? "" : TestRideValidator.NormalizeAppointmentTime(input.AppointmentTime))"
+               data-tr-field="AppointmentTime"
+               required
+               aria-describedby="tr-time-hint" />
+        <p class="tr-hint" id="tr-time-hint">Chọn giờ bạn muốn đến showroom</p>
         <p class="tr-field-error" data-tr-error="AppointmentTime" hidden></p>
     </div>
 

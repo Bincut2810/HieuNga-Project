@@ -61,7 +61,7 @@ public sealed class TestRideService(
             appointmentCalendar.Year,
             appointmentCalendar.Month,
             appointmentCalendar.Day).ToString("dd/MM/yyyy");
-        var timeLabel = request.AppointmentTime.Trim();
+        var timeLabel = TestRideValidator.NormalizeAppointmentTime(request.AppointmentTime);
         var lockKey =
             $"{phone}|{motorcycleId:D}|{appointmentCalendar.Year:D4}-{appointmentCalendar.Month:D2}-{appointmentCalendar.Day:D2}";
 

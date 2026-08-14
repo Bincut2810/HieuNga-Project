@@ -45,7 +45,7 @@ public class IndexModel(
             Source = ContactPageSource,
             MotorcycleId = SelectedMotorcycle?.Id,
             AppointmentDate = TestRideVietnamTime.Today,
-            AppointmentTime = TestRideValidator.AllowedAppointmentTimes[0],
+            AppointmentTime = "",
             BranchId = Branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? Branches.FirstOrDefault()?.Id
         };
 

@@ -96,49 +96,19 @@
   resize: vertical;
 }
 
-.tr-slots {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.tr-slot {
-  position: relative;
-}
-
-.tr-slot input {
-  position: absolute;
-  opacity: 0;
-  inset: 0;
-  margin: 0;
-  cursor: pointer;
-}
-
-.tr-slot span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.tr-input-time {
   min-height: 3rem;
-  padding: 0.55rem 0.4rem;
-  border: 1px solid var(--tr-line);
-  border-radius: var(--tr-radius);
-  background: var(--tr-surface);
-  color: var(--tr-ink);
-  font-size: 0.95rem;
-  font-weight: 600;
+  width: 100%;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.tr-input-time::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  user-select: none;
-}
-
-.tr-slot input:focus-visible + span {
-  outline: 2px solid var(--tr-ink);
-  outline-offset: 2px;
-}
-
-.tr-slot input:checked + span {
-  border-color: var(--tr-ink);
-  background: var(--tr-ink);
-  color: #fff;
+  opacity: 0.7;
+  padding: 0.35rem;
+  margin-left: 0.25rem;
 }
 
 .tr-actions {
@@ -637,10 +607,6 @@ body.tr-drawer-open {
     border-radius: 0;
   }
 
-  .tr-slots {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .tr-actions {
     position: sticky;
     bottom: 0;
@@ -663,12 +629,6 @@ body.tr-drawer-open {
 
   .tr-row-actions form {
     width: 100%;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 900px) {
-  .tr-slots {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

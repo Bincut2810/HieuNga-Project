@@ -1,16 +1,41 @@
+using System.Globalization;
 using FluentValidation;
 
 namespace HieuNga.Application.TestRide;
 
 public sealed class TestRideValidator : AbstractValidator<TestRideRequest>
 {
-    public static readonly string[] AllowedAppointmentTimes =
-    [
-        "09:00",
-        "10:00",
-        "14:00",
-        "16:00"
-    ];
+    /// <summary>
+    /// Accepts browser <c>type="time"</c> values (HH:mm or HH:mm:ss).
+    /// No invented business-hour window — only format validity.
+    /// </summary>
+    public static bool IsValidAppointmentTime(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        return TryParseTime(raw.Trim(), out _);
+    }
+
+    /// <summary>Normalizes to <c>HH:mm</c> for persistence and admin display.</summary>
+    public static string NormalizeAppointmentTime(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        return TryParseTime(raw.Trim(), out var ts)
+            ? ts.ToString(@"hh\:mm", CultureInfo.InvariantCulture)
+            : raw.Trim();
+    }
+
+    private static bool TryParseTime(string t, out TimeSpan ts)
+    {
+        string[] formats = [@"hh\:mm", @"h\:mm", @"hh\:mm\:ss", @"h\:mm\:ss"];
+        if (TimeSpan.TryParseExact(t, formats, CultureInfo.InvariantCulture, out ts))
+            return ts >= TimeSpan.Zero && ts < TimeSpan.FromDays(1);
+
+        if (TimeSpan.TryParse(t, CultureInfo.InvariantCulture, out ts))
+            return ts >= TimeSpan.Zero && ts < TimeSpan.FromDays(1);
+
+        ts = default;
+        return false;
+    }
 
     public TestRideValidator()
     {
@@ -34,7 +59,7 @@ public sealed class TestRideValidator : AbstractValidator<TestRideRequest>
 
         RuleFor(x => x.AppointmentTime)
             .NotEmpty().WithMessage("Vui lòng chọn giờ hẹn.")
-            .Must(t => AllowedAppointmentTimes.Contains(t))
+            .Must(IsValidAppointmentTime)
             .WithMessage("Giờ hẹn không hợp lệ.");
 
         RuleFor(x => x.Source).MaximumLength(100);

@@ -84,17 +84,12 @@
                 </div>
 
                 <div class="tr-field">
-                    <span class="tr-label" id="maint-time-label">Giờ hẹn</span>
-                    <div class="tr-slots" role="radiogroup" aria-labelledby="maint-time-label">
-                        @foreach (var slot in Model.TimeSlots)
-                        {
-                            <label class="tr-slot">
-                                <input type="radio" asp-for="PreferredTime" value="@slot"
-                                       data-maint-field="PreferredTime" />
-                                <span>@slot</span>
-                            </label>
-                        }
-                    </div>
+                    <label class="tr-label" asp-for="PreferredTime">Giờ hẹn</label>
+                    <input asp-for="PreferredTime" type="time" class="tr-input tr-input-time"
+                           data-maint-field="PreferredTime"
+                           required
+                           aria-describedby="maint-time-hint" />
+                    <p class="tr-hint" id="maint-time-hint">Chọn giờ bạn muốn đến showroom</p>
                     <span asp-validation-for="PreferredTime" class="tr-field-error"></span>
                     <p class="tr-field-error" data-maint-error="PreferredTime" hidden></p>
                 </div>

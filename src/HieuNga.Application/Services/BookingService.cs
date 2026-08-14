@@ -26,7 +26,7 @@ public class BookingService(
             MotorcycleModel = dto.MotorcycleModel.Trim(),
             ServiceType = dto.ServiceType.Trim(),
             PreferredDate = dayUtc,
-            PreferredTime = dto.PreferredTime.Trim(),
+            PreferredTime = TestRideValidator.NormalizeAppointmentTime(dto.PreferredTime),
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
             Status = BookingStatus.Pending
         };

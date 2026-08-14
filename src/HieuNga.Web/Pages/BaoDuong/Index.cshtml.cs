@@ -15,14 +15,13 @@ public class IndexModel(
     ILogger<IndexModel> logger) : PageModel
 {
     public IReadOnlyList<string> BookingServiceOptions { get; private set; } = [];
-    public IReadOnlyList<string> TimeSlots { get; } = Application.Validators.CreateMaintenanceBookingValidator.AllowedTimes;
 
     [BindProperty] public string CustomerName { get; set; } = "";
     [BindProperty] public string Phone { get; set; } = "";
     [BindProperty] public string MotorcycleModel { get; set; } = "";
     [BindProperty] public string ServiceType { get; set; } = "";
     [BindProperty] public DateTime PreferredDate { get; set; } = TestRideVietnamTime.Today.AddDays(1);
-    [BindProperty] public string PreferredTime { get; set; } = TestRideValidator.AllowedAppointmentTimes[0];
+    [BindProperty] public string PreferredTime { get; set; } = "";
     [BindProperty] public string? Notes { get; set; }
     public bool Success { get; private set; }
 
@@ -110,8 +109,8 @@ public class IndexModel(
         BookingServiceOptions = await serviceCatalog.GetBookingServiceNamesAsync(ct);
         if (BookingServiceOptions.Count > 0 && !BookingServiceOptions.Contains(ServiceType))
             ServiceType = BookingServiceOptions[0];
-        if (string.IsNullOrWhiteSpace(PreferredTime))
-            PreferredTime = TimeSlots[0];
+        if (!string.IsNullOrWhiteSpace(PreferredTime))
+            PreferredTime = TestRideValidator.NormalizeAppointmentTime(PreferredTime);
         if (PreferredDate == default)
             PreferredDate = TestRideVietnamTime.Today.AddDays(1);
     }

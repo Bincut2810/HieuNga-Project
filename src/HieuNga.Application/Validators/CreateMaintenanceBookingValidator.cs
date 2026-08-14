@@ -6,9 +6,6 @@ namespace HieuNga.Application.Validators;
 
 public class CreateMaintenanceBookingValidator : AbstractValidator<CreateMaintenanceBookingDto>
 {
-    /// <summary>Same slots as Test Ride — unified booking UX.</summary>
-    public static readonly string[] AllowedTimes = TestRideValidator.AllowedAppointmentTimes;
-
     public CreateMaintenanceBookingValidator()
     {
         RuleFor(x => x.CustomerName).NotEmpty().MaximumLength(100)
@@ -24,7 +21,7 @@ public class CreateMaintenanceBookingValidator : AbstractValidator<CreateMainten
             .Must(d => d.Date >= TestRideVietnamTime.Today)
             .WithMessage("Ngày hẹn phải từ hôm nay trở đi.");
         RuleFor(x => x.PreferredTime).NotEmpty()
-            .Must(t => AllowedTimes.Contains(t))
+            .Must(TestRideValidator.IsValidAppointmentTime)
             .WithMessage("Vui lòng chọn giờ hẹn.");
         RuleFor(x => x.Notes).MaximumLength(500);
     }

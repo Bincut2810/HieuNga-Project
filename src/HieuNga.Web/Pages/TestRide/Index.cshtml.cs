@@ -132,8 +132,8 @@ public class IndexModel(
             Input.MotorcycleId = xeId;
         if (!string.IsNullOrWhiteSpace(source))
             Input.Source = source.Trim();
-        if (string.IsNullOrWhiteSpace(Input.AppointmentTime))
-            Input.AppointmentTime = TestRideValidator.AllowedAppointmentTimes[0];
+        if (!string.IsNullOrWhiteSpace(Input.AppointmentTime))
+            Input.AppointmentTime = TestRideValidator.NormalizeAppointmentTime(Input.AppointmentTime);
         if (Input.AppointmentDate == default)
             Input.AppointmentDate = TestRideVietnamTime.Today;
         Input.BranchId ??= branches.FirstOrDefault(b => b.IsHeadOffice)?.Id ?? branches.FirstOrDefault()?.Id;
