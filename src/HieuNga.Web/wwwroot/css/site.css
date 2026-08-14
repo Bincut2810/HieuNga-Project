@@ -698,10 +698,23 @@ textarea.lead-input {
   .site-header-inner { height: 5rem; }
   .site-header.is-scrolled .site-header-inner { height: 4.25rem; }
 }
-.site-logo-mark {
+.site-logo-img {
+  height: 2.5rem;
+  width: auto;
+  max-width: 9.5rem;
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
+  object-position: left center;
   transition: transform var(--motion-base) var(--ease-premium);
 }
-.site-header.is-scrolled .site-logo-mark {
+@media (min-width: 640px) {
+  .site-logo-img {
+    height: 2.75rem;
+    max-width: 11rem;
+  }
+}
+.site-header.is-scrolled .site-logo-img {
   transform: scale(0.92);
 }
 

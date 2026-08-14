@@ -104,18 +104,14 @@
   min-height: 4rem;
 }
 
-.admin-sidebar-brand-mark {
+.admin-sidebar-brand-logo {
   flex-shrink: 0;
-  width: 2.25rem;
   height: 2.25rem;
-  border-radius: 0.55rem;
-  background: var(--admin-honda-red);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  width: auto;
+  max-width: 7.5rem;
+  display: block;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .admin-sidebar-brand-text { min-width: 0; flex: 1; }
@@ -303,6 +299,10 @@
   .admin-shell.is-sidebar-collapsed .admin-sidebar-brand {
     justify-content: center;
     flex-wrap: wrap;
+  }
+  .admin-shell.is-sidebar-collapsed .admin-sidebar-brand-logo {
+    height: 1.75rem;
+    max-width: 2.75rem;
   }
 }
 
