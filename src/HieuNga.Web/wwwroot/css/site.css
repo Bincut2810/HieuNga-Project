@@ -934,10 +934,6 @@ textarea.lead-input {
 }
 .detail-feature-title { font-size: clamp(1.15rem, 2.2vw, 1.5rem); font-weight: 700; color: var(--honda-dark); letter-spacing: -0.02em; }
 .detail-feature-desc { margin-top: 0.75rem; font-size: 0.95rem; color: #6b7280; line-height: 1.65; }
-.detail-highlight-li {
-  display: flex; gap: 0.5rem; font-size: 0.9375rem; color: #374151; padding: 0.75rem 1rem;
-  border-radius: 0.75rem; border: 1px solid #f3f4f6; background: #fff;
-}
 .detail-tech-list { display: flex; flex-direction: column; gap: 0.65rem; }
 .detail-tech-item { border-radius: 1rem; border: 1px solid #e5e7eb; background: #fff; overflow: hidden; box-shadow: var(--shadow-card); }
 .detail-tech-trigger {

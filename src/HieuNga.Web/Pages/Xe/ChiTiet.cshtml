@@ -205,20 +205,6 @@
             </div>
         </section>
     }
-    else if (m.Highlights.Any())
-    {
-        <section class="detail-section reveal" aria-labelledby="feature-heading">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 id="feature-heading" class="section-title">Điểm nổi bật</h2>
-                <ul class="mt-5 grid sm:grid-cols-2 gap-3 max-w-4xl">
-                    @foreach (var h in m.Highlights)
-                    {
-                        <li class="detail-highlight-li"><span class="text-honda-red font-bold" aria-hidden="true">✓</span><span>@h</span></li>
-                    }
-                </ul>
-            </div>
-        </section>
-    }
 
     @* ─── PHASE 6: Technology Experience ─── *@
     @if (m.Technologies.Any())
