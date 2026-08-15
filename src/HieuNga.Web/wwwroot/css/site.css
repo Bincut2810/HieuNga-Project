@@ -1018,10 +1018,6 @@ textarea.lead-input {
   position: absolute; left: 0.75rem; bottom: 0.75rem; z-index: 5; padding: 0.3rem 0.6rem; border-radius: 999px;
   background: rgba(0,0,0,0.65); color: #fff; font-size: 0.625rem; font-weight: 700; backdrop-filter: blur(6px);
 }
-.detail-close-cta {
-  border-radius: 1.25rem; border: 1px solid #f3f4f6; background: linear-gradient(145deg, #fff, #f9fafb);
-  padding: clamp(1.35rem, 3vw, 2rem); box-shadow: var(--shadow-card);
-}
 .detail-sticky-bar {
   background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); border-top: 1px solid #e5e7eb;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.1); padding-bottom: env(safe-area-inset-bottom, 0);

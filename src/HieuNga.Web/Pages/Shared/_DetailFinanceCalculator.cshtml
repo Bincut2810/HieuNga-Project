@@ -6,7 +6,6 @@
     var m = Model.Motorcycle;
     var f = Model.Finance;
     var consultUrl = $"/lien-he?intent=mua-xe&xe={Uri.EscapeDataString(m.Slug)}&source=detail";
-    var testRideUrl = $"/dat-lich-lai-thu?xeId={m.Id}&source=detail";
     var financeConsultUrl = $"/lien-he?intent=tra-gop&xe={Uri.EscapeDataString(m.Slug)}&source=detail";
     var inv = CultureInfo.InvariantCulture;
     var banksJson = JsonSerializer.Serialize(f.Banks.Select(b => new
@@ -25,7 +24,7 @@
 }
 
 <section id="financing"
-         class="mt-6 md:mt-8 scroll-mt-[5.5rem]"
+         class="scroll-mt-[5.5rem]"
          data-finance-calculator
          data-price="@f.Price.ToString("0", inv)"
          data-default-bank="@(f.DefaultBankId ?? "")"
@@ -164,7 +163,7 @@
                     </div>
                 </div>
 
-                <div class="p-4 md:p-5 border-t border-gray-100 bg-white grid sm:grid-cols-3 gap-2">
+                <div class="p-4 md:p-5 border-t border-gray-100 bg-white grid sm:grid-cols-2 gap-2">
                     <a href="@financeConsultUrl"
                        class="touch-press flex items-center justify-center px-4 py-3 bg-honda-red text-white font-semibold rounded-lg hover:bg-red-700 transition text-sm text-center">
                         Tư vấn trả góp
@@ -172,10 +171,6 @@
                     <a href="@consultUrl"
                        class="touch-press flex items-center justify-center px-4 py-3 border border-gray-200 font-semibold rounded-lg hover:border-honda-red hover:text-honda-red transition text-sm text-center">
                         Liên hệ showroom
-                    </a>
-                    <a href="@testRideUrl"
-                       class="touch-press flex items-center justify-center px-4 py-3 border border-honda-dark text-honda-dark font-semibold rounded-lg hover:bg-honda-dark hover:text-white transition text-sm text-center">
-                        Đặt lái thử
                     </a>
                 </div>
             </div>
