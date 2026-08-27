@@ -12,7 +12,7 @@
     var site = SiteSettingsViewData.Get(ViewData);
     <div class="branch-cards @(compact ? "branch-cards-compact" : null)" data-stagger>
         <article class="branch-card reveal">
-            <span class="branch-card-badge">HEAD</span>
+            <span class="branch-card-badge">CHÍNH HÃNG</span>
             <h3 class="branch-card-name">@site.SiteName</h3>
             <p class="branch-card-address">@site.Address</p>
             <p class="branch-card-meta">
@@ -37,7 +37,7 @@ else
             var maps = SiteSettingsViewData.MapsUrl(b);
             var hours = string.IsNullOrWhiteSpace(b.OpeningHours) ? "07:30–19:00" : b.OpeningHours;
             <article class="branch-card reveal">
-                <span class="branch-card-badge">HEAD</span>
+                <span class="branch-card-badge">CHÍNH HÃNG</span>
                 <h3 class="branch-card-name">@b.Name</h3>
                 <p class="branch-card-address">@b.Address</p>
                 <p class="branch-card-meta">

@@ -21,7 +21,7 @@ public class IndexModel(
     public string LeadSource { get; private set; } = "contact";
     public string? ServiceSlug { get; private set; }
     public string PageHeading { get; private set; } = "Liên hệ tư vấn";
-    public string PageSubheading { get; private set; } = "Showroom HEAD — tư vấn tận tâm, phản hồi nhanh";
+    public string PageSubheading { get; private set; } = "Showroom — tư vấn tận tâm, phản hồi nhanh";
 
     public TestRideBookingFormModel BookingForm { get; private set; } = new();
 
@@ -95,7 +95,7 @@ public class IndexModel(
                 break;
             default:
                 PageHeading = bikeName is null ? "Liên hệ — đặt lịch xem xe" : $"Tư vấn mua — {bikeName}";
-                PageSubheading = "Showroom HEAD — đặt lịch xem xe, phản hồi nhanh";
+                PageSubheading = "Showroom — đặt lịch xem xe, phản hồi nhanh";
                 Intent = "mua-xe";
                 break;
         }

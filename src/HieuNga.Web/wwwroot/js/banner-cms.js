@@ -136,7 +136,7 @@
           </div>
           <div>
             <label class="admin-label" for="bc-subtitle">Phụ đề</label>
-            <input id="bc-subtitle" class="admin-input" data-bc-subtitle value="${esc(subtitle)}" placeholder="Showroom Honda HEAD · Đà Nẵng" />
+            <input id="bc-subtitle" class="admin-input" data-bc-subtitle value="${esc(subtitle)}" placeholder="Xe Máy Hiếu Nga · Đà Nẵng" />
           </div>
           <label class="admin-check">
             <input type="checkbox" data-bc-enabled ${enabled ? 'checked' : ''} /> Xuất bản lên trang chủ

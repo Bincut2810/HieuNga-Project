@@ -18,8 +18,8 @@ public class IndexModel(IServiceCatalogService serviceCatalog, IBranchService br
         PricingDisclaimer = serviceCatalog.PricingDisclaimer;
         this.SetSeo(
             null,
-            "Dịch vụ HEAD | Xe Máy Hiếu Nga",
-            "Bảo dưỡng, sửa chữa, nhớt chính hãng, bảo hiểm và chăm sóc xe tại HEAD Hiếu Nga Đà Nẵng.");
+            "Dịch vụ Honda | Xe Máy Hiếu Nga",
+            "Bảo dưỡng, sửa chữa, nhớt chính hãng, bảo hiểm và chăm sóc xe tại Đại lý chính hãng Honda Việt Nam tại Đà Nẵng.");
         ViewData["BranchBookUrl"] = "/bao-duong#booking";
         ViewData["BranchBookLabel"] = "Đặt lịch dịch vụ";
     }

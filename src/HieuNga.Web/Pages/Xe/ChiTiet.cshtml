@@ -28,9 +28,9 @@
     {
         purchaseHighlights =
         [
-            "Honda chính hãng tại HEAD Hiếu Nga",
+            "Honda chính hãng tại Xe Máy Hiếu Nga",
             "Hỗ trợ trả góp linh hoạt",
-            "Bảo dưỡng chuẩn quy trình HEAD",
+            "Bảo dưỡng chuẩn quy trình Honda",
             "Tư vấn & thủ tục nhanh tại showroom"
         ];
     }
@@ -118,10 +118,6 @@
                     </div>
 
                     <dl class="detail-highlight-grid" aria-label="Thông tin mua nhanh">
-                        <div class="detail-highlight-cell">
-                            <dt>Tình trạng</dt>
-                            <dd class="@(Model.IsAvailable ? "text-emerald-700" : "text-gray-600")">@Model.AvailabilityLabel</dd>
-                        </div>
                         <div class="detail-highlight-cell">
                             <dt>Loại xe</dt>
                             <dd>@categoryLabel</dd>
@@ -329,16 +325,16 @@
     @* ─── PHASE 8: Purchase Experience ─── *@
     <section class="detail-section detail-section-muted reveal" aria-labelledby="purchase-heading" id="mua-xe">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p class="section-eyebrow">Cam kết HEAD</p>
+            <p class="section-eyebrow">Cam kết</p>
             <h2 id="purchase-heading" class="section-title">Trải nghiệm mua xe tại Hiếu Nga</h2>
             <p class="section-subtitle">Hỗ trợ đầy đủ từ showroom đến bảo dưỡng</p>
             <div class="detail-purchase-grid mt-8">
                 @{
                     var purchaseCards = new (string Title, string Desc)[]
                     {
-                        ("Bảo hành chính hãng", Model.Warranty ?? "Theo tiêu chuẩn Honda Việt Nam tại đại lý HEAD."),
+                        ("Bảo hành chính hãng", Model.Warranty ?? "Theo tiêu chuẩn Honda Việt Nam tại đại lý chính hãng."),
                         ("Hỗ trợ chính thức", "Tư vấn rõ ràng — báo giá minh bạch tại Xe Máy Hiếu Nga."),
-                        ("Nhắc bảo dưỡng", "Lịch bảo dưỡng định kỳ theo km tại xưởng HEAD."),
+                        ("Nhắc bảo dưỡng", "Lịch bảo dưỡng định kỳ theo km tại xưởng dịch vụ Hiếu Nga."),
                         ("Tóm tắt trả góp", finance.CalculatorEnabled
                             ? $"Ước tính từ ~{((long)monthlyEstimate):N0} ₫/tháng — tính chi tiết ở mục trả góp."
                             : "Liên hệ showroom để được tư vấn trả góp."),

@@ -76,3 +76,6 @@ src/HieuNga.Web/wwwroot/uploads/
 *.tmp
 *.temp
 ~$*
+
+## Local asset backups (not deployed, not committed)
+.backup-assets/
