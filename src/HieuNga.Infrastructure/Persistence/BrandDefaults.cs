@@ -16,4 +16,6 @@ public static class BrandDefaults
     public const string LegacySiteName = "Honda Hiếu Nga Đà Nẵng";
     public const string LegacySeoTitle = "Honda Hiếu Nga Đà Nẵng | Mua xe & dịch vụ HEAD";
     public const string LegacyBranchName = "Honda Hiếu Nga HEAD - Đà Nẵng";
+    public const string LegacySiteNameOld = "HEAD Dealer chính hãng Honda Việt Nam";
+    public const string PublicSiteName = "Đại lý chính hãng Honda Việt Nam tại Đà Nẵng";
 }

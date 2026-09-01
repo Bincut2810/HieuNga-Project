@@ -12,6 +12,6 @@ public class IndexModel(IPromotionService promotionService) : PageModel
     {
         Promotions = await promotionService.GetActiveAsync(ct);
         this.SetSeo(null, "Khuyến mãi xe máy Honda | Xe Máy Hiếu Nga",
-            "Ưu đãi, quà tặng, trả góp và sự kiện tại Đại lý chính hãng Honda Việt Nam tại Đà Nẵng.");
+            "Ưu đãi, quà tặng, trả góp và sự kiện tại Đại lý chính hãng Honda tại Đà Nẵng.");
     }
 }

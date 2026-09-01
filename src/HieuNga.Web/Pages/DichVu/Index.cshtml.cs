@@ -19,7 +19,7 @@ public class IndexModel(IServiceCatalogService serviceCatalog, IBranchService br
         this.SetSeo(
             null,
             "Dịch vụ Honda | Xe Máy Hiếu Nga",
-            "Bảo dưỡng, sửa chữa, nhớt chính hãng, bảo hiểm và chăm sóc xe tại Đại lý chính hãng Honda Việt Nam tại Đà Nẵng.");
+            "Bảo dưỡng, sửa chữa, nhớt chính hãng, bảo hiểm và chăm sóc xe tại Đại lý chính hãng Honda tại Đà Nẵng.");
         ViewData["BranchBookUrl"] = "/bao-duong#booking";
         ViewData["BranchBookLabel"] = "Đặt lịch dịch vụ";
     }

@@ -117,7 +117,7 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
 {
     private static readonly Dictionary<string, string> Defaults = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["site.name"] = BrandDefaults.SiteName,
+        ["site.name"] = BrandDefaults.PublicSiteName,
         ["site.hotline"] = HieuNgaShowrooms.PrimaryPhone,
         ["site.phone"] = HieuNgaShowrooms.PrimaryPhone,
         ["site.zalo"] = "https://zalo.me/118680124068083722",
@@ -145,8 +145,13 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
         if (string.Equals(zalo, "https://zalo.me/02363849556", StringComparison.OrdinalIgnoreCase))
             zalo = Defaults["site.zalo"];
 
+        // Safety net: a previously saved old site-name must not shadow the new official value.
+        var siteName = Get("site.name");
+        if (string.Equals(siteName, BrandDefaults.LegacySiteNameOld, StringComparison.OrdinalIgnoreCase))
+            siteName = Defaults["site.name"];
+
         return new SiteSettingsDto(
-            Get("site.name"), Get("site.hotline"), Get("site.phone"), zalo,
+            siteName, Get("site.hotline"), Get("site.phone"), zalo,
             Get("site.email"), Get("site.address"), Get("site.hours"),
             Get("seo.default_title"), Get("seo.default_description"),
             NullIfEmpty(Get("site.facebook")), NullIfEmpty(Get("site.footer_text")),
