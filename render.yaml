@@ -34,7 +34,7 @@ services:
       - key: Site__Hotline
         value: "0236 384 9556"
       - key: Site__ZaloUrl
-        value: https://zalo.me/02363849556
+        value: https://zalo.me/118680124068083722
       - key: Site__DefaultSeoTitle
         value: Xe Máy Hiếu Nga | Mua xe và dịch vụ xe máy
       - key: Site__DefaultSeoDescription

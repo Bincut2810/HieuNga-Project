@@ -16,7 +16,7 @@ public static class HieuNgaShowrooms
 
     public static readonly ShowroomDef Branch1 = new(
         Slug: "head-hieu-nga-1",
-        Name: "HEAD Hiếu Nga 1",
+        Name: "Hiếu Nga — Hoàng Diệu",
         Address: PrimaryAddress,
         District: "Hải Châu",
         City: "Đà Nẵng",
@@ -29,7 +29,7 @@ public static class HieuNgaShowrooms
 
     public static readonly ShowroomDef Branch2 = new(
         Slug: "head-hieu-nga-2",
-        Name: "HEAD Hiếu Nga 2",
+        Name: "Hiếu Nga — Hùng Vương",
         Address: SecondaryAddress,
         District: "Hải Châu",
         City: "Đà Nẵng",

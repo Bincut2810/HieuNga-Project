@@ -120,7 +120,7 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
         ["site.name"] = BrandDefaults.SiteName,
         ["site.hotline"] = HieuNgaShowrooms.PrimaryPhone,
         ["site.phone"] = HieuNgaShowrooms.PrimaryPhone,
-        ["site.zalo"] = "https://zalo.me/02363849556",
+        ["site.zalo"] = "https://zalo.me/118680124068083722",
         ["site.email"] = "contact@hondahieunga.vn",
         ["site.address"] = HieuNgaShowrooms.PrimaryAddress,
         ["site.hours"] = HieuNgaShowrooms.OpeningHours,
@@ -139,8 +139,14 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
         string Get(string key) => map.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v)
             ? v : Defaults.GetValueOrDefault(key, "");
 
+        // Safety net: a previously persisted CMS row with the legacy Zalo URL must
+        // not silently leave the public site pointing at the old destination.
+        var zalo = Get("site.zalo");
+        if (string.Equals(zalo, "https://zalo.me/02363849556", StringComparison.OrdinalIgnoreCase))
+            zalo = Defaults["site.zalo"];
+
         return new SiteSettingsDto(
-            Get("site.name"), Get("site.hotline"), Get("site.phone"), Get("site.zalo"),
+            Get("site.name"), Get("site.hotline"), Get("site.phone"), zalo,
             Get("site.email"), Get("site.address"), Get("site.hours"),
             Get("seo.default_title"), Get("seo.default_description"),
             NullIfEmpty(Get("site.facebook")), NullIfEmpty(Get("site.footer_text")),
