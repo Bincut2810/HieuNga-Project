@@ -16,6 +16,10 @@
                     @(site.FooterText ?? "Đại lý chính hãng Honda tại Đà Nẵng — mua xe, trả góp và dịch vụ bảo dưỡng chuyên nghiệp.")
                 </p>
                 <div class="mt-5 space-y-2 text-sm">
+                    @if (!string.IsNullOrWhiteSpace(site.HotlineLabel))
+                    {
+                        <p class="text-gray-400 text-sm">@site.HotlineLabel</p>
+                    }
                     <p>
                         <a href="@telHref" hx-boost="false" class="font-semibold text-white hover:text-honda-red transition focus-ring rounded">@site.Hotline</a>
                     </p>

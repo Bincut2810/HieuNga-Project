@@ -49,7 +49,8 @@ public static class SiteSettingsViewData
             BrandDefaults.SeoTitle,
             BrandDefaults.SeoDescription,
             null, null,
-            BrandDefaults.ServicePricingDisclaimer);
+            BrandDefaults.ServicePricingDisclaimer,
+            "Chăm sóc khách hàng");
     }
 
     public static IReadOnlyList<BranchDto> GetBranches(ViewDataDictionary viewData)

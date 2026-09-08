@@ -128,7 +128,8 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
         ["seo.default_description"] = BrandDefaults.SeoDescription,
         ["site.facebook"] = "",
         ["site.footer_text"] = "Đại lý xe máy uy tín tại Đà Nẵng",
-        ["service.pricing_disclaimer"] = BrandDefaults.ServicePricingDisclaimer
+        ["service.pricing_disclaimer"] = BrandDefaults.ServicePricingDisclaimer,
+        ["site.hotline_label"] = "Chăm sóc khách hàng"
     };
 
     public async Task<SiteSettingsDto> GetAsync(CancellationToken ct = default)
@@ -155,7 +156,7 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
             Get("site.email"), Get("site.address"), Get("site.hours"),
             Get("seo.default_title"), Get("seo.default_description"),
             NullIfEmpty(Get("site.facebook")), NullIfEmpty(Get("site.footer_text")),
-            Get("service.pricing_disclaimer"));
+            Get("service.pricing_disclaimer"), Get("site.hotline_label"));
     }
 
     public async Task UpdateAsync(SiteSettingsDto settings, CancellationToken ct = default)
@@ -173,7 +174,8 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
             ["seo.default_description"] = settings.DefaultMetaDescription,
             ["site.facebook"] = settings.FacebookUrl ?? "",
             ["site.footer_text"] = settings.FooterText ?? "",
-            ["service.pricing_disclaimer"] = settings.ServicePricingDisclaimer
+            ["service.pricing_disclaimer"] = settings.ServicePricingDisclaimer,
+            ["site.hotline_label"] = settings.HotlineLabel
         };
 
         var existing = await db.SiteSettings.ToListAsync(ct);

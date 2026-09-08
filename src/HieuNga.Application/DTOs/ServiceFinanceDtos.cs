@@ -43,4 +43,5 @@ public record SiteSettingsDto(
     string DefaultMetaDescription,
     string? FacebookUrl,
     string? FooterText,
-    string ServicePricingDisclaimer);
+    string ServicePricingDisclaimer,
+    string HotlineLabel);

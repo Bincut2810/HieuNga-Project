@@ -26,6 +26,7 @@ public class IndexModel(ISiteSettingsService siteSettings) : PageModel
         public string? FacebookUrl { get; set; }
         public string? FooterText { get; set; }
         public string ServicePricingDisclaimer { get; set; } = string.Empty;
+        public string? HotlineLabel { get; set; }
     }
 
     public async Task OnGetAsync(CancellationToken ct)
@@ -43,7 +44,8 @@ public class IndexModel(ISiteSettingsService siteSettings) : PageModel
         await siteSettings.UpdateAsync(new SiteSettingsDto(
             Input.SiteName, Input.Hotline, Input.Phone, Input.ZaloUrl, Input.Email,
             Input.Address, Input.OpeningHours, Input.DefaultMetaTitle, Input.DefaultMetaDescription,
-            Input.FacebookUrl, Input.FooterText, Input.ServicePricingDisclaimer), ct);
+            Input.FacebookUrl, Input.FooterText, Input.ServicePricingDisclaimer,
+            Input.HotlineLabel ?? string.Empty), ct);
 
         this.SetSuccess("Đã lưu cài đặt.");
         return RedirectToPage();
@@ -55,6 +57,6 @@ public class IndexModel(ISiteSettingsService siteSettings) : PageModel
         Email = s.Email, Address = s.Address, OpeningHours = s.OpeningHours,
         DefaultMetaTitle = s.DefaultMetaTitle, DefaultMetaDescription = s.DefaultMetaDescription,
         FacebookUrl = s.FacebookUrl, FooterText = s.FooterText,
-        ServicePricingDisclaimer = s.ServicePricingDisclaimer
+        ServicePricingDisclaimer = s.ServicePricingDisclaimer, HotlineLabel = s.HotlineLabel
     };
 }
