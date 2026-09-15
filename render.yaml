@@ -28,7 +28,7 @@ services:
           name: hieunga-db
           property: connectionString
       - key: Site__BaseUrl
-        value: https://hieunga-web.onrender.com
+        value: https://xemayhieunga.com
       - key: Site__Name
         value: Xe Máy Hiếu Nga
       - key: Site__Hotline
