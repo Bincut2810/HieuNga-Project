@@ -117,11 +117,11 @@ public class SiteSettingsService(HieuNgaDbContext db, IUnitOfWork uow) : ISiteSe
 {
     private static readonly Dictionary<string, string> Defaults = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["site.name"] = BrandDefaults.PublicSiteName,
+        ["site.name"] = BrandDefaults.SiteName,
         ["site.hotline"] = HieuNgaShowrooms.PrimaryPhone,
         ["site.phone"] = HieuNgaShowrooms.PrimaryPhone,
         ["site.zalo"] = "https://zalo.me/118680124068083722",
-        ["site.email"] = "contact@hondahieunga.vn",
+        ["site.email"] = "",
         ["site.address"] = HieuNgaShowrooms.PrimaryAddress,
         ["site.hours"] = HieuNgaShowrooms.OpeningHours,
         ["seo.default_title"] = BrandDefaults.SeoTitle,

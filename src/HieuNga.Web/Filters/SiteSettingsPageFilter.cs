@@ -43,7 +43,7 @@ public static class SiteSettingsViewData
             HieuNgaShowrooms.PrimaryPhone,
             HieuNgaShowrooms.PrimaryPhone,
             "https://zalo.me/118680124068083722",
-            "contact@hondahieunga.vn",
+            "",
             HieuNgaShowrooms.PrimaryAddress,
             HieuNgaShowrooms.OpeningHours,
             BrandDefaults.SeoTitle,

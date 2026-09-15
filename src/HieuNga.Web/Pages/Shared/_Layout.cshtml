@@ -1,4 +1,6 @@
 @inject Microsoft.Extensions.Options.IOptions<HieuNga.Application.Options.SiteOptions> SiteConfig
+@using System.Text.Json
+@using HieuNga.Application.Catalog
 @{
     var site = SiteConfig.Value;
     var siteName = site.Name;
@@ -7,6 +9,76 @@
     var ogImage = ViewData["OgImage"] as string ?? "/images/og-default.svg";
     var canonical = ViewData["CanonicalUrl"] as string;
     var baseUrl = site.BaseUrl.TrimEnd('/');
+    var requestPath = Context.Request.Path.Value ?? "/";
+    // Layout-level fallback for canonical on the homepage only.
+    // Other pages must continue to set ViewData["CanonicalUrl"] per-page.
+    var resolvedCanonical = !string.IsNullOrEmpty(canonical)
+        ? canonical
+        : (string.Equals(requestPath, "/", StringComparison.OrdinalIgnoreCase)
+            ? $"{baseUrl}/"
+            : null);
+    var ogUrl = resolvedCanonical ?? $"{baseUrl}{requestPath}";
+    var logoUrl = $"{baseUrl}/images/logohieunga.webp";
+    var imageUrl = ogImage.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+        ? ogImage
+        : $"{baseUrl}{ogImage}";
+
+    // JSON-LD address: split existing PrimaryAddress ("street, district, city") into streetAddress + addressLocality.
+    var primaryAddress = HieuNgaShowrooms.PrimaryAddress;
+    var addrParts = primaryAddress.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    var streetAddress = addrParts.Length > 1
+        ? string.Join(", ", addrParts.Take(addrParts.Length - 1))
+        : primaryAddress;
+    var addressCity = addrParts.Length > 0 ? addrParts[^1] : "Đà Nẵng";
+
+    var orgId = $"{baseUrl}/#organization";
+
+    // sameAs: only emit verified, configured external profile URLs (Zalo OA configured in SiteOptions).
+    var sameAsUrls = new List<string>();
+    if (!string.IsNullOrWhiteSpace(site.ZaloUrl)) sameAsUrls.Add(site.ZaloUrl);
+
+    var schema = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "MotorcycleDealer",
+        ["@id"] = orgId,
+        ["name"] = siteName,
+        ["alternateName"] = "Hiếu Nga",
+        ["url"] = baseUrl,
+        ["logo"] = logoUrl,
+        ["image"] = imageUrl,
+        ["description"] = site.DefaultSeoDescription,
+        ["telephone"] = site.Hotline,
+        ["address"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "PostalAddress",
+            ["streetAddress"] = streetAddress,
+            ["addressLocality"] = addressCity,
+            ["addressCountry"] = "VN"
+        },
+        ["areaServed"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "City",
+            ["name"] = "Đà Nẵng"
+        },
+        ["openingHoursSpecification"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "OpeningHoursSpecification",
+            ["opens"] = "07:30",
+            ["closes"] = "19:00"
+        }
+    };
+    if (sameAsUrls.Count > 0)
+    {
+        schema["sameAs"] = sameAsUrls;
+    }
+
+    var jsonOptions = new JsonSerializerOptions
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        WriteIndented = false
+    };
+    var schemaJson = JsonSerializer.Serialize(schema, jsonOptions);
 }
 <!DOCTYPE html>
 <html lang="vi" class="scroll-smooth">
@@ -22,12 +94,17 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="@metaTitle" />
     <meta property="og:description" content="@metaDesc" />
-    <meta property="og:image" content="@(ogImage.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? ogImage : $"{baseUrl}{ogImage}")" />
+    <meta property="og:url" content="@ogUrl" />
+    <meta property="og:site_name" content="@siteName" />
+    <meta property="og:image" content="@imageUrl" />
+    <meta property="og:image:alt" content="Hiếu Nga – Xe Máy tại Đà Nẵng" />
     <meta property="og:locale" content="vi_VN" />
     <meta name="twitter:card" content="summary_large_image" />
-    @if (!string.IsNullOrEmpty(canonical))
+    <meta name="twitter:title" content="@metaTitle" />
+    <meta name="twitter:description" content="@metaDesc" />
+    @if (!string.IsNullOrEmpty(resolvedCanonical))
     {
-        <link rel="canonical" href="@canonical" />
+        <link rel="canonical" href="@resolvedCanonical" />
     }
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,14 +154,7 @@
     <script type="module" src="~/js/finance-calculator.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script type="application/ld+json">
-    {
-        "@@context": "https://schema.org",
-        "@@type": "MotorcycleDealer",
-        "name": "@siteName",
-        "address": { "@@type": "PostalAddress", "addressLocality": "Đà Nẵng", "addressCountry": "VN" },
-        "telephone": "@site.Hotline",
-        "url": "@baseUrl"
-    }
+    @Html.Raw(schemaJson)
     </script>
 </body>
 </html>
