@@ -751,6 +751,29 @@ button.admin-btn-danger:hover {
   background: #FEF2F2;
 }
 
+/* Warning chip — used to alert staff when a record is active publicly
+   but missing a required child record (e.g. active bank with no active rate).
+   Non-destructive: only renders a hint, does not change data. */
+.admin-warning-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid #FDE68A;
+}
+.admin-warning-chip-muted {
+  background: #F3F4F6;
+  color: #4B5563;
+  border-color: #E5E7EB;
+}
+
 /* ─── Tables ─── */
 .admin-table-wrap {
   overflow: hidden;

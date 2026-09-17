@@ -107,7 +107,7 @@ public static class EntityMappers
 
 
     public static PromotionDto ToDto(this Promotion p) =>
-        new(p.Id, p.Title, p.Slug, p.Summary, p.Type, CmsImageOrNull(p.ImageUrl), p.EndDate);
+        new(p.Id, p.Title, p.Slug, p.Summary, p.Type, CmsImageOrNull(p.ImageUrl), p.EndDate, p.IsActive, p.IsFeatured);
 
     public static PromotionDetailDto ToDetail(this Promotion p) => new(
         p.Id, p.Title, p.Slug, p.Summary, p.Content, p.Type, p.DiscountPercent, p.DiscountAmount,
@@ -115,13 +115,13 @@ public static class EntityMappers
         p.Motorcycle?.Name, p.Motorcycle?.Slug, p.ToSeo());
 
     public static BranchDto ToDto(this Branch b) =>
-        new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice, b.Slug);
+        new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice, b.Slug, b.IsActive);
 
     public static ReviewDto ToDto(this Review r, string? motorcycleName = null) =>
         new(r.Id, r.CustomerName, r.Rating, r.Title, r.Content, motorcycleName);
 
     public static BlogPostListItemDto ToListItem(this BlogPost p) =>
-        new(p.Id, p.Title, p.Slug, p.Summary, CmsImageOrNull(p.ThumbnailUrl), p.PublishedAt);
+        new(p.Id, p.Title, p.Slug, p.Summary, CmsImageOrNull(p.ThumbnailUrl), p.PublishedAt, p.IsPublished);
 
     public static BlogDetailDto ToDetail(this BlogPost p) => new(
         p.Id, p.Title, p.Slug, p.Summary, p.Content, CmsImageOrNull(p.ThumbnailUrl),

@@ -39,7 +39,7 @@ public class NganHangIndexModel(IRepository<Bank> bankRepo, IRepository<BankType
     [BindProperty]
     public BankInputModel Input { get; set; } = new();
 
-    public record BankRow(Guid Id, string Name, string ShortName, string TypeName, bool IsActive);
+    public record BankRow(Guid Id, string Name, string ShortName, string TypeName, bool IsActive, bool HasActiveRate, int RateCount);
 
     public async Task OnGetAsync(Guid? editId, CancellationToken ct)
     {
@@ -106,10 +106,20 @@ public class NganHangIndexModel(IRepository<Bank> bankRepo, IRepository<BankType
         var types = await db.BankTypes.AsNoTracking().Where(t => !t.IsDeleted).OrderBy(t => t.DisplayOrder).ToListAsync(ct);
         TypeOptions = new SelectList(types, "Id", "Name", Input.BankTypeId == Guid.Empty ? types.FirstOrDefault()?.Id : Input.BankTypeId);
 
-        Items = await db.Banks.AsNoTracking().Include(b => b.BankType)
-            .Where(b => !b.IsDeleted).OrderBy(b => b.DisplayOrder)
-            .Select(b => new BankRow(b.Id, b.Name, b.ShortName, b.BankType.Name, b.IsActive))
+        var bankQuery = db.Banks.AsNoTracking().Include(b => b.BankType).Where(b => !b.IsDeleted).OrderBy(b => b.DisplayOrder);
+        var banks = await bankQuery.ToListAsync(ct);
+        var rateCounts = await db.FinanceRates.AsNoTracking()
+            .Where(r => !r.IsDeleted)
+            .GroupBy(r => r.BankId)
+            .Select(g => new { BankId = g.Key, Total = g.Count(), Active = g.Count(r => r.IsActive) })
             .ToListAsync(ct);
+        var rateLookup = rateCounts.ToDictionary(r => r.BankId, r => (r.Total, r.Active));
+
+        Items = banks.Select(b =>
+        {
+            var (total, active) = rateLookup.GetValueOrDefault(b.Id, (0, 0));
+            return new BankRow(b.Id, b.Name, b.ShortName, b.BankType.Name, b.IsActive, active > 0, total);
+        }).ToList();
 
         if (editId.HasValue)
         {
@@ -175,11 +185,16 @@ public class LaiSuatIndexModel(IRepository<FinanceRate> rateRepo, IUnitOfWork uo
 {
     public IReadOnlyList<RateRow> Items { get; private set; } = [];
     public SelectList BankOptions { get; private set; } = null!;
+    public IReadOnlyList<BankListItem> Banks { get; private set; } = [];
 
     [BindProperty]
     public FinanceRateInputModel Input { get; set; } = new();
 
+    [BindProperty(SupportsGet = true)]
+    public Guid? BankId { get; set; }
+
     public record RateRow(Guid Id, string BankName, string PlanName, decimal Rate, bool IsDefault, bool IsActive);
+    public record BankListItem(Guid Id, string Name);
 
     public async Task OnGetAsync(Guid? editId, CancellationToken ct)
     {
@@ -227,10 +242,16 @@ public class LaiSuatIndexModel(IRepository<FinanceRate> rateRepo, IUnitOfWork uo
     private async Task LoadAsync(Guid? editId, CancellationToken ct)
     {
         var banks = await db.Banks.AsNoTracking().Where(b => !b.IsDeleted).OrderBy(b => b.DisplayOrder).ToListAsync(ct);
-        BankOptions = new SelectList(banks, "Id", "Name", Input.BankId == Guid.Empty ? banks.FirstOrDefault()?.Id : Input.BankId);
+        var selectedBankId = BankId ?? (Input.BankId == Guid.Empty ? banks.FirstOrDefault()?.Id : Input.BankId);
+        BankOptions = new SelectList(banks, "Id", "Name", selectedBankId);
+        Banks = banks.Select(b => new BankListItem(b.Id, b.Name)).ToList();
 
-        Items = await db.FinanceRates.AsNoTracking().Include(r => r.Bank)
-            .Where(r => !r.IsDeleted).OrderBy(r => r.DisplayOrder)
+        var rateQuery = db.FinanceRates.AsNoTracking().Include(r => r.Bank)
+            .Where(r => !r.IsDeleted);
+        if (selectedBankId.HasValue)
+            rateQuery = rateQuery.Where(r => r.BankId == selectedBankId.Value);
+
+        Items = await rateQuery.OrderBy(r => r.DisplayOrder)
             .Select(r => new RateRow(r.Id, r.Bank.Name, r.PlanName, r.MonthlyInterestRatePercent, r.IsDefault, r.IsActive))
             .ToListAsync(ct);
 

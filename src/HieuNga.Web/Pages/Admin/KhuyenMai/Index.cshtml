@@ -7,28 +7,69 @@
 
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
-             "Promotions",
+             "Khuyến mãi",
              "Chương trình khuyến mãi hiển thị trên website.",
              "/admin/khuyen-mai/them",
              "+ Thêm khuyến mãi")' />
 
+<form method="get" class="admin-toolbar">
+    <div class="admin-toolbar-fields">
+        <div class="admin-field" style="flex: 1; min-width: 200px;">
+            <label for="search" class="admin-label">Tìm kiếm</label>
+            <input id="search" name="Search" value="@Model.Search" placeholder="Tìm theo tiêu đề…" class="admin-input" />
+        </div>
+        <div class="admin-toolbar-actions">
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <a href="/admin/khuyen-mai" class="admin-btn admin-btn-ghost">Xóa lọc</a>
+            }
+            <button type="submit" class="admin-btn admin-btn-secondary">Tìm</button>
+        </div>
+    </div>
+</form>
+
 @if (Model.Items.Count == 0)
 {
-    <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Chưa có khuyến mãi", "Tạo chương trình đầu tiên để hiển thị trên site.", "/admin/khuyen-mai/them", "+ Thêm khuyến mãi")' />
+    if (!string.IsNullOrWhiteSpace(Model.Search))
+    {
+        <div class="admin-empty">
+            <p class="admin-empty-title">Không tìm thấy khuyến mãi</p>
+            <p class="admin-empty-text">Thử từ khóa khác hoặc <a href="/admin/khuyen-mai">xem tất cả</a>.</p>
+        </div>
+    }
+    else
+    {
+        <partial name="Admin/Shared/_AdminEmptyState"
+                 model='new AdminEmptyStateModel("Chưa có khuyến mãi", "Tạo chương trình đầu tiên để hiển thị trên site.", "/admin/khuyen-mai/them", "+ Thêm khuyến mãi")' />
+    }
 }
 else
 {
     <div class="admin-list">
         @foreach (var p in Model.Items)
         {
-            <partial name="Admin/Shared/_AdminListItem"
-                     model='new AdminListItemModel(
-                         p.Title,
-                         p.Type.ToString(),
-                         $"Hết hạn {p.EndDate:dd/MM/yyyy}",
-                         $"/admin/khuyen-mai/sua/{p.Id}",
-                         $"/khuyen-mai/{p.Slug}")' />
+            var now = DateTime.UtcNow;
+            var isExpired = p.EndDate < now;
+            string statusLabel;
+            string viewUrl;
+            if (isExpired)
+            {
+                statusLabel = "Đã hết hạn";
+                viewUrl = null;
+            }
+            else if (p.IsActive)
+            {
+                statusLabel = "Đang chạy";
+                viewUrl = $"/khuyen-mai/{p.Slug}";
+            }
+            else
+            {
+                statusLabel = "Tạm ẩn";
+                viewUrl = null;
+            }
+            string editUrl = $"/admin/khuyen-mai/sua/{p.Id}";
+            string meta = $"Hết hạn {p.EndDate:dd/MM/yyyy}";
+            <partial name="Admin/Shared/_AdminListItem" model="new AdminListItemModel(p.Title, statusLabel, meta, editUrl, viewUrl)" />
         }
     </div>
 }

@@ -71,6 +71,20 @@ public static class DbInitializer
         SeedOptions seedOptions,
         ILogger logger)
     {
+        var roleManager = sp.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        // Ensure the three canonical roles exist so role-separation becomes effective
+        // once at least one operator is assigned to one of them. Existing un-roled
+        // admins keep their full-access behavior via the legacy fallback in the policy.
+        foreach (var role in new[] { "Admin", "ContentStaff", "BookingStaff" })
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                var roleResult = await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+                if (roleResult.Succeeded)
+                    logger.LogInformation("Admin role '{Role}' created.", role);
+            }
+        }
+
         if (!environment.IsDevelopment() && !seedOptions.AdminSeedEnabled)
         {
             logger.LogInformation(
@@ -103,8 +117,15 @@ public static class DbInitializer
         }
 
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
-        if (await userManager.FindByEmailAsync(email) is not null)
+        var existing = await userManager.FindByEmailAsync(email);
+        if (existing is not null)
+        {
+            // Promote the seeded operator to the Admin role if it has no roles yet,
+            // so role-separation becomes active immediately.
+            if (!await userManager.IsInRoleAsync(existing, "Admin"))
+                await userManager.AddToRoleAsync(existing, "Admin");
             return;
+        }
 
         var result = await userManager.CreateAsync(new ApplicationUser
         {
@@ -115,7 +136,12 @@ public static class DbInitializer
         }, password);
 
         if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(
+                (await userManager.FindByEmailAsync(email))!,
+                "Admin");
             logger.LogInformation("Admin user seeded for {Email}.", email);
+        }
         else
             logger.LogWarning("Admin user seed failed for {Email}: {Errors}", email,
                 string.Join("; ", result.Errors.Select(e => e.Description)));

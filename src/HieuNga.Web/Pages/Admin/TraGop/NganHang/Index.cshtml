@@ -60,10 +60,19 @@
                         <tr>
                             <td>
                                 <p class="admin-table-primary">@b.Name (@b.ShortName)</p>
+                                @if (b.IsActive && !b.HasActiveRate)
+                                {
+                                    <span class="admin-warning-chip" title="Ngân hàng đang hoạt động nhưng chưa có gói lãi suất nào đang kích hoạt — sẽ không hiển thị trên máy tính trả góp công khai.">⚠ Chưa có lãi suất kích hoạt (@b.RateCount gói)</span>
+                                }
+                                else if (!b.IsActive)
+                                {
+                                    <span class="admin-warning-chip admin-warning-chip-muted" title="Ngân hàng đang bị tắt trên trang công khai.">Tạm ẩn</span>
+                                }
                             </td>
                             <td>@b.TypeName</td>
                             <td class="text-right">
                                 <div class="admin-actions">
+                                    <a href="/admin/tra-gop/lai-suat?bankId=@b.Id" class="admin-action admin-action-view" title="Xem lãi suất của @b.ShortName">Lãi suất</a>
                                     <a href="?editId=@b.Id" class="admin-action admin-action-edit">Sửa</a>
                                     <form method="post" asp-page-handler="Delete">
                                         @Html.AntiForgeryToken()

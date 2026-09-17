@@ -1,6 +1,9 @@
 @page "/admin/tin-tuc/sua/{id:guid}"
 @using HieuNga.Web.Pages.Admin.Extensions
 @model HieuNga.Web.Pages.Admin.TinTucSuaModel
+@{
+    var editId = RouteData.Values["id"] as string;
+}
 
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel("Sửa bài viết")' />
@@ -9,8 +12,22 @@
     @Html.AntiForgeryToken()
     <partial name="Admin/Shared/_BlogPostForm" model="Model.Input" />
     <div class="admin-form-actions">
+        <a href="/admin/tin-tuc" class="admin-btn admin-btn-ghost">Quay lại</a>
         <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
     </div>
 </form>
+
+@if (!string.IsNullOrEmpty(editId))
+{
+    <form method="post" asp-page-handler="Delete" class="admin-form-card mt-6" style="max-width: 48rem; border-color: rgba(185, 28, 28, 0.25);">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@editId" />
+        <h2 class="admin-form-section-title text-red-700">Vùng nguy hiểm</h2>
+        <p class="text-sm text-gray-600 mt-2">Xóa bài viết sẽ ẩn nó khỏi trang quản trị và trang chủ. Dữ liệu không bị mất vĩnh viễn và có thể khôi phục qua cơ sở dữ liệu.</p>
+        <div class="admin-form-actions">
+            <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirm('Xóa bài viết này? Hành động này sẽ ẩn nó khỏi website.');">Xóa bài viết</button>
+        </div>
+    </form>
+}
 
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

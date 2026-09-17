@@ -7,7 +7,7 @@
 
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
-             "Branches",
+             "Chi nhánh",
              "Địa điểm showroom và thông tin liên hệ.",
              "/admin/chi-nhanh/them",
              "+ Thêm chi nhánh")' />
@@ -22,10 +22,13 @@ else
     <div class="admin-list">
         @foreach (var b in Model.Branches)
         {
+            var eyebrow = b.IsHeadOffice
+                ? (b.IsActive ? "Trụ sở" : "Trụ sở · Tạm ẩn")
+                : (b.IsActive ? "Chi nhánh" : "Chi nhánh · Tạm ẩn");
             <partial name="Admin/Shared/_AdminListItem"
                      model='new AdminListItemModel(
                          b.Name,
-                         b.IsHeadOffice ? "Trụ sở" : null,
+                         eyebrow,
                          $"{b.Address} · {b.Hotline}",
                          $"/admin/chi-nhanh/sua/{b.Id}")' />
         }

@@ -1,49 +1,128 @@
 @page "/admin"
 @model HieuNga.Web.Pages.Admin.IndexModel
 @using HieuNga.Web.Pages.Admin.Extensions
+@using HieuNga.Domain.Enums
 @{
     ViewData["Title"] = "Dashboard";
+
+    // Role detection (mirrors _AdminLayout helpers)
+    bool IsAdmin() => User.IsInRole(AdminRoles.Admin);
+    bool IsContentStaff() => User.IsInRole(AdminRoles.ContentStaff);
+    bool IsBookingStaff() => User.IsInRole(AdminRoles.BookingStaff);
+    bool IsLegacyAdmin() =>
+        User.Identity?.IsAuthenticated == true
+        && !IsAdmin() && !IsContentStaff() && !IsBookingStaff();
+    bool ShowAllModules() => IsAdmin() || IsLegacyAdmin();
 }
 
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
              "Dashboard",
-             "Control center — Xe Máy Hiếu Nga CMS")' />
+             "Trung tâm điều khiển — Xe Máy Hiếu Nga CMS")' />
 
-<div class="admin-dash-grid">
-    <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Motorcycles</p>
-        <p class="admin-dash-card-value admin-dash-card-value-accent">@Model.MotorcycleCount</p>
-        <a href="/admin/xe" class="admin-dash-card-link">Inventory →</a>
+@if (ShowAllModules())
+{
+    @* ── Admin: full overview ──────────────────────────── *@
+    <div class="admin-dash-grid">
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Motorcycles</p>
+            <p class="admin-dash-card-value admin-dash-card-value-accent">@Model.MotorcycleCount</p>
+            <a href="/admin/xe" class="admin-dash-card-link">Inventory →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Services</p>
+            <p class="admin-dash-card-value">@Model.ServiceCount</p>
+            <a href="/admin/dich-vu/bang-gia" class="admin-dash-card-link">Dịch vụ →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Banners</p>
+            <p class="admin-dash-card-value">@Model.BannerCount</p>
+            <a href="/admin/banner" class="admin-dash-card-link">Content →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Finance</p>
+            <p class="admin-dash-card-value">@Model.BankCount</p>
+            @if (Model.BankNoRateCount > 0)
+            {
+                <span class="admin-warning-chip" style="margin-top:.25rem; display:inline-block;">⚠ @Model.BankNoRateCount bank(s) cần lãi suất</span>
+            }
+            <a href="/admin/tra-gop/ngan-hang" class="admin-dash-card-link">Banks →</a>
+        </div>
     </div>
-    <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Services</p>
-        <p class="admin-dash-card-value">@Model.ServiceCount</p>
-        <a href="/admin/dich-vu/bang-gia" class="admin-dash-card-link">Dịch vụ →</a>
-    </div>
-    <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Banners</p>
-        <p class="admin-dash-card-value">@Model.BannerCount</p>
-        <a href="/admin/banner" class="admin-dash-card-link">Content →</a>
-    </div>
-    <div class="admin-dash-card">
-        <p class="admin-dash-card-label">Finance</p>
-        <p class="admin-dash-card-value">@Model.BankCount</p>
-        <a href="/admin/tra-gop/ngan-hang" class="admin-dash-card-link">Banks →</a>
-    </div>
-</div>
 
-<div class="admin-card admin-card-padded admin-section-gap">
-    <h2 class="admin-form-section-title">Quick actions</h2>
-    <div class="admin-quick-grid" style="margin-top: 0.85rem;">
-        <a href="/admin/xe/editor" class="admin-quick-link">+ Thêm motorcycle</a>
-        <a href="/admin/dich-vu/bang-gia/them" class="admin-quick-link">+ Thêm dịch vụ</a>
-        <a href="/admin/banner" class="admin-quick-link">Chỉnh banner</a>
-        <a href="/admin/tra-gop/lai-suat" class="admin-quick-link">Cấu hình lãi suất</a>
-        <a href="/admin/bookings" class="admin-quick-link">Booking Center</a>
-        <a href="/admin/cai-dat" class="admin-quick-link">Site settings</a>
+    <div class="admin-card admin-card-padded admin-section-gap">
+        <h2 class="admin-form-section-title">Quick actions</h2>
+        <div class="admin-quick-grid" style="margin-top: 0.85rem;">
+            <a href="/admin/xe/editor" class="admin-quick-link">+ Thêm motorcycle</a>
+            <a href="/admin/dich-vu/bang-gia/them" class="admin-quick-link">+ Thêm dịch vụ</a>
+            <a href="/admin/banner" class="admin-quick-link">Chỉnh banner</a>
+            <a href="/admin/tra-gop/lai-suat" class="admin-quick-link">Cấu hình lãi suất</a>
+            <a href="/admin/bookings" class="admin-quick-link">Booking Center</a>
+            <a href="/admin/cai-dat" class="admin-quick-link">Site settings</a>
+        </div>
     </div>
-</div>
+}
+else if (IsContentStaff())
+{
+    @* ── Content staff: content metrics ─────────────── *@
+    <div class="admin-dash-grid">
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Tin nháp</p>
+            <p class="admin-dash-card-value">@Model.DraftNewsCount</p>
+            <a href="/admin/tin-tuc" class="admin-dash-card-link">Xem tin tức →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Đã xuất bản</p>
+            <p class="admin-dash-card-value admin-dash-card-value-accent">@Model.PublishedNewsCount</p>
+            <a href="/admin/tin-tuc" class="admin-dash-card-link">Xem tin tức →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Khuyến mãi đang chạy</p>
+            <p class="admin-dash-card-value">@Model.ActivePromotionCount</p>
+            <a href="/admin/khuyen-mai" class="admin-dash-card-link">Xem khuyến mãi →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Banner đang hiển thị</p>
+            <p class="admin-dash-card-value">@Model.ActiveBannerCount</p>
+            <a href="/admin/banner" class="admin-dash-card-link">Quản lý banner →</a>
+        </div>
+    </div>
+
+    <div class="admin-card admin-card-padded admin-section-gap">
+        <h2 class="admin-form-section-title">Thao tác nhanh</h2>
+        <div class="admin-quick-grid" style="margin-top: 0.85rem;">
+            <a href="/admin/tin-tuc/them" class="admin-quick-link">+ Thêm bài viết</a>
+            <a href="/admin/khuyen-mai/them" class="admin-quick-link">+ Thêm khuyến mãi</a>
+            <a href="/admin/banner" class="admin-quick-link">Quản lý banner</a>
+        </div>
+    </div>
+}
+else if (IsBookingStaff())
+{
+    @* ── Booking staff: booking metrics ──────────────── *@
+    <div class="admin-dash-grid">
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Lịch hẹn mới</p>
+            <p class="admin-dash-card-value admin-dash-card-value-accent">@Model.NewBookingCount</p>
+            <a href="/admin/bookings?type=all&range=all&search=" class="admin-dash-card-link">Xem tất cả →</a>
+        </div>
+        <div class="admin-dash-card">
+            <p class="admin-dash-card-label">Lịch hẹn hôm nay</p>
+            <p class="admin-dash-card-value">@Model.TodayBookingCount</p>
+            <a href="/admin/bookings?type=all&range=today" class="admin-dash-card-link">Hôm nay →</a>
+        </div>
+    </div>
+
+    <div class="admin-card admin-card-padded admin-section-gap">
+        <h2 class="admin-form-section-title">Thao tác nhanh</h2>
+        <div class="admin-quick-grid" style="margin-top: 0.85rem;">
+            <a href="/admin/bookings?type=all&range=today" class="admin-quick-link">Lịch hôm nay</a>
+            <a href="/admin/bookings?type=all&range=tomorrow" class="admin-quick-link">Lịch ngày mai</a>
+            <a href="/admin/bookings?type=testride&range=today" class="admin-quick-link">Test Ride hôm nay</a>
+            <a href="/admin/bookings?type=maint&range=today" class="admin-quick-link">Bảo dưỡng hôm nay</a>
+        </div>
+    </div>
+}
 
 <div class="admin-card admin-card-padded admin-section-gap">
     <h2 class="admin-form-section-title">Recent updates</h2>

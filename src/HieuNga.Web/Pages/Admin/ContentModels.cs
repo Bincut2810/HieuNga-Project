@@ -229,6 +229,20 @@ public class KhuyenMaiSuaModel(IRepository<Promotion> repo, IUnitOfWork uow, Hie
         return RedirectToPage("/Admin/KhuyenMai/Index");
     }
 
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct)
+    {
+        ViewData["Title"] = "Khuyến mãi";
+        var e = await repo.GetByIdAsync(id, ct);
+        if (e is null || e.IsDeleted) return NotFound();
+        e.IsDeleted = true;
+        e.IsActive = false;
+        e.UpdatedAt = DateTime.UtcNow;
+        await repo.UpdateAsync(e, ct);
+        await uow.SaveChangesAsync(ct);
+        this.SetSuccess("Đã xóa khuyến mãi.");
+        return RedirectToPage("/Admin/KhuyenMai/Index");
+    }
+
     private async Task LoadMotorcyclesAsync(CancellationToken ct)
     {
         var bikes = await db.Motorcycles.AsNoTracking().Where(m => !m.IsDeleted).OrderBy(m => m.Name).ToListAsync(ct);
@@ -323,6 +337,19 @@ public class TinTucSuaModel(IRepository<BlogPost> repo, IUnitOfWork uow, HieuNga
         await repo.UpdateAsync(e, ct);
         await uow.SaveChangesAsync(ct);
         this.SetSuccess("Đã cập nhật bài viết.");
+        return RedirectToPage("/Admin/TinTuc/Index");
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct)
+    {
+        ViewData["Title"] = "Tin tức";
+        var e = await repo.GetByIdAsync(id, ct);
+        if (e is null || e.IsDeleted) return NotFound();
+        e.IsDeleted = true;
+        e.UpdatedAt = DateTime.UtcNow;
+        await repo.UpdateAsync(e, ct);
+        await uow.SaveChangesAsync(ct);
+        this.SetSuccess("Đã xóa bài viết.");
         return RedirectToPage("/Admin/TinTuc/Index");
     }
 

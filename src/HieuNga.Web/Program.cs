@@ -37,6 +37,27 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CompareSessionService>();
 builder.Services.AddResponseCompression();
 builder.Services.AddAntiforgery();
+
+// Minimum role separation for the admin panel.
+// Roles are added defensively: if the database has no roles yet, every
+// authenticated admin keeps full access (legacy behavior). Once an operator
+// is given a ContentStaff or BookingStaff role, separation becomes active.
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(HieuNga.Web.Pages.Admin.Extensions.AdminRoles.ContentAccessPolicy, policy =>
+        policy.Requirements.Add(
+            new HieuNga.Web.Pages.Admin.Extensions.AdminRoleRequirement(
+                HieuNga.Web.Pages.Admin.Extensions.AdminRoles.ContentStaff,
+                allowLegacyUnroled: true)));
+    options.AddPolicy(HieuNga.Web.Pages.Admin.Extensions.AdminRoles.BookingAccessPolicy, policy =>
+        policy.Requirements.Add(
+            new HieuNga.Web.Pages.Admin.Extensions.AdminRoleRequirement(
+                HieuNga.Web.Pages.Admin.Extensions.AdminRoles.BookingStaff,
+                allowLegacyUnroled: true)));
+});
+builder.Services.AddSingleton<
+    Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
+    HieuNga.Web.Pages.Admin.Extensions.AdminRoleOrLegacyHandler>();
 builder.Services.Configure<FormOptions>(o =>
 {
     o.MultipartBodyLengthLimit = 105_000_000; // ~100 MB media uploads
@@ -46,6 +67,26 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin");
     options.Conventions.AllowAnonymousToPage("/Admin/DangNhap");
+
+    // Content Staff: Blog, Banner, Promotion modules.
+    options.Conventions.Add(new HieuNga.Web.Pages.Admin.Extensions.AuthorizePageConvention(
+        HieuNga.Web.Pages.Admin.Extensions.AdminRoles.ContentAccessPolicy,
+        "/Admin/TinTuc/Index.cshtml",
+        "/Admin/TinTuc/Them.cshtml",
+        "/Admin/TinTuc/Sua.cshtml",
+        "/Admin/Banner/Index.cshtml",
+        "/Admin/KhuyenMai/Index.cshtml",
+        "/Admin/KhuyenMai/Them.cshtml",
+        "/Admin/KhuyenMai/Sua.cshtml"));
+
+    // Booking Staff: Booking Center, Test Ride, customer contacts.
+    options.Conventions.Add(new HieuNga.Web.Pages.Admin.Extensions.AuthorizePageConvention(
+        HieuNga.Web.Pages.Admin.Extensions.AdminRoles.BookingAccessPolicy,
+        "/Admin/Bookings/Index.cshtml",
+        "/Admin/TestRide/Index.cshtml",
+        "/Admin/KhachHang/BaoDuong/Index.cshtml",
+        "/Admin/KhachHang/TraGop/Index.cshtml",
+        "/Admin/KhachHang/TraGop/ChiTiet.cshtml"));
 }).AddMvcOptions(o => o.Filters.Add<SiteSettingsPageFilter>());
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

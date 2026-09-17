@@ -5,6 +5,29 @@
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel("Lãi suất trả góp")' />
 
+@if (Model.BankId.HasValue)
+{
+    <div style="margin-bottom: 1rem;">
+        <a href="/admin/tra-gop/lai-suat" class="admin-btn admin-btn-ghost" style="font-size: var(--admin-font-sm);">← Tất cả ngân hàng</a>
+    </div>
+}
+
+<form method="get" class="admin-toolbar">
+    <div class="admin-toolbar-fields">
+        <div class="admin-field">
+            <label for="bankId" class="admin-label">Lọc theo ngân hàng</label>
+            <select id="bankId" name="BankId" class="admin-select" onchange="this.form.submit()">
+                <option value="">— Tất cả —</option>
+                @foreach (var bank in Model.Banks)
+                {
+                    var selected = Model.BankId == bank.Id ? "selected" : null;
+                    <option value="@bank.Id" selected="@selected">@bank.Name</option>
+                }
+            </select>
+        </div>
+    </div>
+</form>
+
 <div class="admin-grid-2">
     <div class="admin-card admin-card-padded">
         <h2 class="admin-form-section-title">@(Model.Input.Id.HasValue ? "Sửa gói lãi suất" : "Thêm gói lãi suất")</h2>

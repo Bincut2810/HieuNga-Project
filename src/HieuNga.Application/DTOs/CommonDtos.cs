@@ -24,7 +24,9 @@ public record PromotionDto(
     string? Summary,
     PromotionType Type,
     string? ImageUrl,
-    DateTime EndDate);
+    DateTime EndDate,
+    bool IsActive = true,
+    bool IsFeatured = false);
 
 public record BranchDto(
     Guid Id,
@@ -36,7 +38,8 @@ public record BranchDto(
     string? MapEmbedUrl,
     string? OpeningHours,
     bool IsHeadOffice,
-    string Slug = "");
+    string Slug = "",
+    bool IsActive = true);
 
 public record ReviewDto(
     Guid Id,
@@ -52,7 +55,8 @@ public record BlogPostListItemDto(
     string Slug,
     string? Summary,
     string? ThumbnailUrl,
-    DateTime? PublishedAt);
+    DateTime? PublishedAt,
+    bool IsPublished);
 
 public record InstallmentCalculationDto(
     decimal VehiclePrice,

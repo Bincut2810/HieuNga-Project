@@ -3,9 +3,11 @@
 @{
     var hero = Model;
     var slides = hero.Slides ?? Array.Empty<HeroSlideDto>();
-    if (!hero.Enabled || slides.Count == 0) { return; }
+    var hasContent = hero.Enabled && slides.Count > 0;
+    if (!hasContent) { return; }
     var multi = slides.Count > 1;
     var alt = string.IsNullOrWhiteSpace(hero.Title) ? "Banner trang chủ Xe Máy Hiếu Nga" : hero.Title;
+    var showOverlay = !string.IsNullOrWhiteSpace(hero.Title) || !string.IsNullOrWhiteSpace(hero.Subtitle);
 }
 
 <section class="home-hero"
@@ -34,8 +36,23 @@
                          width="1920" height="720"
                          fetchpriority="@(isFirst ? "high" : "low")"
                          loading="@(isFirst ? "eager" : "lazy")"
-                         decoding="async" />
+                         decoding="async"
+                         onerror="this.style.display='none';this.parentElement.style.background='#111';" />
                     <div class="home-hero-shade" aria-hidden="true"></div>
+                    @if (si == 0 && showOverlay)
+                    {
+                        <div class="home-hero-text-overlay" aria-hidden="true">
+                            @if (!string.IsNullOrWhiteSpace(hero.Title))
+                            {
+                                <span class="home-hero-eyebrow">Xe Máy Hiếu Nga</span>
+                                <h2 class="home-hero-title">@hero.Title</h2>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(hero.Subtitle))
+                            {
+                                <p class="home-hero-subtitle">@hero.Subtitle</p>
+                            }
+                        </div>
+                    }
                 </div>
             </article>
             si++;
