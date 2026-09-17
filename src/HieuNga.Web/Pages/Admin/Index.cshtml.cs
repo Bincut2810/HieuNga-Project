@@ -41,11 +41,18 @@ public class IndexModel(
         ServiceCount = (await services.GetAllAsync(ct)).Count;
         BannerCount = (await banners.GetAllAsync(ct)).Count;
         BankCount = (await banks.GetAllAsync(ct)).Count;
+
+        // Use the same group-by pattern as Admin/TraGop NganHang/Index —
+        // proven to translate on PostgreSQL via Npgsql.
+        var rateCounts = await db.FinanceRates.AsNoTracking()
+            .Where(r => !r.IsDeleted)
+            .GroupBy(r => r.BankId)
+            .Select(g => new { BankId = g.Key, Active = g.Count(r => r.IsActive) })
+            .ToListAsync(ct);
+        var activeBankIdsWithRates = rateCounts.Where(r => r.Active > 0).Select(r => r.BankId).ToHashSet();
         BankNoRateCount = await db.Banks.AsNoTracking()
             .Where(b => !b.IsDeleted && b.IsActive)
-            .Where(b => !db.FinanceRates.AsNoTracking()
-                .Where(r => !r.IsDeleted && r.IsActive)
-                .Any(r => r.BankId == b.Id))
+            .Where(b => !activeBankIdsWithRates.Contains(b.Id))
             .CountAsync(ct);
 
         RecentMotorcycles = await db.Motorcycles.AsNoTracking()
@@ -64,12 +71,19 @@ public class IndexModel(
         ActiveBannerCount = await db.Banners.AsNoTracking().Where(b => !b.IsDeleted && b.IsActive).CountAsync(ct);
 
         // ── Booking staff ───────────────────────────────────
-        var todayVn = Application.TestRide.TestRideVietnamTime.Now.Date;
+        // Use UTC day-range pattern (same as BookingService / TestRideService).
+        // .Date on DateTime cannot be translated to SQL on Npgsql.
+        var todayVn = TestRideVietnamTime.Today;
+        var todayStartUtc = TestRideVietnamTime.ConvertLocalAppointmentDateToUtc(todayVn);
+        var tomorrowStartUtc = TestRideVietnamTime.ConvertLocalAppointmentDateEndExclusiveToUtc(todayVn);
+
         NewBookingCount = await db.Bookings.AsNoTracking()
             .Where(b => b.Status == Domain.Enums.BookingStatus.Pending)
             .CountAsync(ct);
         TodayBookingCount = await db.Bookings.AsNoTracking()
-            .Where(b => b.Status != Domain.Enums.BookingStatus.Cancelled && b.PreferredDate.Date == todayVn)
+            .Where(b => b.Status != Domain.Enums.BookingStatus.Cancelled
+                && b.PreferredDate >= todayStartUtc
+                && b.PreferredDate < tomorrowStartUtc)
             .CountAsync(ct);
     }
 }
