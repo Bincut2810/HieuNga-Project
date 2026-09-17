@@ -11,25 +11,25 @@
 
     @if (Model.IsCreate)
     {
-        <p class="admin-hint">Tạo xe ở Quick Create trước.</p>
-        <a href="/admin/xe/editor?tab=general" class="admin-btn-secondary">Về General</a>
+        <p class="admin-hint">Tạo xe ở mục Thông tin trước.</p>
+        <a href="/admin/xe/editor?tab=general" class="admin-btn-secondary">Về Thông tin</a>
     }
     else
     {
-        <h2 class="admin-form-section-title">SEO</h2>
+        <h2 class="admin-form-section-title">Cấu hình SEO</h2>
         <div class="seo-warnings" data-seo-warnings style="margin:0.75rem 0;"></div>
 
         <div style="display:grid;gap:1rem;">
             <div>
-                <label asp-for="Input.MetaTitle" class="admin-label">Title <span data-seo-count="title" class="seo-count">0/60</span></label>
+                <label asp-for="Input.MetaTitle" class="admin-label">Tiêu đề SEO <span data-seo-count="title" class="seo-count">0/60</span></label>
                 <input asp-for="Input.MetaTitle" class="admin-input" data-seo-title placeholder="@(Model.MotorcycleName)" maxlength="70" />
             </div>
             <div>
-                <label asp-for="Input.MetaDescription" class="admin-label">Description <span data-seo-count="desc" class="seo-count">0/160</span></label>
+                <label asp-for="Input.MetaDescription" class="admin-label">Mô tả SEO <span data-seo-count="desc" class="seo-count">0/160</span></label>
                 <textarea asp-for="Input.MetaDescription" rows="3" class="admin-textarea" data-seo-desc maxlength="200"></textarea>
             </div>
             <div>
-                <label asp-for="Input.MetaKeywords" class="admin-label">Keywords</label>
+                <label asp-for="Input.MetaKeywords" class="admin-label">Từ khóa SEO</label>
                 <input asp-for="Input.MetaKeywords" class="admin-input" />
             </div>
             <div>
@@ -37,17 +37,17 @@
                 <input asp-for="Input.CanonicalUrl" class="admin-input" placeholder="/xe/@Model.PublicSlug" />
             </div>
             <div>
-                <label asp-for="Input.OgImageUrl" class="admin-label">OG Image URL</label>
+                <label asp-for="Input.OgImageUrl" class="admin-label">Ảnh chia sẻ (OG Image)</label>
                 <input asp-for="Input.OgImageUrl" class="admin-input" data-seo-og />
                 <div class="seo-og-preview" style="margin-top:0.5rem;">
-                    <img data-seo-og-img src="@(Model.Input.OgImageUrl ?? Model.Input.ThumbnailUrl)" alt="OG preview"
+                    <img data-seo-og-img src="@(Model.Input.OgImageUrl ?? Model.Input.ThumbnailUrl)" alt="Xem trước ảnh chia sẻ"
                          style="max-height:8rem;border-radius:0.5rem;border:1px solid var(--admin-border);@(string.IsNullOrEmpty(Model.Input.OgImageUrl ?? Model.Input.ThumbnailUrl) ? "display:none" : null)" />
                 </div>
             </div>
         </div>
 
         <aside class="seo-serp" style="margin-top:1.25rem;">
-            <p class="admin-label">SERP preview</p>
+            <p class="admin-label">Xem trước Google</p>
             <div class="seo-serp-card">
                 <p class="seo-serp-url" data-seo-serp-url>xemayhieunga.vn › xe › @(Model.PublicSlug)</p>
                 <p class="seo-serp-title" data-seo-serp-title>@(Model.Input.MetaTitle ?? Model.MotorcycleName)</p>
@@ -55,6 +55,6 @@
             </div>
         </aside>
 
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Save Draft", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu bản nháp", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
     }
 </form>

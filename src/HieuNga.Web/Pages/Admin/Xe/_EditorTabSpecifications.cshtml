@@ -4,7 +4,7 @@
 @if (Model.IsCreate)
 {
     <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Lưu xe trước", "Specification Builder mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Quick Create")' />
+             model='new AdminEmptyStateModel("Lưu xe trước", "Trình tạo thông số mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Tạo xe nhanh")' />
 }
 else
 {
@@ -16,22 +16,22 @@ else
 
         <div class="mm-section-head">
             <div>
-                <h2 class="admin-form-section-title">Specification Builder</h2>
-                <p class="admin-hint">Thêm / sửa / sắp xếp thông số — public page render tự động.</p>
+                <h2 class="admin-form-section-title">Trình tạo thông số kỹ thuật</h2>
+                <p class="admin-hint">Thêm / sửa / sắp xếp thông số — trang công khai sẽ tự render.</p>
             </div>
             <div class="mm-section-actions">
-                <button type="button" class="admin-btn-secondary" data-spec-add-group>＋ Group</button>
-                <button type="button" class="admin-btn-primary" data-spec-add-row>＋ Row</button>
+                <button type="button" class="admin-btn-secondary" data-spec-add-group>＋ Nhóm</button>
+                <button type="button" class="admin-btn-primary" data-spec-add-row>＋ Dòng</button>
             </div>
         </div>
 
         <div class="spec-builder" data-spec-rows></div>
 
         <aside class="spec-preview admin-card admin-card-padded" style="margin-top:1rem;">
-            <h3 class="admin-form-section-title" style="font-size:0.9rem;">Preview</h3>
+            <h3 class="admin-form-section-title" style="font-size:0.9rem;">Xem trước</h3>
             <dl class="spec-preview-list" data-spec-preview></dl>
         </aside>
 
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Save Draft", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu bản nháp", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
     </form>
 }

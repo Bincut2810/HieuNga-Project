@@ -1,7 +1,7 @@
 @page "/admin/bookings"
 @model HieuNga.Web.Pages.Admin.Bookings.IndexModel
 @{
-    ViewData["Title"] = "Booking Center";
+    ViewData["Title"] = "Trung tâm đặt lịch";
     ViewData["BcType"] = Model.ActiveType;
     ViewData["BcRange"] = Model.ActiveRange;
     ViewData["BcSearch"] = Model.Search;
@@ -26,7 +26,7 @@
 <div class="bc-page" data-bc-page>
     <header class="bc-header">
         <div>
-            <h1 class="bc-title">Booking Center</h1>
+            <h1 class="bc-title">Trung tâm đặt lịch</h1>
             <p class="bc-subtitle">Lịch tiếp khách theo giờ — xem xe &amp; bảo dưỡng</p>
         </div>
         <p class="bc-visible-count" aria-live="polite">@Model.VisibleCount lịch hiển thị</p>
@@ -36,9 +36,9 @@
         <a role="tab" aria-selected="@(Model.ActiveType == "all")" class="bc-tab @TypeClass("all")"
            href="@Qs("all", Model.ActiveRange)">Tất cả</a>
         <a role="tab" aria-selected="@(Model.ActiveType == "testride")" class="bc-tab bc-tab-tr @TypeClass("testride")"
-           href="@Qs("testride", Model.ActiveRange)">Test Ride</a>
+           href="@Qs("testride", Model.ActiveRange)">Lái thử (Test Ride)</a>
         <a role="tab" aria-selected="@(Model.ActiveType == "maint")" class="bc-tab bc-tab-maint @TypeClass("maint")"
-           href="@Qs("maint", Model.ActiveRange)">Maintenance</a>
+           href="@Qs("maint", Model.ActiveRange)">Bảo dưỡng</a>
     </nav>
 
     <partial name="Admin/Bookings/_BookingSummary" model="Model.Summary" />

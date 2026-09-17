@@ -10,7 +10,7 @@
              "Chi nhánh",
              "Địa điểm showroom và thông tin liên hệ.",
              "/admin/chi-nhanh/them",
-             "+ Thêm chi nhánh")' />
+             "+ Thêm chi nhánh mới")' />
 
 @if (Model.Branches.Count == 0)
 {
@@ -23,8 +23,8 @@ else
         @foreach (var b in Model.Branches)
         {
             var eyebrow = b.IsHeadOffice
-                ? (b.IsActive ? "Trụ sở" : "Trụ sở · Tạm ẩn")
-                : (b.IsActive ? "Chi nhánh" : "Chi nhánh · Tạm ẩn");
+                ? (b.IsActive ? "Trụ sở chính" : "Trụ sở chính · Đang ẩn")
+                : (b.IsActive ? "Chi nhánh" : "Chi nhánh · Đang ẩn");
             <partial name="Admin/Shared/_AdminListItem"
                      model='new AdminListItemModel(
                          b.Name,

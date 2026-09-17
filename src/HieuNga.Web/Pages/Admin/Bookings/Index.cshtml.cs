@@ -39,7 +39,7 @@ public class IndexModel(
 
     public async Task OnGetAsync(CancellationToken ct)
     {
-        ViewData["Title"] = "Booking Center";
+        ViewData["Title"] = "Trung tâm đặt lịch";
         Type = ActiveType;
         Range = ActiveRange;
         try
@@ -217,7 +217,7 @@ public class IndexModel(
     {
         var typePart = ActiveType switch
         {
-            "testride" => "xem xe",
+            "testride" => "lái thử",
             "maint" => "bảo dưỡng",
             _ => "hẹn"
         };

@@ -47,7 +47,7 @@ public record AdminListItemModel(
 
 public record EditorSaveBarModel(
     string? PreviewSlug,
-    string SaveText = "Save Draft",
+    string SaveText = "Lưu bản nháp",
     string? PublishTabUrl = null,
     bool IsPublishTab = false)
 {

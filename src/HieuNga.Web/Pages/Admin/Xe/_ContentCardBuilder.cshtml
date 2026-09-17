@@ -18,7 +18,7 @@
     @if (Model.Items.Count == 0)
     {
         <partial name="Admin/Shared/_AdminEmptyState"
-                 model='new HieuNga.Web.Pages.Admin.Extensions.AdminEmptyStateModel($"Chưa có {Model.Title.ToLower()}", "Thêm thẻ bên dưới.")' />
+                 model='new HieuNga.Web.Pages.Admin.Extensions.AdminEmptyStateModel($"Chưa có {Model.Title.ToLower()}", "Nhấn nút Thêm bên dưới để tạo thẻ đầu tiên.")' />
     }
     else
     {
@@ -35,10 +35,10 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="Id" value="@Model.MotorcycleId" />
                             <input type="hidden" name="itemId" value="@item.Id" />
-                            <input type="text" name="title" value="@item.Title" class="admin-input" placeholder="Title" required />
-                            <textarea name="description" rows="2" class="admin-textarea" placeholder="Description">@item.Description</textarea>
+                            <input type="text" name="title" value="@item.Title" class="admin-input" placeholder="Tiêu đề" required />
+                            <textarea name="description" rows="2" class="admin-textarea" placeholder="Mô tả">@item.Description</textarea>
                             <label class="admin-hint" style="display:block;">
-                                Replace image
+                                Thay ảnh
                                 <input type="file" name="imageFile" accept="image/*" class="admin-input" style="margin-top:0.35rem;" />
                             </label>
                             <button type="submit" class="admin-btn-secondary" style="width:100%;">Lưu thẻ</button>
@@ -48,13 +48,13 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="Id" value="@Model.MotorcycleId" />
                                 <input type="hidden" name="itemId" value="@item.Id" />
-                                <button type="submit" class="admin-action admin-action-edit">Duplicate</button>
+                                <button type="submit" class="admin-action admin-action-edit">Nhân bản</button>
                             </form>
                             <form method="post" asp-page-handler="@Model.DeleteHandler" class="inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="Id" value="@Model.MotorcycleId" />
                                 <input type="hidden" name="@(Model.Kind == "feature" ? "featureId" : "techId")" value="@item.Id" />
-                                <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa?')">Delete</button>
+                                <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa thẻ này?')">Xóa</button>
                             </form>
                         </div>
                     </div>
@@ -68,8 +68,8 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="Id" value="@Model.MotorcycleId" />
         <h3 class="admin-form-section-title" style="font-size:0.95rem;">Thêm @Model.Title.ToLower()</h3>
-        <input name="@(Model.Kind == "feature" ? "NewFeature.Title" : "NewTech.Title")" class="admin-input" placeholder="Title *" required />
-        <textarea name="@(Model.Kind == "feature" ? "NewFeature.Description" : "NewTech.Description")" rows="2" class="admin-textarea" placeholder="Description"></textarea>
+        <input name="@(Model.Kind == "feature" ? "NewFeature.Title" : "NewTech.Title")" class="admin-input" placeholder="Tiêu đề *" required />
+        <textarea name="@(Model.Kind == "feature" ? "NewFeature.Description" : "NewTech.Description")" rows="2" class="admin-textarea" placeholder="Mô tả"></textarea>
         <input type="file" name="imageFile" accept="image/*" class="admin-input" required />
         <button type="submit" class="admin-btn-primary" @(Model.SupportsUpload ? null : "disabled")>Thêm</button>
     </form>

@@ -9,6 +9,12 @@
         "archived" => "admin-badge admin-badge-muted",
         _ => "admin-badge admin-badge-category"
     };
+    var statusLabel = status switch
+    {
+        "published" => "Đã đăng bán",
+        "archived" => "Đã lưu trữ",
+        _ => "Bản nháp"
+    };
     var publicUrl = string.IsNullOrEmpty(Model.PublicSlug) ? null : $"/xe/{Model.PublicSlug}";
 }
 
@@ -21,61 +27,61 @@
     <input type="hidden" name="Tab" value="publish" />
 
     <div class="mm-section-head">
-        <h2 class="admin-form-section-title">Publish</h2>
+        <h2 class="admin-form-section-title">Đăng bán</h2>
         @if (!Model.IsCreate)
         {
-            <span class="@badgeClass">@status</span>
+            <span class="@badgeClass">@statusLabel</span>
         }
     </div>
 
     @if (Model.IsCreate)
     {
-        <p class="admin-hint">Tạo xe ở Quick Create trước.</p>
-        <a href="/admin/xe/editor?tab=general" class="admin-btn-secondary">Về General</a>
+        <p class="admin-hint">Tạo xe ở mục Thông tin trước.</p>
+        <a href="/admin/xe/editor?tab=general" class="admin-btn-secondary">Về Thông tin</a>
     }
     else
     {
         <fieldset style="border:none;padding:0;margin:1rem 0 0;display:flex;flex-direction:column;gap:0.75rem;">
-            <legend class="admin-label">Status</legend>
+            <legend class="admin-label">Trạng thái</legend>
             <label class="admin-publish-option">
                 <input type="radio" asp-for="PublishStatus" value="draft" />
-                <span><strong>Draft</strong><span class="admin-hint">Ẩn trên website.</span></span>
+                <span><strong>Bản nháp</strong><span class="admin-hint">Ẩn trên website.</span></span>
             </label>
             <label class="admin-publish-option">
                 <input type="radio" asp-for="PublishStatus" value="published" />
-                <span><strong>Published</strong><span class="admin-hint">Công khai trên /xe.</span></span>
+                <span><strong>Đã đăng bán</strong><span class="admin-hint">Hiển thị công khai tại /xe.</span></span>
             </label>
             <label class="admin-publish-option" style="opacity:0.75;">
                 <input type="radio" name="PublishStatusScheduled" value="scheduled" disabled />
-                <span><strong>Scheduled</strong><span class="admin-hint">UI only — Sprint sau.</span></span>
+                <span><strong>Hẹn giờ đăng</strong><span class="admin-hint">Tính năng dự kiến — Sprint sau.</span></span>
             </label>
             <label class="admin-publish-option">
                 <input type="radio" asp-for="PublishStatus" value="archived" />
-                <span><strong>Archive</strong><span class="admin-hint">Ẩn + bỏ Featured (placeholder, chưa có cột riêng).</span></span>
+                <span><strong>Lưu trữ</strong><span class="admin-hint">Ẩn + bỏ khỏi Xe nổi bật.</span></span>
             </label>
         </fieldset>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem;">
             <div>
-                <label asp-for="Input.SortOrder" class="admin-label">Sort order</label>
+                <label asp-for="Input.SortOrder" class="admin-label">Thứ tự hiển thị</label>
                 <input asp-for="Input.SortOrder" type="number" class="admin-input" />
             </div>
             <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;padding-top:1.5rem;">
                 <input asp-for="Input.IsFeatured" type="checkbox" style="accent-color:var(--admin-honda-red);" />
-                Featured
+                Xe nổi bật
             </label>
         </div>
 
         @if (publicUrl is not null)
         {
             <div class="admin-card admin-card-padded" style="margin-top:1.25rem;">
-                <p class="admin-label">Public URL</p>
+                <p class="admin-label">Đường dẫn công khai</p>
                 <p style="font-family:ui-monospace,monospace;font-size:0.85rem;margin:0.35rem 0;">@publicUrl</p>
-                <a href="@publicUrl" target="_blank" rel="noopener" class="admin-btn-secondary">Open public page</a>
+                <a href="@publicUrl" target="_blank" rel="noopener" class="admin-btn-secondary">Mở trang công khai</a>
             </div>
         }
 
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Publish", null, true)' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Đăng bán", null, true)' />
     }
 </form>
 
@@ -84,8 +90,8 @@
     <form method="post" asp-page-handler="DuplicateMotorcycle" class="admin-form-card" style="max-width:44rem;margin-top:1rem;">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Id" value="@Model.Id" />
-        <h2 class="admin-form-section-title">Duplicate motorcycle</h2>
-        <p class="admin-hint" style="margin:0.5rem 0 1rem;">Tạo bản sao Draft (kèm variants, colors, features, tech, 6 góc xem).</p>
-        <button type="submit" class="admin-btn-secondary" onclick="return confirm('Nhân bản xe này?')">Duplicate → Draft</button>
+        <h2 class="admin-form-section-title">Nhân bản xe</h2>
+        <p class="admin-hint" style="margin:0.5rem 0 1rem;">Tạo bản sao bản nháp (kèm phiên bản, màu xe, tính năng, công nghệ, 6 góc xem).</p>
+        <button type="submit" class="admin-btn-secondary" onclick="return confirm('Nhân bản xe này?')">Nhân bản → Bản nháp</button>
     </form>
 }

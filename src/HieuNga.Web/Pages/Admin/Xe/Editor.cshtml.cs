@@ -250,7 +250,7 @@ public class EditorModel(
         }
         item.UpdatedAt = DateTime.UtcNow;
         await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã cập nhật feature.");
+        this.SetSuccess("Đã cập nhật tính năng.");
         return RedirectToPage(new { id, tab = "features" });
     }
 
@@ -353,7 +353,7 @@ public class EditorModel(
         }
         item.UpdatedAt = DateTime.UtcNow;
         await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã cập nhật technology.");
+        this.SetSuccess("Đã cập nhật công nghệ.");
         return RedirectToPage(new { id, tab = "features" });
     }
 
@@ -545,7 +545,7 @@ public class EditorModel(
             var thumb = uploadedUrl ?? Input.ThumbnailUrl;
             if (string.IsNullOrWhiteSpace(thumb))
             {
-                ModelState.AddModelError("ThumbnailFile", "Quick Create cần thumbnail (kéo thả / chọn / dán ảnh).");
+                ModelState.AddModelError("ThumbnailFile", "Tạo xe nhanh cần ảnh đại diện (kéo thả / chọn / dán ảnh).");
                 return Page();
             }
 

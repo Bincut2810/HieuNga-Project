@@ -240,7 +240,7 @@
         var badge = qs('[data-unsaved-badge]');
         if (badge) badge.hidden = true;
         var auto = qs('[data-autosave-ui]');
-        if (auto) auto.textContent = 'Saved just now (UI)';
+        if (auto) auto.textContent = 'Đã lưu (UI)';
       });
     });
   }

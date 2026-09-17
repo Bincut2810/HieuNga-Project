@@ -4,7 +4,7 @@
 @if (Model.IsCreate)
 {
     <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Lưu xe trước", "Tab giá mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Quick Create")' />
+             model='new AdminEmptyStateModel("Lưu xe trước", "Tab giá mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Tạo xe nhanh")' />
 }
 else
 {
@@ -13,12 +13,12 @@ else
             <h2 class="admin-form-section-title">Giá niêm yết</h2>
             <p class="admin-hint" style="margin:0.35rem 0 0;">
                 Máy tính trả góp dùng giá phiên bản dương đầu tiên; nếu không có thì dùng BasePrice.
-                Ngân hàng / lãi suất quản lý tại <a href="/admin/tra-gop/ngan-hang">Admin · Banks</a>.
+                Ngân hàng / lãi suất quản lý tại <a href="/admin/tra-gop/ngan-hang">Quản trị · Ngân hàng</a>.
             </p>
             <p style="margin-top:0.75rem;font-size:1.25rem;font-weight:700;color:var(--admin-honda-red);">
                 @Model.Input.BasePrice.ToVnd()
             </p>
-            <p class="admin-hint">Sửa BasePrice ở tab General.</p>
+            <p class="admin-hint">Sửa giá cơ bản ở tab Thông tin.</p>
         </div>
 
         <div class="admin-finance-grid">
@@ -61,7 +61,7 @@ else
                 @if (Model.Variants.Count == 0)
                 {
                     <partial name="Admin/Shared/_AdminEmptyState"
-                             model='new AdminEmptyStateModel("Chưa có phiên bản", "Thêm phiên bản để trang chi tiết dùng đúng giá bán.")' />
+                             model='new AdminEmptyStateModel("Chưa có phiên bản", "Thêm phiên bản để trang chi tiết hiển thị đúng giá bán.")' />
                 }
                 else
                 {
@@ -92,7 +92,7 @@ else
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="Id" value="@Model.Id" />
                                                     <input type="hidden" name="variantId" value="@v.Id" />
-                                                    <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa?')">Xóa</button>
+                                                    <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa phiên bản này?')">Xóa</button>
                                                 </form>
                                             </div>
                                         </td>
@@ -112,9 +112,9 @@ else
                     <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
                     @if (!string.IsNullOrEmpty(Model.PublicSlug))
                     {
-                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
+                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Xem trước</a>
                     }
-                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Publish</a>
+                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Đăng bán</a>
                 </div>
             </div>
         </div>

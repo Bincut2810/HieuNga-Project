@@ -1,7 +1,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using HieuNga.Web.Pages.Admin.Extensions
 @{
-    var title = ViewData["Title"] as string ?? "Admin";
+    var title = ViewData["Title"] as string ?? "Bảng điều khiển";
     var path = Context.Request.Path.Value ?? "";
     var user = Context.User;
 
@@ -72,7 +72,7 @@
     <div class="admin-shell" data-admin-shell>
         <div id="admin-sidebar-overlay" class="admin-sidebar-overlay" aria-hidden="true"></div>
 
-        <aside id="admin-sidebar" class="admin-sidebar" aria-label="Admin navigation">
+        <aside id="admin-sidebar" class="admin-sidebar" aria-label="Menu điều hướng">
             <div class="admin-sidebar-brand">
                 <img src="~/images/logohieunga.webp"
                      asp-append-version="true"
@@ -83,72 +83,72 @@
                      decoding="async" />
                 <div class="admin-sidebar-brand-text">
                     <p class="admin-sidebar-brand-title">Xe Máy Hiếu Nga</p>
-                    <p class="admin-sidebar-brand-sub">CMS Studio</p>
+                    <p class="admin-sidebar-brand-sub">Quản trị nội dung</p>
                 </div>
                 <button type="button" class="admin-sidebar-collapse" id="admin-sidebar-collapse" aria-label="Thu gọn menu" title="Thu gọn">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6 9 12l6 6"/></svg>
                 </button>
             </div>
 
-            <nav class="admin-sidebar-nav" aria-label="Điều hướng quản trị">
+            <nav class="admin-sidebar-nav" aria-label="Menu quản trị">
                 @* Tổng quan — visible to everyone *@
                 <div class="admin-nav-group">
                     <p class="admin-nav-group-label">Tổng quan</p>
-                    <a href="/admin" class="@NavClass("/admin")" @Html.Raw(NavAriaCurrent("/admin"))><span class="admin-nav-icon">@Html.Raw(Icon("home"))</span><span class="admin-nav-text">Dashboard</span></a>
+                    <a href="/admin" class="@NavClass("/admin")" @Html.Raw(NavAriaCurrent("/admin"))><span class="admin-nav-icon">@Html.Raw(Icon("home"))</span><span class="admin-nav-text">Tổng quan</span></a>
                 </div>
 
-                @* Inventory — Admin only *@
+                @* Kho xe — Admin only *@
                 @if (CanSeeSite())
                 {
                     <div class="admin-nav-group @(GroupActive("/admin/xe") ? "is-active-group" : null)">
-                        <p class="admin-nav-group-label">Inventory</p>
-                        <a href="/admin/xe" class="@NavClass("/admin/xe")" @Html.Raw(NavAriaCurrent("/admin/xe"))><span class="admin-nav-icon">@Html.Raw(Icon("bike"))</span><span class="admin-nav-text">Motorcycles</span></a>
+                        <p class="admin-nav-group-label">Kho xe</p>
+                        <a href="/admin/xe" class="@NavClass("/admin/xe")" @Html.Raw(NavAriaCurrent("/admin/xe"))><span class="admin-nav-icon">@Html.Raw(Icon("bike"))</span><span class="admin-nav-text">Danh sách xe</span></a>
                     </div>
                 }
 
-                @* Service — Admin + Booking *@
+                @* Dịch vụ & Đặt lịch — Admin + Booking *@
                 @if (CanSeeBooking())
                 {
                     <div class="admin-nav-group @(GroupActive("/admin/dich-vu", "/admin/bookings", "/admin/test-ride", "/admin/khach-hang/bao-duong") ? "is-active-group" : null)">
-                        <p class="admin-nav-group-label">Service</p>
+                        <p class="admin-nav-group-label">Dịch vụ &amp; Đặt lịch</p>
                         @if (ShowAllModules())
                         {
-                            <a href="/admin/dich-vu/bang-gia" class="@NavClass("/admin/dich-vu/bang-gia")" @Html.Raw(NavAriaCurrent("/admin/dich-vu/bang-gia"))><span class="admin-nav-icon">@Html.Raw(Icon("wrench"))</span><span class="admin-nav-text">Services</span></a>
-                            <a href="/admin/dich-vu/danh-muc" class="@NavClass("/admin/dich-vu/danh-muc")" @Html.Raw(NavAriaCurrent("/admin/dich-vu/danh-muc"))><span class="admin-nav-icon">@Html.Raw(Icon("folder"))</span><span class="admin-nav-text">Categories</span></a>
+                            <a href="/admin/dich-vu/bang-gia" class="@NavClass("/admin/dich-vu/bang-gia")" @Html.Raw(NavAriaCurrent("/admin/dich-vu/bang-gia"))><span class="admin-nav-icon">@Html.Raw(Icon("wrench"))</span><span class="admin-nav-text">Dịch vụ</span></a>
+                            <a href="/admin/dich-vu/danh-muc" class="@NavClass("/admin/dich-vu/danh-muc")" @Html.Raw(NavAriaCurrent("/admin/dich-vu/danh-muc"))><span class="admin-nav-icon">@Html.Raw(Icon("folder"))</span><span class="admin-nav-text">Danh mục dịch vụ</span></a>
                         }
-                        <a href="/admin/bookings" class="@NavClass("/admin/bookings")" @Html.Raw(NavAriaCurrent("/admin/bookings"))><span class="admin-nav-icon">@Html.Raw(Icon("calendar"))</span><span class="admin-nav-text">Booking Center</span></a>
+                        <a href="/admin/bookings" class="@NavClass("/admin/bookings")" @Html.Raw(NavAriaCurrent("/admin/bookings"))><span class="admin-nav-icon">@Html.Raw(Icon("calendar"))</span><span class="admin-nav-text">Trung tâm đặt lịch</span></a>
                     </div>
                 }
 
-                @* Finance — Admin only *@
+                @* Tài chính — Admin only *@
                 @if (CanSeeFinance())
                 {
                     <div class="admin-nav-group @(GroupActive("/admin/tra-gop", "/admin/khach-hang/tra-gop") ? "is-active-group" : null)">
-                        <p class="admin-nav-group-label">Finance</p>
-                        <a href="/admin/tra-gop/ngan-hang" class="@NavClass("/admin/tra-gop/ngan-hang")" @Html.Raw(NavAriaCurrent("/admin/tra-gop/ngan-hang"))><span class="admin-nav-icon">@Html.Raw(Icon("bank"))</span><span class="admin-nav-text">Banks</span></a>
-                        <a href="/admin/tra-gop/lai-suat" class="@NavClass("/admin/tra-gop/lai-suat")" @Html.Raw(NavAriaCurrent("/admin/tra-gop/lai-suat"))><span class="admin-nav-icon">@Html.Raw(Icon("percent"))</span><span class="admin-nav-text">Interest Rates</span></a>
-                        <a href="/admin/khach-hang/tra-gop" class="@NavClass("/admin/khach-hang/tra-gop")" @Html.Raw(NavAriaCurrent("/admin/khach-hang/tra-gop"))><span class="admin-nav-icon">@Html.Raw(Icon("users"))</span><span class="admin-nav-text">Installment leads</span></a>
+                        <p class="admin-nav-group-label">Tài chính</p>
+                        <a href="/admin/tra-gop/ngan-hang" class="@NavClass("/admin/tra-gop/ngan-hang")" @Html.Raw(NavAriaCurrent("/admin/tra-gop/ngan-hang"))><span class="admin-nav-icon">@Html.Raw(Icon("bank"))</span><span class="admin-nav-text">Ngân hàng</span></a>
+                        <a href="/admin/tra-gop/lai-suat" class="@NavClass("/admin/tra-gop/lai-suat")" @Html.Raw(NavAriaCurrent("/admin/tra-gop/lai-suat"))><span class="admin-nav-icon">@Html.Raw(Icon("percent"))</span><span class="admin-nav-text">Lãi suất</span></a>
+                        <a href="/admin/khach-hang/tra-gop" class="@NavClass("/admin/khach-hang/tra-gop")" @Html.Raw(NavAriaCurrent("/admin/khach-hang/tra-gop"))><span class="admin-nav-icon">@Html.Raw(Icon("users"))</span><span class="admin-nav-text">Yêu cầu trả góp</span></a>
                     </div>
                 }
 
-                @* Content — Admin + ContentStaff *@
+                @* Nội dung — Admin + ContentStaff *@
                 @if (CanSeeContent())
                 {
                     <div class="admin-nav-group @(GroupActive("/admin/banner", "/admin/khuyen-mai", "/admin/tin-tuc") ? "is-active-group" : null)">
-                        <p class="admin-nav-group-label">Content</p>
-                        <a href="/admin/khuyen-mai" class="@NavClass("/admin/khuyen-mai")" @Html.Raw(NavAriaCurrent("/admin/khuyen-mai"))><span class="admin-nav-icon">@Html.Raw(Icon("tag"))</span><span class="admin-nav-text">Promotions</span></a>
-                        <a href="/admin/tin-tuc" class="@NavClass("/admin/tin-tuc")" @Html.Raw(NavAriaCurrent("/admin/tin-tuc"))><span class="admin-nav-icon">@Html.Raw(Icon("news"))</span><span class="admin-nav-text">News</span></a>
+                        <p class="admin-nav-group-label">Nội dung</p>
+                        <a href="/admin/khuyen-mai" class="@NavClass("/admin/khuyen-mai")" @Html.Raw(NavAriaCurrent("/admin/khuyen-mai"))><span class="admin-nav-icon">@Html.Raw(Icon("tag"))</span><span class="admin-nav-text">Khuyến mãi</span></a>
+                        <a href="/admin/tin-tuc" class="@NavClass("/admin/tin-tuc")" @Html.Raw(NavAriaCurrent("/admin/tin-tuc"))><span class="admin-nav-icon">@Html.Raw(Icon("news"))</span><span class="admin-nav-text">Tin tức</span></a>
                         <a href="/admin/banner" class="@NavClass("/admin/banner")" @Html.Raw(NavAriaCurrent("/admin/banner"))><span class="admin-nav-icon">@Html.Raw(Icon("image"))</span><span class="admin-nav-text">Banner</span></a>
                     </div>
                 }
 
-                @* Site settings — Admin only *@
+                @* Hệ thống — Admin only *@
                 @if (CanSeeSite())
                 {
                     <div class="admin-nav-group @(GroupActive("/admin/chi-nhanh", "/admin/cai-dat") ? "is-active-group" : null)">
-                        <p class="admin-nav-group-label">Site</p>
-                        <a href="/admin/chi-nhanh" class="@NavClass("/admin/chi-nhanh")" @Html.Raw(NavAriaCurrent("/admin/chi-nhanh"))><span class="admin-nav-icon">@Html.Raw(Icon("pin"))</span><span class="admin-nav-text">Branches</span></a>
-                        <a href="/admin/cai-dat" class="@NavClass("/admin/cai-dat")" @Html.Raw(NavAriaCurrent("/admin/cai-dat"))><span class="admin-nav-icon">@Html.Raw(Icon("gear"))</span><span class="admin-nav-text">Settings</span></a>
+                        <p class="admin-nav-group-label">Hệ thống</p>
+                        <a href="/admin/chi-nhanh" class="@NavClass("/admin/chi-nhanh")" @Html.Raw(NavAriaCurrent("/admin/chi-nhanh"))><span class="admin-nav-icon">@Html.Raw(Icon("pin"))</span><span class="admin-nav-text">Chi nhánh</span></a>
+                        <a href="/admin/cai-dat" class="@NavClass("/admin/cai-dat")" @Html.Raw(NavAriaCurrent("/admin/cai-dat"))><span class="admin-nav-icon">@Html.Raw(Icon("gear"))</span><span class="admin-nav-text">Cài đặt</span></a>
                     </div>
                 }
             </nav>

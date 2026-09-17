@@ -7,14 +7,14 @@
             <a href="/admin/xe" class="admin-btn admin-btn-ghost" data-cancel-link>Hủy</a>
             @if (!string.IsNullOrEmpty(Model.PreviewUrl))
             {
-                <a href="@Model.PreviewUrl" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
+                <a href="@Model.PreviewUrl" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Xem trước</a>
             }
             @if (!string.IsNullOrEmpty(Model.PublishTabUrl) && !Model.IsPublishTab)
             {
-                <a href="@Model.PublishTabUrl" class="admin-btn admin-btn-secondary">Publish</a>
+                <a href="@Model.PublishTabUrl" class="admin-btn admin-btn-secondary">Đăng bán</a>
             }
             <button type="submit" class="admin-btn admin-btn-primary">
-                @(Model.IsPublishTab ? "Publish" : Model.SaveText)
+                @(Model.IsPublishTab ? "Đăng bán" : Model.SaveText)
             </button>
         </div>
     </div>

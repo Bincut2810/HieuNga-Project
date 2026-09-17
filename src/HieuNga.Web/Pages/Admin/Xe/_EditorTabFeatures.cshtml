@@ -4,7 +4,7 @@
 @if (Model.IsCreate)
 {
     <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Lưu xe trước", "Feature & Technology builders mở sau Quick Create.", "/admin/xe/editor?tab=general", "Quick Create")' />
+             model='new AdminEmptyStateModel("Lưu xe trước", "Trình tạo tính năng &amp; công nghệ mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Tạo xe nhanh")' />
 }
 else
 {
@@ -12,7 +12,7 @@ else
         <partial name="Admin/Xe/_ContentCardBuilder" model='new ContentCardBuilderModel(
             Model.Id!.Value,
             "feature",
-            "Features",
+            "Tính năng nổi bật",
             "Điểm nổi bật trên trang chi tiết — kéo để sắp xếp.",
             "AddFeature",
             "UpdateFeature",
@@ -25,8 +25,8 @@ else
         <partial name="Admin/Xe/_ContentCardBuilder" model='new ContentCardBuilderModel(
             Model.Id!.Value,
             "tech",
-            "Technology",
-            "Khối công nghệ xen kẽ ảnh/text trên public detail.",
+            "Công nghệ",
+            "Khối công nghệ xen kẽ ảnh/text trên trang chi tiết.",
             "AddTech",
             "UpdateTech",
             "DeleteTech",
@@ -37,14 +37,14 @@ else
 
         <div class="admin-editor-savebar" data-editor-savebar>
             <div class="admin-editor-savebar-inner">
-                <p class="admin-muted" style="margin:0;">Features lưu theo từng thẻ</p>
+                <p class="admin-muted" style="margin:0;">Tính năng được lưu theo từng thẻ</p>
                 <div class="admin-editor-savebar-actions">
                     <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
                     @if (!string.IsNullOrEmpty(Model.PublicSlug))
                     {
-                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Preview</a>
+                        <a href="/xe/@Model.PublicSlug" target="_blank" rel="noopener" class="admin-btn admin-btn-secondary">Xem trước</a>
                     }
-                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Publish</a>
+                    <a href="/admin/xe/editor/@Model.Id?tab=publish" class="admin-btn admin-btn-primary">Đăng bán</a>
                 </div>
             </div>
         </div>

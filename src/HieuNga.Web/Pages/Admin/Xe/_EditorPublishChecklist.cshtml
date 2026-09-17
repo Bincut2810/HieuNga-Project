@@ -14,8 +14,8 @@
     string ItemClass(bool ok) => "admin-checklist-item" + (ok ? " is-done" : "");
 }
 
-<aside class="admin-checklist" aria-label="Kiểm tra trước khi đăng">
-    <h2 class="admin-checklist-title">Trước khi đăng</h2>
+<aside class="admin-checklist" aria-label="Kiểm tra trước khi đăng bán">
+    <h2 class="admin-checklist-title">Trước khi đăng bán</h2>
     <ul class="admin-checklist-list">
         <li class="@ItemClass(hasThumb)"><span class="admin-checklist-dot"></span> Có ảnh đại diện</li>
         <li class="@ItemClass(hasColorImage)"><span class="admin-checklist-dot"></span> Có ít nhất 1 màu có ảnh</li>
@@ -24,10 +24,10 @@
     </ul>
     @if (ready)
     {
-        <p class="admin-checklist-status is-ready">Sẵn sàng đăng</p>
+        <p class="admin-checklist-status is-ready">Sẵn sàng đăng bán</p>
     }
     else
     {
-        <p class="admin-checklist-status is-warn">Còn thiếu thông tin / hình</p>
+        <p class="admin-checklist-status is-warn">Còn thiếu thông tin / hình ảnh</p>
     }
 </aside>

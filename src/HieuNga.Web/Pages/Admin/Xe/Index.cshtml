@@ -5,10 +5,10 @@
 
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
-             "Motorcycles",
-             "Quản lý danh sách xe, media và trạng thái trên website.",
+             "Danh sách xe",
+             "Quản lý danh sách xe, hình ảnh và trạng thái trên website.",
              "/admin/xe/editor",
-             "+ Thêm xe")' />
+             "+ Thêm xe mới")' />
 
 <div class="admin-stat-grid">
     <div class="admin-stat">
@@ -67,7 +67,7 @@
                  "Chưa có xe nào phù hợp",
                  Model.HasActiveFilters ? "Thử đổi bộ lọc hoặc xóa lọc để xem thêm." : "Thêm xe đầu tiên để hiển thị trên website.",
                  Model.HasActiveFilters ? "/admin/xe" : "/admin/xe/editor",
-                 Model.HasActiveFilters ? "Đặt lại bộ lọc" : "+ Thêm xe")' />
+                 Model.HasActiveFilters ? "Đặt lại bộ lọc" : "+ Thêm xe mới")' />
 }
 else
 {
@@ -83,7 +83,7 @@ else
                     }
                     else
                     {
-                        <div class="admin-moto-thumb-empty">No img</div>
+                        <div class="admin-moto-thumb-empty">Chưa có ảnh</div>
                     }
                 </div>
                 <div>
@@ -95,20 +95,20 @@ else
                     <span class="admin-badge admin-badge-category">@item.Category.ToDisplayName()</span>
                     @if (item.IsPublished)
                     {
-                        <span class="admin-badge admin-badge-success">Hiển thị</span>
+                        <span class="admin-badge admin-badge-success">Đang hiển thị</span>
                     }
                     else
                     {
-                        <span class="admin-badge admin-badge-muted">Ẩn</span>
+                        <span class="admin-badge admin-badge-muted">Đang ẩn</span>
                     }
-                    <span class="admin-media-meter" title="Media completeness">
+                    <span class="admin-media-meter" title="Mức độ hoàn thiện hình ảnh">
                         <span class="admin-media-meter-bar"><span class="admin-media-meter-fill" style="width:@mediaPct%"></span></span>
-                        <span>Media @mediaPct%</span>
+                        <span>Ảnh @mediaPct%</span>
                     </span>
                     <span>Cập nhật @(item.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy") ?? "—")</span>
                 </div>
                 <div class="admin-moto-row-actions">
-                    <a href="/admin/xe/editor/@item.Id" class="admin-btn admin-btn-primary">Edit</a>
+                    <a href="/admin/xe/editor/@item.Id" class="admin-btn admin-btn-primary">Sửa</a>
                     <a href="/xe/@item.Slug" target="_blank" rel="noopener" class="admin-btn admin-btn-ghost">Xem</a>
                     <form method="post" asp-page-handler="TogglePublish" class="inline">
                         @Html.AntiForgeryToken()

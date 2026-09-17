@@ -15,7 +15,7 @@ public sealed class BookingCenterItemVm
 {
     public Guid Id { get; init; }
     public BookingCenterKind Kind { get; init; }
-    public string KindLabel => Kind == BookingCenterKind.TestRide ? "Test Ride" : "Maintenance";
+    public string KindLabel => Kind == BookingCenterKind.TestRide ? "Lái thử" : "Bảo dưỡng";
     public string TimeLabel { get; init; } = "—";
     public string DateLabel { get; init; } = "";
     public string CustomerName { get; init; } = "";
