@@ -42,29 +42,51 @@ public class IndexModel(
         ViewData["Title"] = "Booking Center";
         Type = ActiveType;
         Range = ActiveRange;
-        await LoadAsync(ct);
+        try
+        {
+            await LoadAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Booking Center OnGet failed. Type={Type} Range={Range} Search={Search}",
+                Type, Range, Search);
+            // Let the page render with empty state so the operator can still see the UI
+            Summary = new BookingCenterSummaryVm();
+            Timeline = [];
+            VisibleCount = 0;
+            EmptyMessage = "Không tải được dữ liệu lịch hẹn. Vui lòng thử lại.";
+        }
     }
 
     public async Task<IActionResult> OnGetDetailAsync(Guid id, string kind, CancellationToken ct)
     {
-        var nowVn = TestRideVietnamTime.Now;
-        BookingDetailViewModel? detail = null;
-
-        if (string.Equals(kind, "testride", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            var item = await testRideService.GetByIdAsync(id, ct);
-            if (item is not null)
-                detail = BookingDetailViewModel.FromTestRide(item, nowVn);
-        }
-        else if (string.Equals(kind, "maint", StringComparison.OrdinalIgnoreCase))
-        {
-            var item = await bookingService.GetMaintenanceByIdAsync(id, ct);
-            if (item is not null)
-                detail = BookingDetailViewModel.FromMaintenance(item, nowVn);
-        }
+            var nowVn = TestRideVietnamTime.Now;
+            BookingDetailViewModel? detail = null;
 
-        if (detail is null) return NotFound();
-        return new JsonResult(detail);
+            if (string.Equals(kind, "testride", StringComparison.OrdinalIgnoreCase))
+            {
+                var item = await testRideService.GetByIdAsync(id, ct);
+                if (item is not null)
+                    detail = BookingDetailViewModel.FromTestRide(item, nowVn);
+            }
+            else if (string.Equals(kind, "maint", StringComparison.OrdinalIgnoreCase))
+            {
+                var item = await bookingService.GetMaintenanceByIdAsync(id, ct);
+                if (item is not null)
+                    detail = BookingDetailViewModel.FromMaintenance(item, nowVn);
+            }
+
+            if (detail is null) return NotFound();
+            return new JsonResult(detail);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "OnGetDetailAsync failed. id={Id} kind={Kind}", id, kind);
+            Response.StatusCode = StatusCodes.Status500InternalServerError;
+            return new JsonResult(new { error = "Không tải được chi tiết lịch hẹn." });
+        }
     }
 
     public Task<IActionResult> OnPostConfirmAsync(
@@ -147,23 +169,35 @@ public class IndexModel(
         var trQuery = WithType(query, BookingType.TestRide);
         var maintQuery = WithType(query, bookingType: null);
 
-        if (includeTr && includeMaint)
+        try
         {
-            var trTask = testRideService.GetBoardAsync(trQuery, ct);
-            var mTask = bookingService.GetMaintenanceBoardAsync(maintQuery, ct);
-            await Task.WhenAll(trTask, mTask);
-            list.AddRange((await trTask).Items.Select(b => BookingCenterMapper.FromTestRide(b, nowVn)));
-            list.AddRange((await mTask).Items.Select(b => BookingCenterMapper.FromMaintenance(b, nowVn)));
+            if (includeTr && includeMaint)
+            {
+                // EF Core is NOT thread-safe on a single DbContext: serialize on the
+                // scoped service, otherwise concurrent SaveChanges/DetectChanges calls
+                // can throw ObjectDisposedException / InvalidOperationException and
+                // surface as 500 on /admin/bookings?type=all.
+                var tr = await testRideService.GetBoardAsync(trQuery, ct);
+                list.AddRange(tr.Items.Select(b => BookingCenterMapper.FromTestRide(b, nowVn)));
+                var m = await bookingService.GetMaintenanceBoardAsync(maintQuery, ct);
+                list.AddRange(m.Items.Select(b => BookingCenterMapper.FromMaintenance(b, nowVn)));
+            }
+            else if (includeTr)
+            {
+                var tr = await testRideService.GetBoardAsync(trQuery, ct);
+                list.AddRange(tr.Items.Select(b => BookingCenterMapper.FromTestRide(b, nowVn)));
+            }
+            else if (includeMaint)
+            {
+                var m = await bookingService.GetMaintenanceBoardAsync(maintQuery, ct);
+                list.AddRange(m.Items.Select(b => BookingCenterMapper.FromMaintenance(b, nowVn)));
+            }
         }
-        else if (includeTr)
+        catch (Exception ex)
         {
-            var tr = await testRideService.GetBoardAsync(trQuery, ct);
-            list.AddRange(tr.Items.Select(b => BookingCenterMapper.FromTestRide(b, nowVn)));
-        }
-        else if (includeMaint)
-        {
-            var m = await bookingService.GetMaintenanceBoardAsync(maintQuery, ct);
-            list.AddRange(m.Items.Select(b => BookingCenterMapper.FromMaintenance(b, nowVn)));
+            logger.LogError(ex, "FetchBoardAsync failed. includeTr={IncludeTr} includeMaint={IncludeMaint} query.DateRange={Range} query.Search={Search}",
+                includeTr, includeMaint, query.DateRange, query.Search);
+            throw;
         }
 
         return list;
