@@ -1,39 +1,64 @@
 @model HieuNga.Web.Pages.Admin.BlogPostInputModel
 <div class="admin-form-stack">
-    <div>
-        <label asp-for="Title" class="admin-label">Tiêu đề *</label>
-        <input asp-for="Title" class="admin-input" />
-        <span asp-validation-for="Title" class="admin-validation"></span>
-    </div>
-    <div>
-        <label asp-for="Slug" class="admin-label">Slug</label>
-        <input asp-for="Slug" class="admin-input" />
-    </div>
-    <div>
-        <label asp-for="Summary" class="admin-label">Tóm tắt</label>
-        <textarea asp-for="Summary" rows="2" class="admin-textarea"></textarea>
-    </div>
-    <div>
-        <label asp-for="Content" class="admin-label">Nội dung *</label>
-        <textarea asp-for="Content" rows="10" class="admin-textarea"></textarea>
-        <span asp-validation-for="Content" class="admin-validation"></span>
-    </div>
-    <div class="admin-grid-2">
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Nội dung chính</h2>
         <div>
-            <label asp-for="CategoryId" class="admin-label">Danh mục</label>
-            <select asp-for="CategoryId" asp-items="@(ViewData["CategoryOptions"] as SelectList)" class="admin-select">
-                <option value="">—</option>
-            </select>
+            <label asp-for="Title" class="admin-label">Tiêu đề <span class="admin-label-required">*</span></label>
+            <input asp-for="Title" class="admin-input" />
+            <span asp-validation-for="Title" class="admin-validation"></span>
         </div>
         <div>
-            <label asp-for="AuthorName" class="admin-label">Tác giả</label>
-            <input asp-for="AuthorName" class="admin-input" />
+            <label asp-for="Slug" class="admin-label">Slug</label>
+            <input asp-for="Slug" class="admin-input" placeholder="tự-động-theo-tiêu-đề" />
+            <p class="admin-hint">Để trống để hệ thống tự tạo đường dẫn thân thiện.</p>
         </div>
-    </div>
-    <div>
-        <label asp-for="ThumbnailUrl" class="admin-label">Thumbnail URL</label>
-        <input asp-for="ThumbnailUrl" class="admin-input" />
-    </div>
-    <label class="admin-check"><input asp-for="IsPublished" type="checkbox" /> Xuất bản</label>
-    <partial name="Admin/Shared/_SeoFields" model="Model" />
+        <div>
+            <label asp-for="Summary" class="admin-label">Tóm tắt</label>
+            <textarea asp-for="Summary" rows="2" class="admin-textarea"
+                      placeholder="Một vài câu mô tả ngắn hiển thị ở danh sách bài viết."></textarea>
+        </div>
+        <div>
+            <label asp-for="Content" class="admin-label">Nội dung <span class="admin-label-required">*</span></label>
+            <textarea asp-for="Content" rows="10" class="admin-textarea"></textarea>
+            <span asp-validation-for="Content" class="admin-validation"></span>
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Ảnh đại diện &amp; Danh mục</h2>
+        <div class="admin-grid-2">
+            <div>
+                <label asp-for="CategoryId" class="admin-label">Danh mục</label>
+                <select asp-for="CategoryId" asp-items="@(ViewData["CategoryOptions"] as SelectList)" class="admin-select">
+                    <option value="">— Chưa phân loại —</option>
+                </select>
+            </div>
+            <div>
+                <label asp-for="AuthorName" class="admin-label">Tác giả</label>
+                <input asp-for="AuthorName" class="admin-input" />
+            </div>
+        </div>
+        <div>
+            <partial name="Admin/Shared/_ImagePickerField" model='new HieuNga.Web.Pages.Admin.Extensions.ImagePickerField(
+                AspFor: "ThumbnailUrl",
+                Kind: "blog",
+                Label: "Ảnh đại diện",
+                Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
+                HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB. Ảnh hiển thị ở danh sách tin tức và khi chia sẻ lên mạng xã hội.",
+                CurrentValue: Model.ThumbnailUrl)' />
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Xuất bản</h2>
+        <label class="admin-check"><input asp-for="IsPublished" type="checkbox" /> Xuất bản bài viết lên website</label>
+        <p class="admin-hint">Bỏ chọn để lưu thành bản nháp — bài viết sẽ không hiển thị công khai cho đến khi xuất bản.</p>
+    </section>
+
+    <details class="admin-collapse">
+        <summary>Cài đặt nâng cao (SEO &amp; Chia sẻ mạng xã hội)</summary>
+        <div style="padding-top: 0.75rem;">
+            <partial name="Admin/Shared/_SeoFields" model="Model" />
+        </div>
+    </details>
 </div>

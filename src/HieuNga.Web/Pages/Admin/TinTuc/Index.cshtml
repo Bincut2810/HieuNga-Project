@@ -8,7 +8,7 @@
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
              "Tin tức",
-             "Quản lý bài viết — xem, tạo, chỉnh sửa và xuất bản tin tức.",
+             "Quản lý bài viết — tạo, chỉnh sửa, xuất bản và ẩn bài viết trên website.",
              "/admin/tin-tuc/them",
              "+ Thêm bài viết")' />
 
@@ -16,7 +16,7 @@
     <div class="admin-toolbar-fields">
         <div class="admin-field" style="flex: 1; min-width: 200px;">
             <label for="search" class="admin-label">Tìm kiếm</label>
-            <input id="search" name="Search" value="@Model.Search" placeholder="Tìm theo tiêu đề…" class="admin-input" />
+            <input id="search" name="Search" value="@Model.Search" placeholder="Tìm theo tiêu đề hoặc slug…" class="admin-input" />
         </div>
         <div class="admin-toolbar-actions">
             @if (!string.IsNullOrWhiteSpace(Model.Search))
@@ -40,20 +40,57 @@
     else
     {
         <partial name="Admin/Shared/_AdminEmptyState"
-                 model='new AdminEmptyStateModel("Chưa có bài viết", "Viết bài đầu tiên cho mục Tin tức.", "/admin/tin-tuc/them", "+ Thêm bài viết")' />
+                 model='new AdminEmptyStateModel("Chưa có bài viết", "Viết bài đầu tiên cho mục Tin tức — kèm ảnh đại diện và tóm tắt.", "/admin/tin-tuc/them", "+ Thêm bài viết")' />
     }
 }
 else
 {
-    <div class="admin-list">
+    <div class="admin-thumb-list">
         @foreach (var post in Model.Posts)
         {
             var isPub = post.IsPublished;
-            var dateLabel = post.PublishedAt?.ToString("dd/MM/yyyy");
-            string statusLabel = isPub ? (dateLabel ?? "Đã xuất bản") : "Bản nháp";
-            string viewUrl = isPub ? $"/tin-tuc/{post.Slug}" : null;
+            var publishedLabel = post.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+            string statusBadgeClass = isPub ? "admin-badge-success" : "admin-badge-muted";
+            string statusLabel = isPub ? "Đã xuất bản" : "Bản nháp";
+            string? viewUrl = isPub ? $"/tin-tuc/{post.Slug}" : null;
             string editUrl = $"/admin/tin-tuc/sua/{post.Id}";
-            <partial name="Admin/Shared/_AdminListItem" model="new AdminListItemModel(post.Title, statusLabel, null, editUrl, viewUrl)" />
+            <article class="admin-thumb-row">
+                <div class="admin-thumb-row-img">
+                    @if (!string.IsNullOrWhiteSpace(post.ThumbnailUrl))
+                    {
+                        <img src="@post.ThumbnailUrl" alt="" loading="lazy" width="72" height="72" />
+                    }
+                    else
+                    {
+                        <div class="admin-thumb-row-placeholder">Chưa có ảnh</div>
+                    }
+                </div>
+                <div class="admin-thumb-row-body">
+                    <h2 class="admin-thumb-row-title">@post.Title</h2>
+                    <p class="admin-thumb-row-meta">
+                        <span class="admin-badge @statusBadgeClass">@statusLabel</span>
+                        @if (isPub && !string.IsNullOrEmpty(publishedLabel))
+                        {
+                            <span>Xuất bản: @publishedLabel</span>
+                        }
+                        else if (!isPub)
+                        {
+                            <span>Chưa xuất bản — bài viết ở chế độ nháp</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(post.Slug))
+                        {
+                            <span style="font-family: ui-monospace, monospace; color: var(--admin-text-faint);">/@post.Slug</span>
+                        }
+                    </p>
+                </div>
+                <div class="admin-thumb-row-actions">
+                    <a href="@editUrl" class="admin-action admin-action-edit">Sửa</a>
+                    @if (!string.IsNullOrEmpty(viewUrl))
+                    {
+                        <a href="@viewUrl" class="admin-action admin-action-view" target="_blank" rel="noopener">Xem →</a>
+                    }
+                </div>
+            </article>
         }
     </div>
 }

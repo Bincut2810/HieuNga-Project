@@ -1,0 +1,55 @@
+@*
+    Image Picker — dropzone + click-to-upload.
+    Replaces a plain URL input. Writes the uploaded URL back into the bound field.
+
+    Usage (Promotion form, @model = PromotionInputModel):
+        <partial name="Admin/Shared/_ImagePickerField"
+                 model='new ImagePickerField(
+                     AspFor: "ImageUrl",
+                     Kind: "promotions",
+                     Label: "Ảnh đại diện",
+                     Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
+                     HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB",
+                     CurrentValue: Model.ImageUrl)' />
+
+    Usage (Bank form, @model = NganHangIndexModel — note "Input." prefix):
+        <partial name="Admin/Shared/_ImagePickerField"
+                 model='new ImagePickerField(
+                     AspFor: "Input.LogoUrl",
+                     Kind: "banks",
+                     Label: "Logo ngân hàng",
+                     Hint: "Kéo logo vào đây hoặc bấm để chọn logo",
+                     HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB",
+                     CurrentValue: Model.Input.LogoUrl)' />
+
+    The widget writes to an <input> matching the model expression `AspFor`.
+    Upload is delegated to /admin/api/image-upload (see ImagePickerEndpoints).
+*@
+@model HieuNga.Web.Pages.Admin.Extensions.ImagePickerField
+
+@{
+    // Build a safe DOM id for the hidden input. The JS reads the target input
+    // by `name` first, then by `id`; both work, so the unique id here is for
+    // label association and to avoid duplicate-id collisions on the page.
+    var inputId = "aip-" + Model.AspFor
+        .Replace(".", "_")
+        .Replace("[", "_")
+        .Replace("]", "_");
+}
+
+<div class="aip-block">
+    <label class="admin-label" for="@inputId">@Model.Label</label>
+    <input id="@inputId"
+           name="@Model.AspFor"
+           type="hidden"
+           value="@Model.CurrentValue" />
+    <div data-image-picker
+         data-target="@Model.AspFor"
+         data-kind="@Model.Kind"
+         data-label="@Model.Label"
+         data-hint="@Model.Hint"></div>
+    @if (!string.IsNullOrWhiteSpace(Model.HelpText))
+    {
+        <p class="admin-hint" style="margin-top:0.4rem;">@Model.HelpText</p>
+    }
+</div>

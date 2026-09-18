@@ -8,7 +8,7 @@
 <partial name="Admin/Shared/_AdminPageHeader"
          model='new AdminPageHeaderModel(
              "Khuyến mãi",
-             "Chương trình khuyến mãi hiển thị trên website.",
+             "Chương trình khuyến mãi hiển thị trên website — quản lý thời gian và trạng thái.",
              "/admin/khuyen-mai/them",
              "+ Thêm khuyến mãi")' />
 
@@ -16,7 +16,7 @@
     <div class="admin-toolbar-fields">
         <div class="admin-field" style="flex: 1; min-width: 200px;">
             <label for="search" class="admin-label">Tìm kiếm</label>
-            <input id="search" name="Search" value="@Model.Search" placeholder="Tìm theo tiêu đề…" class="admin-input" />
+            <input id="search" name="Search" value="@Model.Search" placeholder="Tìm theo tiêu đề hoặc slug…" class="admin-input" />
         </div>
         <div class="admin-toolbar-actions">
             @if (!string.IsNullOrWhiteSpace(Model.Search))
@@ -40,36 +40,68 @@
     else
     {
         <partial name="Admin/Shared/_AdminEmptyState"
-                 model='new AdminEmptyStateModel("Chưa có khuyến mãi", "Tạo chương trình đầu tiên để hiển thị trên site.", "/admin/khuyen-mai/them", "+ Thêm khuyến mãi")' />
+                 model='new AdminEmptyStateModel("Chưa có khuyến mãi", "Tạo chương trình đầu tiên để hiển thị trên trang chủ và trang khuyến mãi.", "/admin/khuyen-mai/them", "+ Thêm khuyến mãi")' />
     }
 }
 else
 {
-    <div class="admin-list">
+    <div class="admin-thumb-list">
         @foreach (var p in Model.Items)
         {
             var now = DateTime.UtcNow;
             var isExpired = p.EndDate < now;
+            string statusBadgeClass;
             string statusLabel;
-            string viewUrl;
+            string? viewUrl;
             if (isExpired)
             {
+                statusBadgeClass = "admin-badge-muted";
                 statusLabel = "Đã hết hạn";
                 viewUrl = null;
             }
             else if (p.IsActive)
             {
+                statusBadgeClass = "admin-badge-success";
                 statusLabel = "Đang chạy";
                 viewUrl = $"/khuyen-mai/{p.Slug}";
             }
             else
             {
+                statusBadgeClass = "admin-badge-warning";
                 statusLabel = "Tạm ẩn";
                 viewUrl = null;
             }
             string editUrl = $"/admin/khuyen-mai/sua/{p.Id}";
-            string meta = $"Hết hạn {p.EndDate:dd/MM/yyyy}";
-            <partial name="Admin/Shared/_AdminListItem" model="new AdminListItemModel(p.Title, statusLabel, meta, editUrl, viewUrl)" />
+            <article class="admin-thumb-row">
+                <div class="admin-thumb-row-img">
+                    @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
+                    {
+                        <img src="@p.ImageUrl" alt="" loading="lazy" width="72" height="72" />
+                    }
+                    else
+                    {
+                        <div class="admin-thumb-row-placeholder">Chưa có ảnh</div>
+                    }
+                </div>
+                <div class="admin-thumb-row-body">
+                    <h2 class="admin-thumb-row-title">@p.Title</h2>
+                    <p class="admin-thumb-row-meta">
+                        <span class="admin-badge @statusBadgeClass">@statusLabel</span>
+                        <span>Hết hạn: @p.EndDate.ToString("dd/MM/yyyy")</span>
+                        @if (!string.IsNullOrWhiteSpace(p.Slug))
+                        {
+                            <span style="font-family: ui-monospace, monospace; color: var(--admin-text-faint);">/@p.Slug</span>
+                        }
+                    </p>
+                </div>
+                <div class="admin-thumb-row-actions">
+                    <a href="@editUrl" class="admin-action admin-action-edit">Sửa</a>
+                    @if (!string.IsNullOrEmpty(viewUrl))
+                    {
+                        <a href="@viewUrl" class="admin-action admin-action-view" target="_blank" rel="noopener">Xem →</a>
+                    }
+                </div>
+            </article>
         }
     </div>
 }

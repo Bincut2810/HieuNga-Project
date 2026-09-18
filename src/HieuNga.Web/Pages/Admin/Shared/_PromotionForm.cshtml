@@ -1,51 +1,77 @@
 @model HieuNga.Web.Pages.Admin.PromotionInputModel
 <div class="admin-form-stack">
-    <div>
-        <label asp-for="Title" class="admin-label">Tiêu đề *</label>
-        <input asp-for="Title" class="admin-input" />
-        <span asp-validation-for="Title" class="admin-validation"></span>
-    </div>
-    <div>
-        <label asp-for="Slug" class="admin-label">Slug</label>
-        <input asp-for="Slug" class="admin-input" />
-    </div>
-    <div>
-        <label asp-for="Summary" class="admin-label">Tóm tắt</label>
-        <textarea asp-for="Summary" rows="2" class="admin-textarea"></textarea>
-    </div>
-    <div>
-        <label asp-for="Content" class="admin-label">Nội dung</label>
-        <textarea asp-for="Content" rows="6" class="admin-textarea"></textarea>
-    </div>
-    <div class="admin-grid-2">
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Thông tin chương trình</h2>
         <div>
-            <label asp-for="Type" class="admin-label">Loại</label>
-            <select asp-for="Type" asp-items="Html.GetEnumSelectList<PromotionType>()" class="admin-select"></select>
+            <label asp-for="Title" class="admin-label">Tiêu đề <span class="admin-label-required">*</span></label>
+            <input asp-for="Title" class="admin-input" />
+            <span asp-validation-for="Title" class="admin-validation"></span>
         </div>
         <div>
-            <label asp-for="MotorcycleId" class="admin-label">Xe liên quan</label>
-            <select asp-for="MotorcycleId" asp-items="@(ViewData["MotorcycleOptions"] as SelectList)" class="admin-select">
-                <option value="">—</option>
-            </select>
+            <label asp-for="Slug" class="admin-label">Slug</label>
+            <input asp-for="Slug" class="admin-input" placeholder="tự-động-theo-tiêu-đề" />
+            <p class="admin-hint">Để trống để hệ thống tự tạo đường dẫn thân thiện cho SEO.</p>
         </div>
-    </div>
-    <div class="admin-grid-2">
+        <div class="admin-grid-2">
+            <div>
+                <label asp-for="Type" class="admin-label">Loại chương trình</label>
+                <select asp-for="Type" asp-items="Html.GetEnumSelectList<PromotionType>()" class="admin-select"></select>
+            </div>
+            <div>
+                <label asp-for="MotorcycleId" class="admin-label">Xe liên quan</label>
+                <select asp-for="MotorcycleId" asp-items="@(ViewData["MotorcycleOptions"] as SelectList)" class="admin-select">
+                    <option value="">— Không gắn với xe cụ thể —</option>
+                </select>
+                <p class="admin-hint">Gắn vào xe để hiển thị chương trình trong trang chi tiết xe.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Nội dung hiển thị</h2>
         <div>
-            <label asp-for="StartDate" class="admin-label">Bắt đầu</label>
-            <input asp-for="StartDate" type="date" class="admin-input" />
+            <label asp-for="Summary" class="admin-label">Tóm tắt</label>
+            <textarea asp-for="Summary" rows="2" class="admin-textarea"
+                      placeholder="Mô tả ngắn gọn — hiển thị ở danh sách khuyến mãi và thẻ chia sẻ."></textarea>
         </div>
         <div>
-            <label asp-for="EndDate" class="admin-label">Kết thúc</label>
-            <input asp-for="EndDate" type="date" class="admin-input" />
+            <label asp-for="Content" class="admin-label">Nội dung chi tiết</label>
+            <textarea asp-for="Content" rows="6" class="admin-textarea"
+                      placeholder="Điều kiện áp dụng, thời hạn, quyền lợi…"></textarea>
         </div>
-    </div>
-    <div>
-        <label asp-for="ImageUrl" class="admin-label">Ảnh URL</label>
-        <input asp-for="ImageUrl" class="admin-input" />
-    </div>
-    <div class="admin-grid-2">
-        <label class="admin-check"><input asp-for="IsActive" type="checkbox" /> Kích hoạt</label>
-        <label class="admin-check"><input asp-for="IsFeatured" type="checkbox" /> Nổi bật</label>
-    </div>
-    <partial name="Admin/Shared/_SeoFields" model="Model" />
+        <div>
+            <partial name="Admin/Shared/_ImagePickerField" model='new HieuNga.Web.Pages.Admin.Extensions.ImagePickerField(
+                AspFor: "ImageUrl",
+                Kind: "promotions",
+                Label: "Ảnh đại diện",
+                Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
+                HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB. Ảnh hiển thị trên trang chủ và danh sách khuyến mãi.",
+                CurrentValue: Model.ImageUrl)' />
+        </div>
+    </section>
+
+    <section class="admin-form-section">
+        <h2 class="admin-form-section-title">Thời gian &amp; Trạng thái</h2>
+        <div class="admin-grid-2">
+            <div>
+                <label asp-for="StartDate" class="admin-label">Bắt đầu <span class="admin-label-required">*</span></label>
+                <input asp-for="StartDate" type="date" class="admin-input" />
+            </div>
+            <div>
+                <label asp-for="EndDate" class="admin-label">Kết thúc <span class="admin-label-required">*</span></label>
+                <input asp-for="EndDate" type="date" class="admin-input" />
+            </div>
+        </div>
+        <div class="admin-grid-2">
+            <label class="admin-check"><input asp-for="IsActive" type="checkbox" /> Đang chạy trên website</label>
+            <label class="admin-check"><input asp-for="IsFeatured" type="checkbox" /> Nổi bật (hiển thị ưu tiên)</label>
+        </div>
+    </section>
+
+    <details class="admin-collapse">
+        <summary>Cài đặt nâng cao (SEO &amp; Chia sẻ mạng xã hội)</summary>
+        <div style="padding-top: 0.75rem;">
+            <partial name="Admin/Shared/_SeoFields" model="Model" />
+        </div>
+    </details>
 </div>

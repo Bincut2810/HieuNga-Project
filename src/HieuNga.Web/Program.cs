@@ -142,6 +142,7 @@ app.MapGet("/health", async (HieuNgaDbContext db, IHostEnvironment env, Cancella
 app.MapMediaStudioApi();
 app.MapBannerApi();
 app.MapServiceApi();
+app.MapImagePickerApi();
 app.MapSitemap();
 app.MapRazorPages();
 

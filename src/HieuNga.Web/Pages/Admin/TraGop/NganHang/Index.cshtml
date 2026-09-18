@@ -25,8 +25,13 @@
                 <input asp-for="Input.ShortName" class="admin-input" />
             </div>
             <div>
-                <label class="admin-label">Logo URL</label>
-                <input asp-for="Input.LogoUrl" class="admin-input" />
+                <partial name="Admin/Shared/_ImagePickerField" model='new HieuNga.Web.Pages.Admin.Extensions.ImagePickerField(
+                    AspFor: "Input.LogoUrl",
+                    Kind: "banks",
+                    Label: "Logo ngân hàng",
+                    Hint: "Kéo logo vào đây hoặc bấm để chọn logo",
+                    HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB. Logo hiển thị trên máy tính trả góp công khai.",
+                    CurrentValue: Model.Input.LogoUrl)' />
             </div>
             <div class="admin-grid-2">
                 <div>

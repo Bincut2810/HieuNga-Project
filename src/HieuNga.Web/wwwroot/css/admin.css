@@ -2370,3 +2370,235 @@ button.admin-btn-danger:hover {
   .book-action { min-height: 2.75rem; flex: 1 1 calc(50% - 0.4rem); }
 }
 
+/* ─── Admin Image Picker widget (.aip-*) ─── */
+/* Used by Promotion / BlogPost / Bank logo forms. Generic enough to
+   be reused by future modules without changes. */
+.aip-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.aip-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.aip-dropzone {
+  position: relative;
+  border: 1.5px dashed var(--admin-border-strong);
+  border-radius: var(--admin-radius);
+  background: #FAFAFA;
+  min-height: 9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+.aip-dropzone:hover,
+.aip-dropzone:focus-visible,
+.aip-dropzone.is-drag {
+  border-color: var(--admin-honda-red);
+  background: var(--admin-honda-red-light);
+  outline: none;
+}
+
+.aip-dropzone:focus-visible {
+  box-shadow: var(--admin-focus-ring);
+}
+
+.aip-dropzone.has-image {
+  border-style: solid;
+  background: #fff;
+  padding: 0;
+}
+
+.aip-dropzone.has-image .aip-preview {
+  max-height: 14rem;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.aip-drop-empty {
+  text-align: center;
+  color: var(--admin-text-muted);
+  padding: 0.85rem 1rem;
+  pointer-events: none;
+}
+
+.aip-drop-empty strong {
+  display: block;
+  color: var(--admin-text);
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.aip-drop-empty span {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.aip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.aip-actions .ms-btn { flex: 0 1 auto; }
+
+.aip-progress {
+  border-radius: var(--admin-radius-sm);
+  background: #111827;
+  color: #fff;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8125rem;
+}
+
+.aip-progress[hidden] { display: none !important; }
+
+.aip-progress-bar {
+  height: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+  position: relative;
+}
+
+.aip-progress-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background: var(--admin-honda-red);
+  border-radius: inherit;
+  animation: aipBar 1.1s ease-in-out infinite;
+}
+
+@keyframes aipBar {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(360%); }
+}
+
+.aip-progress-label { margin: 0; font-size: 0.8125rem; }
+
+.aip-toast {
+  background: #111827;
+  color: #fff;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--admin-radius-sm);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.aip-toast[hidden] { display: none !important; }
+
+.aip-toast.is-error {
+  background: #B91C1C;
+}
+
+@media (max-width: 640px) {
+  .aip-dropzone { min-height: 7.5rem; }
+  .aip-actions .ms-btn { flex: 1 1 calc(50% - 0.25rem); }
+}
+
+@media (max-width: 360px) {
+  .aip-dropzone { min-height: 6.5rem; }
+  .aip-actions .ms-btn { flex: 1 1 100%; }
+}
+
+/* ─── Generic thumbnail row (Blog posts, Promotions, future modules) ─── */
+.admin-thumb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-thumb-row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 0.85rem 1rem;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-thumb-row-img {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--admin-radius-sm);
+  overflow: hidden;
+  background: #F3F4F6;
+  border: 1px solid var(--admin-border);
+  flex-shrink: 0;
+}
+
+.admin-thumb-row-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-thumb-row-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  color: var(--admin-text-faint);
+  font-weight: 600;
+  text-align: center;
+  padding: 0.25rem;
+}
+
+.admin-thumb-row-body { min-width: 0; }
+
+.admin-thumb-row-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--admin-text);
+  line-height: 1.35;
+}
+
+.admin-thumb-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+  margin: 0.35rem 0 0;
+}
+
+.admin-thumb-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .admin-thumb-row {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+  .admin-thumb-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+

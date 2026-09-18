@@ -68,3 +68,39 @@ public record ContentCardBuilderModel(
     string ReorderHandler,
     bool SupportsUpload,
     IReadOnlyList<ContentCardItemModel> Items);
+
+/// <summary>
+/// Model for the Admin/Shared/_ImagePickerField partial.
+/// Drives a single-image dropzone widget that writes a URL back into
+/// the bound hidden input. Used for Promotion, BlogPost and Bank logos.
+///
+/// <param name="AspFor">
+///   The form field name the picker should write to. This must match
+///   the existing `name` attribute that the surrounding form would have
+///   produced (e.g. "ImageUrl", "ThumbnailUrl", "Input.LogoUrl").
+/// </param>
+/// <param name="Kind">
+///   Storage folder key passed to /admin/api/image-upload.
+///   Recognized values: "promotions", "blog", "banks".
+/// </param>
+/// <param name="Label">
+///   Vietnamese field label shown above the widget (e.g. "Ảnh đại diện").
+/// </param>
+/// <param name="Hint">
+///   Short call-to-action shown inside the empty dropzone
+///   (e.g. "Kéo ảnh vào đây hoặc bấm để chọn ảnh"). Falls back to a JS default.
+/// </param>
+/// <param name="HelpText">
+///   Supporting text shown below the widget (e.g. "JPG, PNG hoặc WebP • Tối đa 5 MB").
+/// </param>
+/// <param name="CurrentValue">
+///   Existing URL to display as the initial preview (taken from the bound model property).
+/// </param>
+/// </summary>
+public record ImagePickerField(
+    string AspFor,
+    string Kind,
+    string Label,
+    string? Hint = null,
+    string? HelpText = null,
+    string? CurrentValue = null);
