@@ -117,8 +117,8 @@ public static class EntityMappers
     public static BranchDto ToDto(this Branch b) =>
         new(b.Id, b.Name, b.Address, b.Phone, b.Hotline, b.Email, b.MapEmbedUrl, b.OpeningHours, b.IsHeadOffice, b.Slug, b.IsActive);
 
-    public static ReviewDto ToDto(this Review r, string? motorcycleName = null) =>
-        new(r.Id, r.CustomerName, r.Rating, r.Title, r.Content, motorcycleName);
+    public static ReviewDto ToDto(this Review r, string? motorcycleName = null, string? branchName = null) =>
+        new(r.Id, r.CustomerName, r.Rating, r.Title, r.Content, motorcycleName, branchName);
 
     public static BlogPostListItemDto ToListItem(this BlogPost p) =>
         new(p.Id, p.Title, p.Slug, p.Summary, CmsImageOrNull(p.ThumbnailUrl), p.PublishedAt, p.IsPublished);

@@ -390,13 +390,19 @@
                                     <span class="home-review-avatar" aria-hidden="true">@initials</span>
                                     <div>
                                         <cite class="home-review-name">@review.CustomerName</cite>
-                                        <p class="home-review-branch">
-                                            @(headBranch?.Name ?? site.SiteName)
-                                            @if (!string.IsNullOrWhiteSpace(review.MotorcycleName))
-                                            {
-                                                <span> · @review.MotorcycleName</span>
-                                            }
-                                        </p>
+                                        @* Only show the branch/vehicle context line when at
+                                            least one piece of verified metadata is present;
+                                            never fabricate branch or vehicle info. *@
+                                        @if (!string.IsNullOrWhiteSpace(review.MotorcycleName) || !string.IsNullOrWhiteSpace(review.BranchName))
+                                        {
+                                            <p class="home-review-branch">
+                                                @(review.BranchName ?? headBranch?.Name ?? site.SiteName)
+                                                @if (!string.IsNullOrWhiteSpace(review.MotorcycleName))
+                                                {
+                                                    <span> · @review.MotorcycleName</span>
+                                                }
+                                            </p>
+                                        }
                                     </div>
                                 </footer>
                             </blockquote>

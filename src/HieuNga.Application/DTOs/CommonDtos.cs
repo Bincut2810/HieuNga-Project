@@ -47,7 +47,8 @@ public record ReviewDto(
     int Rating,
     string? Title,
     string Content,
-    string? MotorcycleName);
+    string? MotorcycleName,
+    string? BranchName = null);
 
 public record BlogPostListItemDto(
     Guid Id,

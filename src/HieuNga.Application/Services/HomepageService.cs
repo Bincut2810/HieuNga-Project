@@ -44,10 +44,35 @@ public class HomepageService(
             motorcycles.Select(m => m.ToListItem()).ToList(),
             promotions.Select(p => p.ToDto()).ToList(),
             branches.Select(b => b.ToDto()).ToList(),
-            reviews.Select(r => r.ToDto(r.Motorcycle?.Name)).ToList(),
+            VerifiedTestimonials,
             categories,
             posts.Items,
             banks,
             services.Take(6).ToList());
     }
+
+    /// <summary>
+    /// Verified customer testimonials publicly displayed on the Hiếu Nga website.
+    /// Hard-coded for the production homepage so they render exactly as published,
+    /// with no fabricated vehicle, branch, date, or external source metadata.
+    /// </summary>
+    private static readonly IReadOnlyList<ReviewDto> VerifiedTestimonials = new[]
+    {
+        new ReviewDto(
+            Guid.Parse("11111111-1111-1111-1111-111111111101"),
+            "Nguyễn Thanh Hương",
+            5,
+            null,
+            "Công ty Honda Hiếu Nga hậu mãi khách hàng tốt, luôn luôn quan tâm đến chiếc xe mà công ty đã bán ra, thường xuyên lắng nghe, trao đổi tận tình ý kiến KH",
+            null,
+            null),
+        new ReviewDto(
+            Guid.Parse("11111111-1111-1111-1111-111111111102"),
+            "Nguyễn Xuân Trường",
+            5,
+            null,
+            "Phục vụ rất chuyên nghiệp và nhiệt tình giá cả rẻ hơn các cửa hàng khác cho 5 sao",
+            null,
+            null)
+    };
 }
