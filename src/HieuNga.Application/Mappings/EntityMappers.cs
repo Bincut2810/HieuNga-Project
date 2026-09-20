@@ -139,11 +139,69 @@ public static class EntityMappers
 
         {
 
-            return JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
+            var raw = JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
+
+            // Production safety: drop developer-note highlights accidentally left over
+
+            // from staging/seed (e.g. "Dữ liệu demo", "Ảnh local ổn định", "Máy tính
+
+            // trả góp bắt mặc định") and any line whose content mentions "demo".
+
+            return raw
+
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+
+                .Where(s => !LooksLikeInternalDemoNote(s))
+
+                .ToList();
 
         }
 
         catch { return []; }
+
+    }
+
+
+
+    private static bool LooksLikeInternalDemoNote(string text)
+
+    {
+
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        if (text.Contains("demo", StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (text.Contains("chỉnh sửa trong CMS", StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (text.Contains("phụ thuộc CDN", StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (text.Contains("bắt mặc định", StringComparison.OrdinalIgnoreCase)) return true;
+
+        return false;
+
+    }
+
+
+
+    private static string? StripInternalDemoSuffix(string? value)
+
+    {
+
+        if (string.IsNullOrWhiteSpace(value)) return value;
+
+        // Strip trailing "(demo)" / "( Demo )" annotations left over from staging seed data.
+
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(
+
+            value.Trim(),
+
+            @"\s*\(demo\)\s*$",
+
+            string.Empty,
+
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return cleaned;
 
     }
 
@@ -161,7 +219,7 @@ public static class EntityMappers
 
             var items = JsonSerializer.Deserialize<List<SpecJson>>(json, JsonOptions);
 
-            return items?.Select(x => new MotorcycleSpecItemDto(x.Icon ?? "•", x.Label ?? "", x.Value ?? "")).ToList() ?? [];
+            return items?.Select(x => new MotorcycleSpecItemDto(x.Icon ?? "•", x.Label ?? "", StripInternalDemoSuffix(x.Value) ?? "")).ToList() ?? [];
 
         }
 
