@@ -27,7 +27,7 @@
             }
 
             @{
-                var rows = new[] { ("Loại xe", (Func<MotorcycleListItemDto, string>)(m => m.Category.ToString())), ("Giá niêm yết", (Func<MotorcycleListItemDto, string>)(m => m.BasePrice.ToVnd())) };
+                var rows = new[] { ("Loại xe", (Func<MotorcycleListItemDto, string>)(m => m.Category.ToString())), ("Giá tham khảo", (Func<MotorcycleListItemDto, string>)(m => m.BasePrice.ToVnd())) };
             }
             @foreach (var (label, getter) in rows)
             {
