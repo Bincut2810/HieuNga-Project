@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HieuNga.Web.Pages.Admin.Xe;
 
@@ -28,8 +29,11 @@ public class EditorModel(
     HieuNgaDbContext db,
     IImageStorageService imageStorage,
     IMotorcycleMediaStudioService mediaStudio,
-    IImageUploadService imageUploader) : PageModel
+    IImageUploadService imageUploader,
+    ILogger<EditorModel> logger) : PageModel
 {
+    private const int SlugCollisionMaxTries = 1000;
+
     public static readonly string[] ValidTabs =
         ["general", "media", "specifications", "features", "finance", "seo", "publish"];
 
@@ -153,13 +157,51 @@ public class EditorModel(
     {
         Tab = "general";
         SetViewData();
+        logger.LogInformation("SaveGeneral started. IsCreate={IsCreate} Id={Id} RequestId={RequestId}",
+            IsCreate, Id, HttpContext.TraceIdentifier);
         if (!ModelState.IsValid)
         {
+            LogModelStateErrors("SaveGeneral");
             if (!IsCreate) await LoadRelatedAsync(Id!.Value, ct);
             return Page();
         }
 
-        return await SaveCoreAsync(ct, "general");
+        try
+        {
+            var result = await SaveCoreAsync(ct, "general");
+            logger.LogInformation("SaveGeneral completed. IsCreate={IsCreate} Id={Id} RequestId={RequestId}",
+                IsCreate, Id, HttpContext.TraceIdentifier);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "SaveGeneral failed. IsCreate={IsCreate} Id={Id} RequestId={RequestId}",
+                IsCreate, Id, HttpContext.TraceIdentifier);
+            this.SetError("Đã xảy ra lỗi khi lưu xe. Vui lòng thử lại hoặc liên hệ quản trị viên.");
+            if (!IsCreate && Id.HasValue)
+            {
+                try { await LoadRelatedAsync(Id.Value, ct); }
+                catch (Exception loadEx)
+                {
+                    logger.LogWarning(loadEx, "Failed to reload related data after save error.");
+                }
+            }
+            return Page();
+        }
+    }
+
+    private void LogModelStateErrors(string stage)
+    {
+        foreach (var kvp in ModelState)
+        {
+            if (kvp.Value.Errors.Count == 0) continue;
+            foreach (var err in kvp.Value.Errors)
+            {
+                logger.LogWarning("ModelState invalid at {Stage}. Key={Key} Error={Error} Exception={Exception}",
+                    stage, kvp.Key, err.ErrorMessage, err.Exception?.Message);
+            }
+        }
     }
 
     public async Task<IActionResult> OnPostSaveSeoAsync(CancellationToken ct)
@@ -528,6 +570,7 @@ public class EditorModel(
         var uploadedUrl = await TryStudioUploadAsync(ThumbnailFile, "motorcycles", ct, thumbContextId);
         if (!ModelState.IsValid)
         {
+            LogModelStateErrors("SaveCoreAsync.PreSlug");
             if (!IsCreate) await LoadRelatedAsync(Id!.Value, ct);
             return Page();
         }
@@ -535,6 +578,10 @@ public class EditorModel(
         var slug = string.IsNullOrWhiteSpace(Input.Slug)
             ? SlugHelper.Generate(Input.Name)
             : SlugHelper.Generate(Input.Slug);
+
+        logger.LogInformation(
+            "SaveCoreAsync preparing. IsCreate={IsCreate} BaseSlug={Slug} Name={Name} HasThumbnail={HasThumbnail}",
+            IsCreate, slug, Input.Name, !string.IsNullOrWhiteSpace(uploadedUrl ?? Input.ThumbnailUrl));
 
         if (IsCreate)
         {
@@ -554,16 +601,21 @@ public class EditorModel(
                 return Page();
             }
 
-            if (await db.Motorcycles.AnyAsync(m => m.Slug == slug && !m.IsDeleted, ct))
+            // Reuse the project's existing duplicate-slug retry convention
+            // (counter-suffix `-2`, `-3`, …). Mirrors the pattern already used
+            // by OnPostDuplicateMotorcycleAsync for the `-copy` suffix.
+            var resolvedSlug = await ResolveUniqueSlugAsync(slug, ct);
+            if (!string.Equals(resolvedSlug, slug, StringComparison.Ordinal))
             {
-                ModelState.AddModelError("Input.Slug", "Slug đã tồn tại.");
-                return Page();
+                logger.LogInformation(
+                    "SaveCoreAsync slug collision. Original={Original} Resolved={Resolved}",
+                    slug, resolvedSlug);
             }
 
             var entity = new Motorcycle
             {
                 Name = Input.Name.Trim(),
-                Slug = slug,
+                Slug = resolvedSlug,
                 Category = Input.Category,
                 BasePrice = Input.BasePrice,
                 ShortDescription = Input.ShortDescription,
@@ -579,7 +631,13 @@ public class EditorModel(
                 CanonicalUrl = Input.CanonicalUrl
             };
             await motorcycleRepo.AddAsync(entity, ct);
+            logger.LogInformation(
+                "SaveCoreAsync sending SaveChanges. IsCreate=true Slug={Slug} Name={Name}",
+                resolvedSlug, entity.Name);
             await uow.SaveChangesAsync(ct);
+            logger.LogInformation(
+                "SaveCoreAsync SaveChanges succeeded. NewMotorcycleId={NewId} Slug={Slug}",
+                entity.Id, resolvedSlug);
             this.SetSuccess("Đã tạo Draft. Tiếp tục thêm ảnh đại diện, màu và góc xem.");
             return RedirectToPage(new { id = entity.Id, tab = "media" });
         }
@@ -587,6 +645,8 @@ public class EditorModel(
         var id = Id!.Value;
         if (await db.Motorcycles.AnyAsync(m => m.Slug == slug && m.Id != id && !m.IsDeleted, ct))
         {
+            // Edit-mode slug collision: surface the error via the validation span added in the form.
+            // Keep behavior minimal — the user can rename the slug and retry.
             ModelState.AddModelError("Input.Slug", "Slug đã tồn tại.");
             await LoadRelatedAsync(id, ct);
             return Page();
@@ -614,8 +674,32 @@ public class EditorModel(
 
         await motorcycleRepo.UpdateAsync(bike, ct);
         await uow.SaveChangesAsync(ct);
+        logger.LogInformation(
+            "SaveCoreAsync SaveChanges succeeded. IsCreate=false MotorcycleId={Id} Slug={Slug}",
+            bike.Id, bike.Slug);
         this.SetSuccess("Đã lưu thay đổi.");
         return RedirectToPage(new { id, tab = returnTab });
+    }
+
+    private async Task<string> ResolveUniqueSlugAsync(string baseSlug, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(baseSlug))
+            baseSlug = Guid.NewGuid().ToString("N")[..8];
+
+        var candidate = baseSlug;
+        var n = 2;
+        while (await db.Motorcycles.AnyAsync(m => m.Slug == candidate && !m.IsDeleted, ct))
+        {
+            if (n > SlugCollisionMaxTries)
+            {
+                // Fall back to a random suffix rather than loop forever.
+                candidate = $"{baseSlug}-{Guid.NewGuid():N}";
+                break;
+            }
+            candidate = $"{baseSlug}-{n}";
+            n++;
+        }
+        return candidate;
     }
 
     private void ApplyPublishStatusToInput()

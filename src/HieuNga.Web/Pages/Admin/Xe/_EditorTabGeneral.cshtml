@@ -23,6 +23,7 @@
                 <div>
                     <label asp-for="Input.Slug" class="admin-label">Slug</label>
                     <input asp-for="Input.Slug" id="moto-slug" class="admin-input" placeholder="tự-động-theo-tên" />
+                    <span asp-validation-for="Input.Slug" class="admin-validation"></span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
@@ -35,6 +36,7 @@
                     <div>
                         <label asp-for="Input.BasePrice" class="admin-label">Giá (VNĐ) <span class="admin-label-required">*</span></label>
                         <input asp-for="Input.BasePrice" type="number" step="1000" min="0" class="admin-input" required />
+                        <span asp-validation-for="Input.BasePrice" class="admin-validation"></span>
                     </div>
                 </div>
                 <div>
@@ -71,6 +73,7 @@ else
                     <div>
                         <label asp-for="Input.Slug" class="admin-label">Slug</label>
                         <input asp-for="Input.Slug" id="moto-slug" class="admin-input" placeholder="tự-động-theo-tên" />
+                        <span asp-validation-for="Input.Slug" class="admin-validation"></span>
                         <p class="admin-hint">Để trống để tự tạo slug từ tên xe.</p>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
@@ -83,6 +86,7 @@ else
                         <div>
                             <label asp-for="Input.BasePrice" class="admin-label">Giá (VNĐ)</label>
                             <input asp-for="Input.BasePrice" type="number" step="1000" class="admin-input" />
+                            <span asp-validation-for="Input.BasePrice" class="admin-validation"></span>
                         </div>
                     </div>
                     <div>
