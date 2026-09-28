@@ -7,10 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HieuNga.Infrastructure.Services;
 
+/// <summary>
+/// Domain service for the per-service gallery. Owns the <c>ServiceItem.GalleryJson</c>
+/// array (append, delete by index, reorder by index) and the settings save.
+/// Does NOT own the upload pipeline — the canonical
+/// <see cref="Interfaces.IImageUploadService"/> produces URLs first, then
+/// <see cref="AddImagesAsync"/> appends them to the array.
+/// </summary>
 public class ServiceCmsService(
     HieuNgaDbContext db,
-    IUnitOfWork uow,
-    IMotorcycleMediaStudioService mediaStudio) : IServiceCmsService
+    IUnitOfWork uow) : IServiceCmsService
 {
     public async Task<ServiceCmsStateDto?> GetStateAsync(Guid serviceId, CancellationToken ct = default)
     {
@@ -18,32 +24,31 @@ public class ServiceCmsService(
         return item is null ? null : BuildState(item);
     }
 
-    public async Task<ServiceMutationResult> UploadImagesAsync(Guid serviceId, IReadOnlyList<MediaFileUpload> files, CancellationToken ct = default)
+    public async Task<ServiceMutationResult> AddImagesAsync(Guid serviceId, IReadOnlyList<string> urls, CancellationToken ct = default)
     {
-        if (files.Count == 0)
-            return Fail("Chưa chọn ảnh.");
+        if (urls.Count == 0)
+            return Fail("Không có URL ảnh để thêm.");
 
         var item = await LoadAsync(serviceId, ct);
         if (item is null)
             return Fail("Không tìm thấy dịch vụ.");
 
         var images = ServiceGallery.Parse(item.GalleryJson).ToList();
-        var folder = $"services/{serviceId:N}";
         var added = 0;
-
-        foreach (var file in files)
+        foreach (var url in urls)
         {
-            var (ok, url, error) = await mediaStudio.UploadOnlyAsync(file, folder, ct);
-            if (!ok || string.IsNullOrWhiteSpace(url))
-                return Fail(error ?? "Không tải được ảnh.");
-            images.Add(url);
+            if (string.IsNullOrWhiteSpace(url)) continue;
+            images.Add(url.Trim());
             added++;
         }
+
+        if (added == 0)
+            return Fail("Danh sách URL rỗng hoặc không hợp lệ.");
 
         item.GalleryJson = ServiceGallery.Serialize(images);
         item.UpdatedAt = DateTime.UtcNow;
         await uow.SaveChangesAsync(ct);
-        return Ok($"Đã tải {added} ảnh.", item);
+        return Ok($"Đã thêm {added} ảnh.", item);
     }
 
     public async Task<ServiceMutationResult> DeleteImageAsync(Guid serviceId, int index, CancellationToken ct = default)

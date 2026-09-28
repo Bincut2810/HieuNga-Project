@@ -1,6 +1,21 @@
 /**
- * Hình ảnh xe V3 — Ảnh đại diện · Màu xe · 6 góc xe.
- * Drop = upload + save. No Gallery. No Hero slot.
+ * Motorcycle Media Studio — Thumbnail · Colors · 6 angles.
+ *
+ * The Media Studio is now built on top of the shared image-uploader widget
+ * (window.HieuNgaUploader.ImageUploader) for the actual file upload + storage.
+ * The upload step always goes through the canonical POST /admin/api/upload
+ * endpoint; the URL returned is then POSTed to one of the motorcycle media
+ * routes (in JSON body { url }).
+ *
+ * This file owns:
+ *   - Studio state fetch + re-render
+ *   - Color CRUD (add / edit / delete / reorder)
+ *   - Angle CRUD (set / clear)
+ *   - UI rendering (cards, grids, dropzones)
+ *
+ * It does NOT own:
+ *   - File validation / storage (delegated to image-uploader.js)
+ *   - Storage folder selection (handled server-side by ImageUploadService)
  */
 (function () {
   'use strict';
@@ -8,10 +23,12 @@
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
   function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[c]);
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&' + 'amp;', '<': '&' + 'lt;', '>': '&' + 'gt;', '"': '&' + 'quot;', "'": '&' + '#39;' }[c];
+    });
   }
+
+  var UploaderCtor = (window.HieuNgaUploader && window.HieuNgaUploader.ImageUploader) || null;
 
   class MediaStudio {
     constructor(root) {
@@ -75,7 +92,7 @@
       el.classList.toggle('is-error', !!isError);
       el.hidden = false;
       clearTimeout(this._toastT);
-      this._toastT = setTimeout(() => { el.hidden = true; }, 2800);
+      this._toastT = setTimeout(() => { el.hidden = true; }, 4500);
     }
 
     showProgress(on, label) {
@@ -85,6 +102,91 @@
       const lab = qs('[data-ms-progress-label]', this.root);
       if (lab) lab.textContent = label || 'Đang tải ảnh…';
     }
+
+    /* ─── upload-then-save helpers ─────────────────────────────── */
+
+    uploadThumbnail(file) {
+      const self = this;
+      return this._uploadOne(file, 'motorcycle-thumbnail').then(function (url) {
+        if (!url) return;
+        return self.mutate('/thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url }),
+          label: 'Đang lưu ảnh…'
+        });
+      });
+    }
+
+    uploadColorImage(colorId, file) {
+      const self = this;
+      return this._uploadOne(file, 'motorcycle-color').then(function (url) {
+        if (!url) return;
+        return self.mutate('/colors/' + colorId + '/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url }),
+          label: 'Đang tải ảnh màu…'
+        });
+      });
+    }
+
+    uploadAngle(key, file) {
+      const self = this;
+      return this._uploadOne(file, 'motorcycle-angle').then(function (url) {
+        if (!url) return;
+        return self.mutate('/angles/' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url }),
+          label: 'Đang tải ảnh…'
+        });
+      });
+    }
+
+    _uploadOne(file, kind) {
+      const self = this;
+      const motorcycleId = self._motorcycleId();
+      if (!UploaderCtor) {
+        self.toast('Trình tải ảnh chưa sẵn sàng (image-uploader.js).', true);
+        return Promise.resolve(null);
+      }
+      self.showProgress(true, 'Đang tải ảnh lên máy chủ…');
+
+      return new Promise(function (resolve) {
+        // Build a one-off DOM node to host the upload, capture the result.
+        const host = document.createElement('div');
+        host.style.display = 'none';
+        document.body.appendChild(host);
+        const u = new UploaderCtor(host, {
+          kind: kind,
+          contextId: motorcycleId,
+          maxBytes: 5 * 1024 * 1024
+        });
+        let resolved = false;
+        const original = u._handleResponse.bind(u);
+        u._handleResponse = function (data, status) {
+          self.showProgress(false);
+          try { document.body.removeChild(host); } catch (_) { /* ignore */ }
+          if (data && data.ok && data.url) {
+            if (!resolved) { resolved = true; resolve(data.url); }
+            return;
+          }
+          var message = (data && (data.message || data.code)) || ('Upload thất bại (HTTP ' + status + ').');
+          self.toast(message, true);
+          if (!resolved) { resolved = true; resolve(null); }
+        };
+        u.init();
+        u._uploadOne(file);
+      });
+    }
+
+    _motorcycleId() {
+      const m = (this.api || '').match(/\/xe\/([0-9a-f-]+)\/media/i);
+      return m ? m[1] : '';
+    }
+
+    /* ─── render ───────────────────────────────────────────────── */
 
     render() {
       const s = this.state;
@@ -131,7 +233,7 @@
             ${url
               ? `<img src="${esc(url)}" alt="" class="ms-slot-img" />`
               : `<div class="ms-drop-empty"><strong>Kéo ảnh vào đây</strong><span>hoặc chạm để chọn</span></div>`}
-            <input type="file" accept="image/*" hidden data-file="thumbnail" />
+            <input type="file" accept="image/jpeg,image/png,image/webp" hidden data-file="thumbnail" />
           </div>
           <div class="ms-actions">
             <button type="button" class="ms-btn primary ms-btn-lg" data-pick="thumbnail">${url ? 'Đổi ảnh' : 'Chọn ảnh'}</button>
@@ -166,7 +268,7 @@
                 <div class="ms-color-actions">
                   <label class="ms-btn primary ms-btn-sm">
                     ${img ? 'Đổi ảnh' : 'Thêm ảnh'}
-                    <input type="file" accept="image/*" hidden data-color-image="${id}" />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" hidden data-color-image="${id}" />
                   </label>
                   <button type="button" class="ms-btn danger ms-btn-sm" data-color-delete="${id}">Xóa</button>
                 </div>
@@ -178,7 +280,7 @@
               <h3>Thêm màu</h3>
               <label>Tên màu<input name="name" required placeholder="Đen bóng" /></label>
               <label>Mã màu<input name="hex" required placeholder="#111111" value="#111111" /></label>
-              <label>Ảnh màu<input type="file" name="image" accept="image/*" required /></label>
+              <label>Ảnh màu<input type="file" name="image" accept="image/jpeg,image/png,image/webp" required /></label>
               <div class="ms-actions">
                 <button type="submit" class="ms-btn primary">Lưu</button>
                 <button type="button" class="ms-btn" data-color-close>Đóng</button>
@@ -207,7 +309,7 @@
                   ${url
                     ? `<img src="${esc(url)}" alt="${esc(lab)}" />`
                     : `<div class="ms-drop-empty"><strong>${esc(lab)}</strong><span>Kéo ảnh vào</span></div>`}
-                  <input type="file" accept="image/*" hidden data-file-angle="${esc(key)}" />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden data-file-angle="${esc(key)}" />
                 </div>
                 <div class="ms-angle-bar">
                   <strong>${esc(lab)}</strong>
@@ -219,7 +321,11 @@
         </section>`;
     }
 
+    /* ─── event bindings ───────────────────────────────────────── */
+
     bindAfterRender() {
+      const self = this;
+
       qsa('[data-pick]', this.root).forEach(btn => {
         btn.addEventListener('click', () => {
           const input = qs(`[data-file="${btn.getAttribute('data-pick')}"]`, this.root);
@@ -232,18 +338,19 @@
           const key = input.getAttribute('data-file');
           const files = Array.from(input.files || []);
           input.value = '';
-          if (key === 'thumbnail' && files[0]) this.uploadSlot(files[0]);
+          if (key === 'thumbnail' && files[0]) self.uploadThumbnail(files[0]);
         });
       });
 
       qsa('[data-drop="thumbnail"]', this.root).forEach(zone => {
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drag'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('is-drag'));
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.add('is-drag'); });
+        zone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.remove('is-drag'); });
         zone.addEventListener('drop', (e) => {
           e.preventDefault();
+          e.stopPropagation();
           zone.classList.remove('is-drag');
           const file = (e.dataTransfer.files || [])[0];
-          if (file) this.uploadSlot(file);
+          if (file) self.uploadThumbnail(file);
         });
         zone.addEventListener('click', (e) => {
           if (e.target.closest('button,input')) return;
@@ -262,6 +369,7 @@
     }
 
     bindColors() {
+      const self = this;
       const dialog = qs('[data-color-dialog]', this.root);
       const form = qs('[data-color-form]', this.root);
       qs('[data-color-add]', this.root)?.addEventListener('click', () => {
@@ -269,14 +377,27 @@
         dialog.showModal();
       });
       qs('[data-color-close]', this.root)?.addEventListener('click', () => dialog.close());
+
       form?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fd = new FormData();
-        fd.append('name', form.name.value);
-        fd.append('hex', form.hex.value);
-        if (form.image.files[0]) fd.append('image', form.image.files[0]);
+        const file = form.image.files[0];
+        if (!file) { self.toast('Chọn ảnh cho màu.', true); return; }
+        if (!UploaderCtor) { self.toast('Trình tải ảnh chưa sẵn sàng.', true); return; }
+        self.showProgress(true, 'Đang tải ảnh màu…');
+        const url = await self._uploadOne(file, 'motorcycle-color');
+        if (!url) { self.showProgress(false); return; }
         dialog.close();
-        await this.mutate('/colors', { method: 'POST', body: fd, label: 'Đang lưu màu…' });
+        await self.mutate('/colors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name.value,
+            hex: form.hex.value,
+            imageUrl: url
+          }),
+          label: 'Đang lưu màu…'
+        });
+        self.showProgress(false);
       });
 
       qsa('[data-color-image]', this.root).forEach(input => {
@@ -285,9 +406,7 @@
           const file = (input.files || [])[0];
           input.value = '';
           if (!file || !id) return;
-          const fd = new FormData();
-          fd.append('file', file);
-          await this.mutate('/colors/' + id + '/image', { method: 'POST', body: fd, label: 'Đang tải ảnh màu…' });
+          await self.uploadColorImage(id, file);
         });
       });
 
@@ -295,29 +414,32 @@
         btn.addEventListener('click', async () => {
           const id = btn.getAttribute('data-color-delete');
           if (!id || !confirm('Xóa màu này?')) return;
-          await this.mutate('/colors/' + id, { method: 'DELETE', label: 'Đang xóa…' });
+          await self.mutate('/colors/' + id, { method: 'DELETE', label: 'Đang xóa…' });
         });
       });
     }
 
     bindAngles() {
+      const self = this;
+
       qsa('[data-file-angle]', this.root).forEach(input => {
         input.addEventListener('change', () => {
           const key = input.getAttribute('data-file-angle');
           const file = (input.files || [])[0];
           input.value = '';
-          if (file) this.uploadAngle(key, file);
+          if (file) self.uploadAngle(key, file);
         });
       });
       qsa('[data-drop-angle]', this.root).forEach(zone => {
         const key = zone.getAttribute('data-drop-angle');
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drag'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('is-drag'));
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.add('is-drag'); });
+        zone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.remove('is-drag'); });
         zone.addEventListener('drop', (e) => {
           e.preventDefault();
+          e.stopPropagation();
           zone.classList.remove('is-drag');
           const file = (e.dataTransfer.files || [])[0];
-          if (file) this.uploadAngle(key, file);
+          if (file) self.uploadAngle(key, file);
         });
         zone.addEventListener('click', () => {
           const input = qs(`[data-file-angle="${key}"]`, this.root);
@@ -329,21 +451,9 @@
           e.stopPropagation();
           const key = btn.getAttribute('data-clear-angle');
           if (!confirm('Xóa góc này?')) return;
-          await this.mutate('/angles/' + encodeURIComponent(key), { method: 'DELETE', label: 'Đang xóa…' });
+          await self.mutate('/angles/' + encodeURIComponent(key), { method: 'DELETE', label: 'Đang xóa…' });
         });
       });
-    }
-
-    uploadSlot(file) {
-      const fd = new FormData();
-      fd.append('file', file);
-      return this.mutate('/thumbnail', { method: 'POST', body: fd, label: 'Đang tải ảnh…' });
-    }
-
-    uploadAngle(key, file) {
-      const fd = new FormData();
-      fd.append('file', file);
-      return this.mutate('/angles/' + encodeURIComponent(key), { method: 'POST', body: fd, label: 'Đang tải ảnh…' });
     }
   }
 

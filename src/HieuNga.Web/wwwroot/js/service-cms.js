@@ -1,6 +1,16 @@
 /**
  * Service CMS — multi-image upload, reorder, remove.
- * Same dropzone UX as Banner CMS / Media Studio.
+ *
+ * Upload is now performed by the shared image-uploader widget
+ * (window.HieuNgaUploader.ImageUploader) against the canonical POST /admin/api/upload
+ * endpoint. The returned URLs are POSTed to the service CMS endpoint as
+ * { urls: [...] }.
+ *
+ * This file owns service-specific domain logic:
+ *   - State fetch + re-render
+ *   - Reorder via drag-and-drop
+ *   - Settings save (name/description/order/enabled)
+ *   - Delete
  */
 (function () {
   'use strict';
@@ -8,10 +18,12 @@
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
   function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[c]);
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&' + 'amp;', '<': '&' + 'lt;', '>': '&' + 'gt;', '"': '&' + 'quot;', "'": '&' + '#39;' }[c];
+    });
   }
+
+  var UploaderCtor = (window.HieuNgaUploader && window.HieuNgaUploader.ImageUploader) || null;
 
   class ServiceCms {
     constructor(root) {
@@ -77,7 +89,7 @@
       el.classList.toggle('is-error', !!isError);
       el.hidden = false;
       clearTimeout(this._toastT);
-      this._toastT = setTimeout(() => { el.hidden = true; }, 2800);
+      this._toastT = setTimeout(() => { el.hidden = true; }, 4500);
     }
 
     showProgress(on, label) {
@@ -96,6 +108,75 @@
     images() {
       return this.val('images') || this.val('Images') || [];
     }
+
+    /* ─── upload pipeline ─────────────────────────────────────────── */
+
+    async uploadFiles(files) {
+      const images = files.filter(f => /^image\/(jpe?g|png|webp)$/i.test(f.type || ''));
+      if (!images.length) {
+        this.toast('Không có ảnh hợp lệ để tải lên.', true);
+        return;
+      }
+      if (!UploaderCtor) {
+        this.toast('Trình tải ảnh chưa sẵn sàng.', true);
+        return;
+      }
+      const serviceId = this._serviceId();
+      this.showProgress(true, 'Đang tải ' + images.length + ' ảnh…');
+
+      const urls = [];
+      for (const file of images) {
+        const url = await this._uploadOne(file, 'service-gallery', serviceId);
+        if (url) urls.push(url);
+      }
+
+      if (urls.length === 0) {
+        this.showProgress(false);
+        this.toast('Không tải được ảnh nào.', true);
+        return;
+      }
+      await this.mutate('/images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: urls }),
+        label: 'Đang lưu dịch vụ…'
+      });
+    }
+
+    _uploadOne(file, kind, contextId) {
+      const self = this;
+      return new Promise(function (resolve) {
+        const host = document.createElement('div');
+        host.style.display = 'none';
+        document.body.appendChild(host);
+        const u = new UploaderCtor(host, {
+          kind: kind,
+          contextId: contextId,
+          maxBytes: 5 * 1024 * 1024
+        });
+        let resolved = false;
+        u._handleResponse = function (data, status) {
+          self.showProgress(false);
+          try { document.body.removeChild(host); } catch (_) { /* ignore */ }
+          if (data && data.ok && data.url) {
+            if (!resolved) { resolved = true; resolve(data.url); }
+            return;
+          }
+          var message = (data && (data.message || data.code)) || ('Upload thất bại (HTTP ' + status + ').');
+          self.toast(message, true);
+          if (!resolved) { resolved = true; resolve(null); }
+        };
+        u.init();
+        u._uploadOne(file);
+      });
+    }
+
+    _serviceId() {
+      const m = (this.api || '').match(/\/dich-vu\/([0-9a-f-]+)\/media/i);
+      return m ? m[1] : '';
+    }
+
+    /* ─── render ───────────────────────────────────────────────── */
 
     render() {
       const name = this.val('name') || '';
@@ -122,7 +203,7 @@
                   <strong>Kéo ảnh vào đây</strong>
                   <span>hoặc chạm để chọn — có thể chọn nhiều ảnh</span>
                 </div>
-                <input type="file" accept="image/*" multiple hidden data-sc-file />
+                <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden data-sc-file />
               </div>`
             : '<p class="ms-hint ms-error">Tải ảnh chưa bật trên môi trường này.</p>'}
           <div class="bc-thumb-grid" data-sc-grid>
@@ -148,7 +229,7 @@
           </label>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn admin-btn-primary ms-btn-lg" data-sc-save>Lưu</button>
-            <button type="button" class="admin-btn admin-btn-secondary ms-btn-lg" data-sc-publish>Lưu &amp; Xuất bản</button>
+            <button type="button" class="admin-btn admin-btn-secondary ms-btn-lg" data-sc-publish>Lưu & Xuất bản</button>
           </div>
         </section>`;
 
@@ -171,10 +252,11 @@
       const grid = qs('[data-sc-grid]', this.root);
 
       if (drop && fileInput) {
-        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('is-drag'); });
-        drop.addEventListener('dragleave', () => drop.classList.remove('is-drag'));
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); drop.classList.add('is-drag'); });
+        drop.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('is-drag'); });
         drop.addEventListener('drop', (e) => {
           e.preventDefault();
+          e.stopPropagation();
           drop.classList.remove('is-drag');
           this.uploadFiles(Array.from(e.dataTransfer.files || []));
         });
@@ -201,14 +283,6 @@
 
       qs('[data-sc-save]', this.root)?.addEventListener('click', () => this.saveSettings(false));
       qs('[data-sc-publish]', this.root)?.addEventListener('click', () => this.saveSettings(true));
-    }
-
-    async uploadFiles(files) {
-      const images = files.filter((f) => f.type.startsWith('image/'));
-      if (!images.length) return;
-      const fd = new FormData();
-      images.forEach((f) => fd.append('files', f));
-      await this.mutate('/images', { method: 'POST', body: fd, label: 'Đang tải ảnh…' });
     }
 
     bindReorder(grid) {

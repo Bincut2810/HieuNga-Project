@@ -1,9 +1,14 @@
 using HieuNga.Application.Media;
-using HieuNga.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HieuNga.Web.Endpoints;
 
+/// <summary>
+/// Banner CMS endpoints. The actual file upload is performed by the canonical
+/// <see cref="ImageUploadEndpoints"/>; this surface only receives a JSON body
+/// with the already-uploaded URLs and performs the database operations
+/// (add rows, soft-delete, reorder, save shared settings).
+/// </summary>
 public static class BannerEndpoints
 {
     public static IEndpointRouteBuilder MapBannerApi(this IEndpointRouteBuilder app)
@@ -15,19 +20,8 @@ public static class BannerEndpoints
         group.MapGet("/", async (IBannerCmsService cms, CancellationToken ct) =>
             Results.Json(await cms.GetStateAsync(ct)));
 
-        group.MapPost("/images", async (HttpRequest request, IBannerCmsService cms, CancellationToken ct) =>
-        {
-            var form = await request.ReadFormAsync(ct);
-            var files = form.Files.Where(f => f.Length > 0).ToList();
-            if (files.Count == 0)
-                return Results.Json(new BannerMutationResult(false, "Chưa chọn ảnh.", null));
-
-            var uploads = new List<MediaFileUpload>();
-            foreach (var file in files)
-                uploads.Add(await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct));
-
-            return Results.Json(await cms.UploadImagesAsync(uploads, ct));
-        });
+        group.MapPost("/images", async ([FromBody] AddImagesBody body, IBannerCmsService cms, CancellationToken ct) =>
+            Results.Json(await cms.AddImagesAsync(body.Urls ?? [], ct)));
 
         group.MapDelete("/images/{id:guid}", async (Guid id, IBannerCmsService cms, CancellationToken ct) =>
             Results.Json(await cms.DeleteImageAsync(id, ct)));
@@ -43,4 +37,5 @@ public static class BannerEndpoints
 
     public sealed record OrderBody(List<Guid>? Ids);
     public sealed record SettingsBody(string? Title, string? Subtitle, bool Enabled);
+    public sealed record AddImagesBody(List<string>? Urls);
 }

@@ -6,10 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HieuNga.Infrastructure.Services;
 
+/// <summary>
+/// Domain service for the homepage banner carousel. Owns the database rows
+/// (SortOrder / Title / Subtitle / IsActive / ImageUrl) and the soft-delete
+/// + reorder semantics. Does NOT own the upload pipeline — the canonical
+/// <see cref="Interfaces.IImageUploadService"/> produces URLs first, then
+/// <see cref="AddImagesAsync"/> persists them.
+/// </summary>
 public class BannerCmsService(
     HieuNgaDbContext db,
-    IUnitOfWork uow,
-    IMotorcycleMediaStudioService mediaStudio) : IBannerCmsService
+    IUnitOfWork uow) : IBannerCmsService
 {
     public async Task<BannerCmsStateDto> GetStateAsync(CancellationToken ct = default)
     {
@@ -17,35 +23,35 @@ public class BannerCmsService(
         return BuildState(banners);
     }
 
-    public async Task<BannerMutationResult> UploadImagesAsync(IReadOnlyList<MediaFileUpload> files, CancellationToken ct = default)
+    public async Task<BannerMutationResult> AddImagesAsync(IReadOnlyList<string> urls, CancellationToken ct = default)
     {
-        if (files.Count == 0)
-            return Fail("Chưa chọn ảnh.");
+        if (urls.Count == 0)
+            return Fail("Không có URL ảnh để thêm.");
 
         var banners = await LoadBannersAsync(ct);
         var meta = MetaFrom(banners);
         var nextOrder = banners.Count > 0 ? banners.Max(b => b.SortOrder) + 1 : 0;
         var added = 0;
 
-        foreach (var file in files)
+        foreach (var url in urls)
         {
-            var (ok, url, error) = await mediaStudio.UploadOnlyAsync(file, "banners", ct);
-            if (!ok || string.IsNullOrWhiteSpace(url))
-                return Fail(error ?? "Không tải được ảnh.");
-
+            if (string.IsNullOrWhiteSpace(url)) continue;
             await db.Banners.AddAsync(new Banner
             {
                 Title = meta.Title,
                 Subtitle = meta.Subtitle,
-                ImageUrl = url,
+                ImageUrl = url.Trim(),
                 SortOrder = nextOrder++,
                 IsActive = meta.Enabled
             }, ct);
             added++;
         }
 
+        if (added == 0)
+            return Fail("Danh sách URL rỗng hoặc không hợp lệ.");
+
         await uow.SaveChangesAsync(ct);
-        return Ok($"Đã tải {added} ảnh.", await LoadBannersAsync(ct));
+        return Ok($"Đã thêm {added} ảnh.", await LoadBannersAsync(ct));
     }
 
     public async Task<BannerMutationResult> DeleteImageAsync(Guid id, CancellationToken ct = default)

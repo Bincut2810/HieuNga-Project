@@ -1,0 +1,80 @@
+@*
+    Shared Image Uploader — dropzone + click-to-upload + clear.
+
+    Replaces the old _ImagePickerField. Supports:
+
+    • "form-input" mode (default): uploads to /admin/api/upload and writes the
+      returned URL into a hidden input. The surrounding Razor Page POST then
+      persists the URL on submit.
+
+    • "domain" mode: uploads to /admin/api/upload, then POSTs the URL to a
+      configured domain endpoint (e.g. /admin/api/xe/{id}/media/thumbnail).
+
+    Usage (Promotion/Blog/Bank):
+        <partial name="Admin/Shared/_ImageUploader" model='new ImageUploaderField(
+            AspFor: "ImageUrl",
+            Kind: "promotion",
+            Label: "Ảnh đại diện",
+            Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
+            HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB",
+            CurrentValue: Model.ImageUrl)' />
+
+    Usage (domain mode):
+        <partial name="Admin/Shared/_ImageUploader" model='new ImageUploaderField(
+            Kind: "motorcycle-thumbnail",
+            Label: "Ảnh đại diện",
+            Mode: "domain",
+            Endpoint: $"/admin/api/xe/{Model.Id}/media/thumbnail")' />
+*@
+@model HieuNga.Web.Pages.Admin.Extensions.ImageUploaderField
+
+@{
+    var mode = string.IsNullOrEmpty(Model.Mode) ? "form-input" : Model.Mode;
+    var inputId = "iu-" + Model.AspFor.Replace(".", "_").Replace("[", "_").Replace("]", "_");
+}
+
+<div class="iu-block">
+    @if (!string.IsNullOrEmpty(Model.Label))
+    {
+        <label class="admin-label" for="@inputId">@Model.Label</label>
+    }
+
+    @if (mode == "form-input")
+    {
+        <input id="@inputId"
+               name="@Model.AspFor"
+               type="hidden"
+               value="@Model.CurrentValue" />
+    }
+
+    <div data-image-uploader
+         data-mode="@mode"
+         data-kind="@Model.Kind"
+         @if (!string.IsNullOrEmpty(Model.AspFor))
+         {
+             <text>data-target-input="@Model.AspFor"</text>
+         }
+         @if (!string.IsNullOrEmpty(Model.ContextId))
+         {
+             <text>data-context-id="@Model.ContextId"</text>
+         }
+         @if (!string.IsNullOrEmpty(Model.Endpoint))
+         {
+             <text>data-endpoint="@Model.Endpoint"</text>
+         }
+         data-label="@Model.Label"
+         data-hint="@Model.Hint"
+         @if (!string.IsNullOrEmpty(Model.CurrentValue))
+         {
+             <text>data-initial-url="@Model.CurrentValue"</text>
+         }
+         @if (Model.Multiple)
+         {
+             <text>data-multiple="true"</text>
+         }></div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.HelpText))
+    {
+        <p class="admin-hint" style="margin-top: 0.4rem;">@Model.HelpText</p>
+    }
+</div>

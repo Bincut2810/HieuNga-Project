@@ -11,23 +11,24 @@ using Microsoft.Extensions.Options;
 
 namespace HieuNga.Infrastructure.Services;
 
+/// <summary>
+/// Default implementation of <see cref="IMotorcycleMediaStudioService"/>. The
+/// service no longer touches the upload pipeline directly — it only manages the
+/// database state for the motorcycle's thumbnail, color cards (with images),
+/// and six fixed viewing-angle spin frames.
+/// </summary>
 public sealed class MotorcycleMediaStudioService(
     HieuNgaDbContext db,
     IImageStorageService storage,
     IOptions<ImageStorageOptions> options) : IMotorcycleMediaStudioService
 {
-    private static readonly HashSet<string> AllowedTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"
-    };
-
     public async Task<MediaStudioStateDto?> GetStateAsync(Guid motorcycleId, CancellationToken ct = default)
     {
         var bike = await LoadBikeAsync(motorcycleId, ct);
         return bike is null ? null : BuildState(bike);
     }
 
-    public async Task<MediaMutationResult> SetSlotAsync(Guid motorcycleId, MediaSlot slot, MediaFileUpload file, CancellationToken ct = default)
+    public async Task<MediaMutationResult> SetSlotUrlAsync(Guid motorcycleId, MediaSlot slot, string url, CancellationToken ct = default)
     {
         if (slot != MediaSlot.Thumbnail)
             return Fail("Slot không hợp lệ.");
@@ -35,10 +36,7 @@ public sealed class MotorcycleMediaStudioService(
         var bike = await db.Motorcycles.FirstOrDefaultAsync(m => m.Id == motorcycleId && !m.IsDeleted, ct);
         if (bike is null) return Fail("Không tìm thấy xe.");
 
-        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Thumbnail), ct);
-        if (!uploaded.Ok) return Fail(uploaded.Error!);
-
-        bike.ThumbnailUrl = uploaded.Url;
+        bike.ThumbnailUrl = url;
         bike.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return await OkAsync(motorcycleId, "Đã lưu ảnh.", ct);
@@ -58,7 +56,7 @@ public sealed class MotorcycleMediaStudioService(
         return await OkAsync(motorcycleId, "Đã xóa ảnh.", ct);
     }
 
-    public async Task<MediaMutationResult> UpsertColorAsync(Guid motorcycleId, Guid? colorId, string name, string hex, MediaFileUpload? image, CancellationToken ct = default)
+    public async Task<MediaMutationResult> UpsertColorUrlAsync(Guid motorcycleId, Guid? colorId, string name, string hex, string? imageUrl, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(name)) return Fail("Nhập tên màu.");
         hex = NormalizeHex(hex) ?? "#000000";
@@ -66,9 +64,7 @@ public sealed class MotorcycleMediaStudioService(
 
         if (colorId is null)
         {
-            if (image is null) return Fail("Thêm ảnh đại diện cho màu.");
-            var uploaded = await UploadValidatedAsync(image, Folder(motorcycleId, MediaSlot.Color), ct);
-            if (!uploaded.Ok) return Fail(uploaded.Error!);
+            if (string.IsNullOrWhiteSpace(imageUrl)) return Fail("Thêm ảnh đại diện cho màu.");
             var maxSort = await db.MotorcycleColors.Where(c => c.MotorcycleId == motorcycleId && !c.IsDeleted)
                 .Select(c => (int?)c.SortOrder).MaxAsync(ct) ?? -1;
             db.MotorcycleColors.Add(new MotorcycleColor
@@ -76,7 +72,7 @@ public sealed class MotorcycleMediaStudioService(
                 MotorcycleId = motorcycleId,
                 Name = name.Trim(),
                 HexCode = hex,
-                ImageUrl = uploaded.Url,
+                ImageUrl = imageUrl,
                 SortOrder = maxSort + 1
             });
         }
@@ -86,12 +82,8 @@ public sealed class MotorcycleMediaStudioService(
             if (color is null) return Fail("Không tìm thấy màu.");
             color.Name = name.Trim();
             color.HexCode = hex;
-            if (image is not null)
-            {
-                var uploaded = await UploadValidatedAsync(image, Folder(motorcycleId, MediaSlot.Color), ct);
-                if (!uploaded.Ok) return Fail(uploaded.Error!);
-                color.ImageUrl = uploaded.Url;
-            }
+            if (!string.IsNullOrWhiteSpace(imageUrl))
+                color.ImageUrl = imageUrl;
             color.UpdatedAt = DateTime.UtcNow;
         }
 
@@ -99,13 +91,11 @@ public sealed class MotorcycleMediaStudioService(
         return await OkAsync(motorcycleId, "Đã lưu màu.", ct);
     }
 
-    public async Task<MediaMutationResult> ReplaceColorImageAsync(Guid motorcycleId, Guid colorId, MediaFileUpload file, CancellationToken ct = default)
+    public async Task<MediaMutationResult> ReplaceColorImageUrlAsync(Guid motorcycleId, Guid colorId, string imageUrl, CancellationToken ct = default)
     {
         var color = await db.MotorcycleColors.FirstOrDefaultAsync(c => c.Id == colorId && c.MotorcycleId == motorcycleId && !c.IsDeleted, ct);
         if (color is null) return Fail("Không tìm thấy màu.");
-        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Color), ct);
-        if (!uploaded.Ok) return Fail(uploaded.Error!);
-        color.ImageUrl = uploaded.Url;
+        color.ImageUrl = imageUrl;
         color.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return await OkAsync(motorcycleId, "Đã thay ảnh màu.", ct);
@@ -135,21 +125,18 @@ public sealed class MotorcycleMediaStudioService(
         return await OkAsync(motorcycleId, "Đã xóa màu.", ct);
     }
 
-    public async Task<MediaMutationResult> SetAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, MediaFileUpload file, CancellationToken ct = default)
+    public async Task<MediaMutationResult> SetAngleUrlAsync(Guid motorcycleId, MotorcycleViewAngle angle, string url, CancellationToken ct = default)
     {
         if (!await BikeExistsAsync(motorcycleId, ct)) return Fail("Không tìm thấy xe.");
         if ((int)angle < 0 || (int)angle >= MotorcycleViewAngleCatalog.Count)
             return Fail("Góc xem không hợp lệ.");
-
-        var uploaded = await UploadValidatedAsync(file, Folder(motorcycleId, MediaSlot.Angles), ct);
-        if (!uploaded.Ok) return Fail(uploaded.Error!);
 
         var existing = await db.MotorcycleSpinFrames
             .FirstOrDefaultAsync(f => f.MotorcycleId == motorcycleId && f.Angle == angle && !f.IsDeleted, ct);
 
         if (existing is not null)
         {
-            existing.ImageUrl = uploaded.Url!;
+            existing.ImageUrl = url;
             existing.UpdatedAt = DateTime.UtcNow;
         }
         else
@@ -157,7 +144,7 @@ public sealed class MotorcycleMediaStudioService(
             db.MotorcycleSpinFrames.Add(new MotorcycleSpinFrame
             {
                 MotorcycleId = motorcycleId,
-                ImageUrl = uploaded.Url!,
+                ImageUrl = url,
                 Angle = angle
             });
         }
@@ -195,112 +182,33 @@ public sealed class MotorcycleMediaStudioService(
         return await OkAsync(motorcycleId, "Đã xóa toàn bộ góc xem.", ct);
     }
 
-    public async Task<SmartImportSummaryDto> SmartImportAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> entries, CancellationToken ct = default)
+    public async Task<MediaMutationResult> AssignByPathAsync(Guid motorcycleId, string relativePath, string url, CancellationToken ct = default)
     {
-        if (!await BikeExistsAsync(motorcycleId, ct))
-            return new SmartImportSummaryDto(false, "Không tìm thấy xe.", 0, 0, 0, [], null);
+        if (string.IsNullOrWhiteSpace(relativePath)) return Fail("Thiếu đường dẫn.");
+        var lower = relativePath.Replace('\\', '/').Trim('/').ToLowerInvariant();
+        var fileName = Path.GetFileName(lower);
 
-        var warnings = new List<string>();
-        var thumb = 0;
-        var colors = 0;
-        var angles = 0;
-
-        MediaFileUpload? pendingHero = null;
-        var angleEntries = new List<(MotorcycleViewAngle Angle, MediaFileUpload File)>();
-        var colorGroups = new Dictionary<string, List<MediaFileUpload>>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var entry in entries)
+        if (fileName is "thumbnail.jpg" or "thumbnail.jpeg" or "thumbnail.png" or "thumbnail.webp"
+            or "thumb.jpg" or "thumb.jpeg" or "thumb.png" or "thumb.webp")
         {
-            var path = (entry.RelativePath ?? entry.FileName).Replace('\\', '/').Trim('/');
-            var lower = path.ToLowerInvariant();
-            var fileName = Path.GetFileName(path);
-
-            if (IsGalleryPath(lower))
-            {
-                warnings.Add($"Bỏ qua gallery: {path}");
-                continue;
-            }
-
-            if (IsThumbPath(lower, fileName))
-            {
-                var r = await SetSlotAsync(motorcycleId, MediaSlot.Thumbnail, entry, ct);
-                if (r.Success) thumb++;
-                else warnings.Add(r.Message ?? fileName);
-            }
-            else if (IsHeroPath(lower, fileName))
-            {
-                pendingHero = entry;
-            }
-            else if (IsAngleFolderPath(lower) || MotorcycleViewAngleCatalog.TryParseKey(fileName, out _))
-            {
-                if (!MotorcycleViewAngleCatalog.TryParseKey(fileName, out var angle)
-                    && !MotorcycleViewAngleCatalog.TryParseKey(Path.GetFileNameWithoutExtension(fileName), out angle))
-                {
-                    warnings.Add($"Không nhận diện góc: {path}");
-                    continue;
-                }
-                angleEntries.Add((angle, entry));
-            }
-            else if (TryColorFolder(lower, out var colorName))
-            {
-                if (!colorGroups.TryGetValue(colorName, out var list))
-                    colorGroups[colorName] = list = [];
-                list.Add(entry);
-            }
-            else if (lower.Contains("/colors/") || lower.StartsWith("colors/"))
-            {
-                var name = Path.GetFileNameWithoutExtension(fileName);
-                if (!colorGroups.TryGetValue(name, out var list))
-                    colorGroups[name] = list = [];
-                list.Add(entry);
-            }
-            else
-                warnings.Add($"Không nhận diện: {path}");
+            return await SetSlotUrlAsync(motorcycleId, MediaSlot.Thumbnail, url, ct);
         }
 
-        if (thumb == 0 && pendingHero is not null)
+        if (MotorcycleViewAngleCatalog.TryParseKey(fileName, out var angle)
+            || MotorcycleViewAngleCatalog.TryParseKey(Path.GetFileNameWithoutExtension(fileName), out angle))
         {
-            var bike = await db.Motorcycles.AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Id == motorcycleId && !m.IsDeleted, ct);
-            if (bike is not null && string.IsNullOrWhiteSpace(bike.ThumbnailUrl))
-            {
-                var r = await SetSlotAsync(motorcycleId, MediaSlot.Thumbnail, pendingHero, ct);
-                if (r.Success) thumb++;
-                else warnings.Add(r.Message ?? pendingHero.FileName);
-            }
-            else
-                warnings.Add($"Bỏ qua hero.jpg (đã có ảnh đại diện).");
-        }
-        else if (pendingHero is not null)
-            warnings.Add("Bỏ qua hero.jpg.");
-
-        foreach (var (angle, file) in angleEntries)
-        {
-            var r = await SetAngleAsync(motorcycleId, angle, file, ct);
-            if (r.Success) angles++;
-            else warnings.Add(r.Message ?? file.FileName);
+            return await SetAngleUrlAsync(motorcycleId, angle, url, ct);
         }
 
-        foreach (var (name, files) in colorGroups)
+        if (lower.Contains("/colors/") || lower.StartsWith("colors/") || lower.Contains("/gallery/") || lower.StartsWith("gallery/"))
         {
-            var image = files.OrderBy(f => f.FileName, StringComparer.OrdinalIgnoreCase).First();
-            var hex = GuessHex(name);
-            var r = await UpsertColorAsync(motorcycleId, null, ToTitle(name), hex, image, ct);
-            if (r.Success) colors++;
-            else warnings.Add($"{name}: {r.Message}");
+            var nameGuess = Path.GetFileNameWithoutExtension(fileName);
+            var titleName = ToTitle(nameGuess);
+            var hex = GuessHex(nameGuess);
+            return await UpsertColorUrlAsync(motorcycleId, null, titleName, hex, url, ct);
         }
 
-        var state = await GetStateAsync(motorcycleId, ct);
-        return new SmartImportSummaryDto(
-            true,
-            $"Đã import: thumb {thumb}, màu {colors}, góc {angles}.",
-            thumb, colors, angles, warnings, state);
-    }
-
-    public async Task<(bool Ok, string? Url, string? Error)> UploadOnlyAsync(MediaFileUpload file, string folder, CancellationToken ct = default)
-    {
-        var uploaded = await UploadValidatedAsync(file, folder, ct);
-        return uploaded.Ok ? (true, uploaded.Url, null) : (false, null, uploaded.Error);
+        return Fail($"Không nhận diện đường dẫn: {relativePath}");
     }
 
     // ─── helpers ───────────────────────────────────────────────
@@ -393,7 +301,6 @@ public sealed class MotorcycleMediaStudioService(
             new("angles", "6 góc xe", angleStatus, angleDetail)
         };
 
-        // Ready blockers are thumb + color; angles are optional (warn only).
         var score = 0;
         if (hasThumb) score += 45;
         if (hasColor) score += 45;
@@ -418,96 +325,12 @@ public sealed class MotorcycleMediaStudioService(
             missing);
     }
 
-    private async Task<(bool Ok, string? Url, string? Error, int? Width, int? Height, long? Bytes)> UploadValidatedAsync(
-        MediaFileUpload file, string folder, CancellationToken ct)
-    {
-        var err = Validate(file);
-        if (err is not null) return (false, null, err, null, null, null);
-        if (!storage.SupportsUpload)
-            return (false, null, "Upload chưa sẵn sàng. Cấu hình Cloudinary (Production) hoặc Local (Development).", null, null, null);
-
-        if (file.Content.CanSeek) file.Content.Position = 0;
-        var result = await storage.UploadAsync(file.Content, file.FileName, file.ContentType, folder, ct);
-        if (!result.Success)
-            return (false, null, result.ErrorMessage ?? "Không tải được ảnh.", null, null, null);
-
-        return (true, result.EffectiveUrl, null, result.Width, result.Height, result.Bytes ?? file.Length);
-    }
-
-    private string? Validate(MediaFileUpload file)
-    {
-        if (string.IsNullOrWhiteSpace(file.FileName)) return "Tên file không hợp lệ.";
-        if (file.Length <= 0 && (!file.Content.CanSeek || file.Content.Length <= 0))
-            return "File trống.";
-        var len = file.Length > 0 ? file.Length : (file.Content.CanSeek ? file.Content.Length : 0);
-        var max = options.Value.MaxFileSizeMb * 1024L * 1024L;
-        if (len > max) return $"Ảnh vượt quá {options.Value.MaxFileSizeMb} MB.";
-        var ct = string.IsNullOrWhiteSpace(file.ContentType) ? GuessContentType(file.FileName) : file.ContentType;
-        if (!AllowedTypes.Contains(ct))
-            return "Chỉ chấp nhận JPG, PNG, WebP, GIF hoặc SVG.";
-        return null;
-    }
-
-    private static string GuessContentType(string fileName) =>
-        Path.GetExtension(fileName).ToLowerInvariant() switch
-        {
-            ".png" => "image/png",
-            ".webp" => "image/webp",
-            ".gif" => "image/gif",
-            ".svg" => "image/svg+xml",
-            _ => "image/jpeg"
-        };
-
-    private static string Folder(Guid id, MediaSlot slot) => slot switch
-    {
-        MediaSlot.Thumbnail => $"motorcycles/{id:N}/thumb",
-        MediaSlot.Color => $"motorcycles/{id:N}/colors",
-        MediaSlot.Angles => $"motorcycles/{id:N}/angles",
-        _ => $"motorcycles/{id:N}"
-    };
-
     private static string? NormalizeHex(string? hex)
     {
         if (string.IsNullOrWhiteSpace(hex)) return "#000000";
         hex = hex.Trim();
         if (!hex.StartsWith('#')) hex = "#" + hex;
         return Regex.IsMatch(hex, "^#[0-9A-Fa-f]{6}$") ? hex.ToUpperInvariant() : null;
-    }
-
-    private static bool IsThumbPath(string lower, string fileName) =>
-        lower is "thumbnail.jpg" or "thumbnail.jpeg" or "thumbnail.png" or "thumbnail.webp"
-        || lower.EndsWith("/thumbnail.jpg") || lower.EndsWith("/thumbnail.jpeg")
-        || lower.EndsWith("/thumbnail.png") || lower.EndsWith("/thumbnail.webp")
-        || lower is "thumb.jpg" or "thumb.png" or "thumb.jpeg" or "thumb.webp"
-        || fileName.Equals("thumbnail.jpg", StringComparison.OrdinalIgnoreCase)
-        || fileName.Equals("thumbnail.jpeg", StringComparison.OrdinalIgnoreCase)
-        || fileName.Equals("thumbnail.png", StringComparison.OrdinalIgnoreCase)
-        || fileName.Equals("thumbnail.webp", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsHeroPath(string lower, string fileName) =>
-        lower is "hero.jpg" or "hero.jpeg" or "hero.png" or "hero.webp"
-        || lower.EndsWith("/hero.jpg") || lower.EndsWith("/hero.jpeg")
-        || lower.EndsWith("/hero.png") || lower.EndsWith("/hero.webp")
-        || fileName.Equals("hero.jpg", StringComparison.OrdinalIgnoreCase)
-        || fileName.Equals("hero.jpeg", StringComparison.OrdinalIgnoreCase)
-        || fileName.Equals("hero.png", StringComparison.OrdinalIgnoreCase)
-        || fileName.Equals("hero.webp", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsGalleryPath(string lower) =>
-        lower.Contains("/gallery/") || lower.StartsWith("gallery/");
-
-    private static bool IsAngleFolderPath(string lower) =>
-        lower.Contains("/angles/") || lower.StartsWith("angles/")
-        || lower.Contains("/360/") || lower.StartsWith("360/")
-        || lower.Contains("/spin/") || lower.StartsWith("spin/");
-
-    private static bool TryColorFolder(string lower, out string colorName)
-    {
-        colorName = "";
-        var m = Regex.Match(lower, @"colors/([^/]+)/");
-        if (!m.Success) return false;
-        colorName = m.Groups[1].Value;
-        return !string.IsNullOrWhiteSpace(colorName) && colorName is not ("gallery" or "360" or "spin" or "angles");
     }
 
     private static string GuessHex(string name) => name.ToLowerInvariant() switch

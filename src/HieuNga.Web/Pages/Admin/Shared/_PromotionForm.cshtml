@@ -40,9 +40,9 @@
                       placeholder="Điều kiện áp dụng, thời hạn, quyền lợi…"></textarea>
         </div>
         <div>
-            <partial name="Admin/Shared/_ImagePickerField" model='new HieuNga.Web.Pages.Admin.Extensions.ImagePickerField(
+            <partial name="Admin/Shared/_ImageUploader" model='new HieuNga.Web.Pages.Admin.Extensions.ImageUploaderField(
+                Kind: "promotion",
                 AspFor: "ImageUrl",
-                Kind: "promotions",
                 Label: "Ảnh đại diện",
                 Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
                 HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB. Ảnh hiển thị trên trang chủ và danh sách khuyến mãi.",

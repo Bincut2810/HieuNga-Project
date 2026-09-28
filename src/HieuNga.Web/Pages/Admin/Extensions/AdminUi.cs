@@ -70,37 +70,31 @@ public record ContentCardBuilderModel(
     IReadOnlyList<ContentCardItemModel> Items);
 
 /// <summary>
-/// Model for the Admin/Shared/_ImagePickerField partial.
-/// Drives a single-image dropzone widget that writes a URL back into
-/// the bound hidden input. Used for Promotion, BlogPost and Bank logos.
-///
-/// <param name="AspFor">
-///   The form field name the picker should write to. This must match
-///   the existing `name` attribute that the surrounding form would have
-///   produced (e.g. "ImageUrl", "ThumbnailUrl", "Input.LogoUrl").
-/// </param>
-/// <param name="Kind">
-///   Storage folder key passed to /admin/api/image-upload.
-///   Recognized values: "promotions", "blog", "banks".
-/// </param>
-/// <param name="Label">
-///   Vietnamese field label shown above the widget (e.g. "Ảnh đại diện").
-/// </param>
-/// <param name="Hint">
-///   Short call-to-action shown inside the empty dropzone
-///   (e.g. "Kéo ảnh vào đây hoặc bấm để chọn ảnh"). Falls back to a JS default.
-/// </param>
-/// <param name="HelpText">
-///   Supporting text shown below the widget (e.g. "JPG, PNG hoặc WebP • Tối đa 5 MB").
-/// </param>
-/// <param name="CurrentValue">
-///   Existing URL to display as the initial preview (taken from the bound model property).
-/// </param>
+/// Model for the Admin/Shared/_ImageUploader partial.
+/// Drives the shared dropzone widget for both single-image forms (Promotion,
+/// BlogPost, Bank) and domain-endpoint integrations (motorcycle media, banner,
+/// service gallery).
 /// </summary>
-public record ImagePickerField(
-    string AspFor,
+public record ImageUploaderField(
     string Kind,
-    string Label,
+    string? Label = null,
     string? Hint = null,
     string? HelpText = null,
-    string? CurrentValue = null);
+
+    /// <summary>form-input mode only — the name of the hidden input the uploader writes to.</summary>
+    string? AspFor = null,
+
+    /// <summary>form-input mode only — the current URL used for the initial preview.</summary>
+    string? CurrentValue = null,
+
+    /// <summary>"form-input" (default) or "domain" (POST URL to <see cref="Endpoint"/>).</summary>
+    string? Mode = null,
+
+    /// <summary>domain mode only — endpoint that receives { url } in a JSON body.</summary>
+    string? Endpoint = null,
+
+    /// <summary>Optional context id (e.g. motorcycle id) sent as the canonical <c>contextId</c> field.</summary>
+    string? ContextId = null,
+
+    /// <summary>If true, the picker accepts multiple files (banner / service gallery).</summary>
+    bool Multiple = false);

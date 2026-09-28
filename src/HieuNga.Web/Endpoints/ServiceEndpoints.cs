@@ -1,9 +1,15 @@
 using HieuNga.Application.Media;
-using HieuNga.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HieuNga.Web.Endpoints;
 
+/// <summary>
+/// Service CMS endpoints (per-service gallery management). The actual file
+/// upload is performed by the canonical <see cref="ImageUploadEndpoints"/>;
+/// this surface receives JSON bodies with already-uploaded URLs and performs
+/// the database operations (append, delete by index, reorder by index,
+/// save shared settings).
+/// </summary>
 public static class ServiceEndpoints
 {
     public static IEndpointRouteBuilder MapServiceApi(this IEndpointRouteBuilder app)
@@ -18,19 +24,8 @@ public static class ServiceEndpoints
             return state is null ? Results.NotFound() : Results.Json(state);
         });
 
-        group.MapPost("/images", async (Guid serviceId, HttpRequest request, IServiceCmsService cms, CancellationToken ct) =>
-        {
-            var form = await request.ReadFormAsync(ct);
-            var files = form.Files.Where(f => f.Length > 0).ToList();
-            if (files.Count == 0)
-                return Results.Json(new ServiceMutationResult(false, "Chưa chọn ảnh.", null));
-
-            var uploads = new List<MediaFileUpload>();
-            foreach (var file in files)
-                uploads.Add(await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct));
-
-            return Results.Json(await cms.UploadImagesAsync(serviceId, uploads, ct));
-        });
+        group.MapPost("/images", async (Guid serviceId, [FromBody] AddImagesBody body, IServiceCmsService cms, CancellationToken ct) =>
+            Results.Json(await cms.AddImagesAsync(serviceId, body.Urls ?? [], ct)));
 
         group.MapDelete("/images/{index:int}", async (Guid serviceId, int index, IServiceCmsService cms, CancellationToken ct) =>
             Results.Json(await cms.DeleteImageAsync(serviceId, index, ct)));
@@ -52,4 +47,5 @@ public static class ServiceEndpoints
 
     public sealed record OrderBody(List<int>? Indexes);
     public sealed record SettingsBody(string? Name, string? ShortDescription, int DisplayOrder, bool Enabled);
+    public sealed record AddImagesBody(List<string>? Urls);
 }

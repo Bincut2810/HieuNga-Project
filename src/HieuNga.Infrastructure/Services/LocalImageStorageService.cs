@@ -11,9 +11,15 @@ public sealed class LocalImageStorageService(
     IOptions<ImageStorageOptions> options,
     ILogger<LocalImageStorageService> logger) : IImageStorageService
 {
+    /// <summary>
+    /// Allowed MIME types. SVG is deliberately excluded: SVG can carry scripts
+    /// and the local backend serves files as-is. The canonical
+    /// <see cref="ImageUploadService"/> enforces this rule; the local provider
+    /// repeats it as a defense-in-depth check for any non-canonical entry point.
+    /// </summary>
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/svg+xml"
+        "image/jpeg", "image/jpg", "image/png", "image/webp"
     };
 
     public bool SupportsUpload => true;
@@ -39,10 +45,11 @@ public sealed class LocalImageStorageService(
             {
                 "image/png" => ".png",
                 "image/webp" => ".webp",
-                "image/gif" => ".gif",
-                "image/svg+xml" => ".svg",
                 _ => ".jpg"
             };
+        // SVG is forbidden everywhere in the new pipeline.
+        if (string.Equals(extension, ".svg", StringComparison.OrdinalIgnoreCase))
+            return ImageUploadResult.Fail("Không chấp nhận ảnh SVG.");
 
         var storedName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
         var uploadsRoot = Path.Combine(environment.ContentRootPath, "wwwroot", "uploads", safeFolder);
@@ -67,7 +74,7 @@ public sealed class LocalImageStorageService(
             return "Tên file không hợp lệ.";
 
         if (!AllowedContentTypes.Contains(contentType))
-            return "Chỉ chấp nhận ảnh JPG, PNG, WebP, GIF hoặc SVG.";
+            return "Chỉ chấp nhận ảnh JPG, PNG hoặc WebP.";
 
         var maxBytes = options.Value.MaxFileSizeMb * 1024L * 1024L;
         if (content.CanSeek && content.Length > maxBytes)

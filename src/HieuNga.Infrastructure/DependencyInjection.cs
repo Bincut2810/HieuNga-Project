@@ -72,8 +72,8 @@ public static class DependencyInjection
 
         services.AddSingleton<LocalImageStorageService>();
         services.AddSingleton<CloudinaryImageStorageService>();
-        services.AddSingleton<DisabledImageStorageService>();
         services.AddSingleton<IImageStorageService, ImageStorageRouter>();
+        services.AddScoped<IImageUploadService, ImageUploadService>();
         services.AddScoped<IMotorcycleMediaStudioService, MotorcycleMediaStudioService>();
         services.AddScoped<IBannerCmsService, BannerCmsService>();
         services.AddScoped<IServiceCmsService, ServiceCmsService>();

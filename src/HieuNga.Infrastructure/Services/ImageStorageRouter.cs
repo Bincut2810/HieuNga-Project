@@ -6,20 +6,35 @@ using Microsoft.Extensions.Options;
 
 namespace HieuNga.Infrastructure.Services;
 
+/// <summary>
+/// Routes uploads to either <see cref="CloudinaryImageStorageService"/> or
+/// <see cref="LocalImageStorageService"/> based on <see cref="ImageStorageOptions"/>.
+///
+/// <para>
+/// Selection rules:
+///   • If <c>ImageStorage:Provider = "Cloudinary"</c> AND Cloudinary credentials are
+///     present → Cloudinary.
+///   • Otherwise → Local (regardless of environment).
+/// </para>
+///
+/// <para>
+/// There is no longer a <c>DisabledImageStorageService</c>. When Cloudinary is
+/// selected but credentials are missing, the router delegates to Cloudinary,
+/// which then returns <c>SupportsUpload = false</c>. The canonical
+/// <see cref="ImageUploadService"/> translates that into a stable
+/// <c>STORAGE_UNAVAILABLE</c> response with HTTP 503, so the UI surfaces a
+/// visible error instead of silently disabling the uploader.
+/// </para>
+/// </summary>
 public sealed class ImageStorageRouter(
     IServiceProvider services,
-    IOptions<ImageStorageOptions> options,
-    IHostEnvironment environment) : IImageStorageService
+    IOptions<ImageStorageOptions> options) : IImageStorageService
 {
     private IImageStorageService Resolve()
     {
         var cfg = options.Value;
-        if (cfg.UseCloudinary && cfg.Cloudinary.IsConfigured)
+        if (cfg.UseCloudinary)
             return services.GetRequiredService<CloudinaryImageStorageService>();
-
-        if (!environment.IsDevelopment() && cfg.UseCloudinary && !cfg.Cloudinary.IsConfigured)
-            return services.GetRequiredService<DisabledImageStorageService>();
-
         return services.GetRequiredService<LocalImageStorageService>();
     }
 
@@ -33,22 +48,4 @@ public sealed class ImageStorageRouter(
         string folder,
         CancellationToken cancellationToken = default) =>
         Resolve().UploadAsync(content, fileName, contentType, folder, cancellationToken);
-}
-
-/// <summary>Used in staging/production when Cloudinary is selected but not configured.</summary>
-public sealed class DisabledImageStorageService : IImageStorageService
-{
-    public bool SupportsUpload => false;
-
-    public string StorageDescription =>
-        "Upload tạm thời tắt trên môi trường này. Dùng URL ảnh hoặc cấu hình Cloudinary (ImageStorage__Provider=Cloudinary).";
-
-    public Task<ImageUploadResult> UploadAsync(
-        Stream content,
-        string fileName,
-        string contentType,
-        string folder,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(ImageUploadResult.Fail(
-            "Upload file bị tắt trên staging/production khi chưa cấu hình Cloudinary. Nhập URL ảnh thay thế."));
 }

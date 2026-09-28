@@ -13,23 +13,33 @@ public sealed class MediaFileUpload
     public string? RelativePath { get; init; }
 }
 
+/// <summary>
+/// Domain service for motorcycle media. Owns the database state (thumbnail,
+/// color cards with images, six fixed viewing-angle spin frames) and the
+/// reorder/delete rules. Does NOT own the upload pipeline — callers must
+/// resolve an image URL via <see cref="IImageUploadService"/> first, then call
+/// the matching <c>*UrlAsync</c> method here.
+/// </summary>
 public interface IMotorcycleMediaStudioService
 {
     Task<MediaStudioStateDto?> GetStateAsync(Guid motorcycleId, CancellationToken ct = default);
 
-    Task<MediaMutationResult> SetSlotAsync(Guid motorcycleId, MediaSlot slot, MediaFileUpload file, CancellationToken ct = default);
+    Task<MediaMutationResult> SetSlotUrlAsync(Guid motorcycleId, MediaSlot slot, string url, CancellationToken ct = default);
     Task<MediaMutationResult> ClearSlotAsync(Guid motorcycleId, MediaSlot slot, CancellationToken ct = default);
 
-    Task<MediaMutationResult> UpsertColorAsync(Guid motorcycleId, Guid? colorId, string name, string hex, MediaFileUpload? image, CancellationToken ct = default);
-    Task<MediaMutationResult> ReplaceColorImageAsync(Guid motorcycleId, Guid colorId, MediaFileUpload file, CancellationToken ct = default);
+    Task<MediaMutationResult> UpsertColorUrlAsync(Guid motorcycleId, Guid? colorId, string name, string hex, string? imageUrl, CancellationToken ct = default);
+    Task<MediaMutationResult> ReplaceColorImageUrlAsync(Guid motorcycleId, Guid colorId, string imageUrl, CancellationToken ct = default);
     Task<MediaMutationResult> ReorderColorsAsync(Guid motorcycleId, IReadOnlyList<Guid> orderedIds, CancellationToken ct = default);
     Task<MediaMutationResult> DeleteColorAsync(Guid motorcycleId, Guid colorId, CancellationToken ct = default);
 
-    Task<MediaMutationResult> SetAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, MediaFileUpload file, CancellationToken ct = default);
+    Task<MediaMutationResult> SetAngleUrlAsync(Guid motorcycleId, MotorcycleViewAngle angle, string url, CancellationToken ct = default);
     Task<MediaMutationResult> ClearAngleAsync(Guid motorcycleId, MotorcycleViewAngle angle, CancellationToken ct = default);
     Task<MediaMutationResult> ClearAllAnglesAsync(Guid motorcycleId, CancellationToken ct = default);
 
-    Task<SmartImportSummaryDto> SmartImportAsync(Guid motorcycleId, IReadOnlyList<MediaFileUpload> entries, CancellationToken ct = default);
-
-    Task<(bool Ok, string? Url, string? Error)> UploadOnlyAsync(MediaFileUpload file, string folder, CancellationToken ct = default);
+    /// <summary>
+    /// Apply an uploaded URL to the slot inferred from <paramref name="relativePath"/>.
+    /// Used by the smart-import endpoint to batch-assign uploads without leaking
+    /// filename heuristics into the JS layer.
+    /// </summary>
+    Task<MediaMutationResult> AssignByPathAsync(Guid motorcycleId, string relativePath, string url, CancellationToken ct = default);
 }

@@ -27,7 +27,8 @@ public class EditorModel(
     IUnitOfWork uow,
     HieuNgaDbContext db,
     IImageStorageService imageStorage,
-    IMotorcycleMediaStudioService mediaStudio) : PageModel
+    IMotorcycleMediaStudioService mediaStudio,
+    IImageUploadService imageUploader) : PageModel
 {
     public static readonly string[] ValidTabs =
         ["general", "media", "specifications", "features", "finance", "seo", "publish"];
@@ -211,7 +212,7 @@ public class EditorModel(
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
-        var url = await TryStudioUploadAsync(imageFile, "features", ct);
+        var url = await TryStudioUploadAsync(imageFile, "features", ct, Id);
         if (string.IsNullOrWhiteSpace(url))
         {
             ModelState.AddModelError(string.Empty, "Vui lòng tải ảnh điểm nổi bật.");
@@ -245,7 +246,7 @@ public class EditorModel(
         item.Description = description?.Trim();
         if (imageFile is { Length: > 0 })
         {
-            var url = await TryStudioUploadAsync(imageFile, "features", ct);
+            var url = await TryStudioUploadAsync(imageFile, "features", ct, id);
             if (url is not null) item.ImageUrl = url;
         }
         item.UpdatedAt = DateTime.UtcNow;
@@ -314,7 +315,7 @@ public class EditorModel(
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
-        var url = await TryStudioUploadAsync(imageFile, "technology", ct);
+        var url = await TryStudioUploadAsync(imageFile, "technology", ct, Id);
         if (string.IsNullOrWhiteSpace(url))
         {
             ModelState.AddModelError(string.Empty, "Vui lòng tải ảnh công nghệ.");
@@ -348,7 +349,7 @@ public class EditorModel(
         item.Description = description?.Trim();
         if (imageFile is { Length: > 0 })
         {
-            var url = await TryStudioUploadAsync(imageFile, "technology", ct);
+            var url = await TryStudioUploadAsync(imageFile, "technology", ct, id);
             if (url is not null) item.ImageUrl = url;
         }
         item.UpdatedAt = DateTime.UtcNow;
@@ -520,7 +521,11 @@ public class EditorModel(
     {
         ApplyPublishStatusToInput();
 
-        var uploadedUrl = await TryStudioUploadAsync(ThumbnailFile, "motorcycles", ct);
+        // During edit, scope the motorcycle-thumbnail storage folder to this bike.
+        // During create, the thumbnail goes to a generic folder — the user will
+        // re-upload from the Media tab once the bike has an id.
+        var thumbContextId = IsCreate ? null : (Id.HasValue ? Id.Value : (Guid?)null);
+        var uploadedUrl = await TryStudioUploadAsync(ThumbnailFile, "motorcycles", ct, thumbContextId);
         if (!ModelState.IsValid)
         {
             if (!IsCreate) await LoadRelatedAsync(Id!.Value, ct);
@@ -688,17 +693,36 @@ public class EditorModel(
             .ToList();
     }
 
-    private async Task<string?> TryStudioUploadAsync(IFormFile? file, string folder, CancellationToken ct)
+    private async Task<string?> TryStudioUploadAsync(IFormFile? file, string folder, CancellationToken ct, Guid? contextId = null)
     {
         if (file is null || file.Length == 0) return null;
-        var upload = await MediaFileUploadAdapter.FromFormFileAsync(file, ct: ct);
-        var (ok, url, error) = await mediaStudio.UploadOnlyAsync(upload, folder, ct);
-        if (!ok)
+        // Map the legacy static-folder call site to the canonical upload pipeline.
+        // Folder is unused now — the kind drives the storage location.
+        var kind = folder switch
         {
-            ModelState.AddModelError(string.Empty, error ?? "Không tải được ảnh.");
+            "motorcycles" => ImageUploadKinds.MotorcycleThumbnail,
+            "features" => ImageUploadKinds.MotorcycleFeature,
+            "technology" => ImageUploadKinds.MotorcycleTechnology,
+            _ => ImageUploadKinds.MotorcycleThumbnail
+        };
+
+        var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct);
+        ms.Position = 0;
+        var payload = new ImageUploadPayload
+        {
+            Content = ms,
+            FileName = file.FileName ?? "upload",
+            ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType!,
+            Length = file.Length
+        };
+        var response = await imageUploader.UploadAsync(payload, kind, contextId, ct);
+        if (!response.Ok)
+        {
+            ModelState.AddModelError(string.Empty, response.Message ?? "Không tải được ảnh.");
             return null;
         }
-        return url;
+        return response.Url;
     }
 
     private static MotorcycleInputModel Map(Motorcycle m) => new()
