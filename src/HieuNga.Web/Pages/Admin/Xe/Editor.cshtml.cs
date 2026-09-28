@@ -157,6 +157,12 @@ public class EditorModel(
     {
         Tab = "general";
         SetViewData();
+        // SaveGeneral only consumes `Input.*` (+ ThumbnailFile / PublishStatus / Tab).
+        // Strip cross-tab nested BindProperty pollution so empty VariantForm /
+        // NewColor / NewFeature / NewTech default-constructed instances don't
+        // fail validation before we reach SaveCoreAsync.
+        EditorModelStateIsolation.RemoveFor(ModelState,
+            "VariantForm", "NewColor", "NewFeature", "NewTech");
         logger.LogInformation("SaveGeneral started. IsCreate={IsCreate} Id={Id} RequestId={RequestId}",
             IsCreate, Id, HttpContext.TraceIdentifier);
         if (!ModelState.IsValid)
@@ -208,6 +214,10 @@ public class EditorModel(
     {
         Tab = "seo";
         SetViewData();
+        // SaveSeo consumes only `Input.MetaTitle/MetaDescription/MetaKeywords/
+        // OgImageUrl/CanonicalUrl` — strip the unrelated nested models.
+        EditorModelStateIsolation.RemoveFor(ModelState,
+            "VariantForm", "NewColor", "NewFeature", "NewTech");
         if (IsCreate)
             return RedirectToPage(new { tab = "general" });
 
@@ -230,6 +240,9 @@ public class EditorModel(
     {
         Tab = "publish";
         SetViewData();
+        // SavePublish consumes only `Input.IsPublished/IsFeatured/SortOrder`.
+        EditorModelStateIsolation.RemoveFor(ModelState,
+            "VariantForm", "NewColor", "NewFeature", "NewTech");
         ApplyPublishStatusToInput();
         if (IsCreate)
             return RedirectToPage(new { tab = "general" });
@@ -251,6 +264,9 @@ public class EditorModel(
     {
         Tab = "features";
         SetViewData();
+        // AddFeature consumes only `NewFeature.*` (+ imageFile).
+        EditorModelStateIsolation.RemoveFor(ModelState,
+            "VariantForm", "NewColor", "Input", "NewTech");
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
@@ -354,6 +370,9 @@ public class EditorModel(
     {
         Tab = "features";
         SetViewData();
+        // AddTech consumes only `NewTech.*` (+ imageFile).
+        EditorModelStateIsolation.RemoveFor(ModelState,
+            "VariantForm", "NewColor", "NewFeature", "Input");
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
