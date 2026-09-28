@@ -62,10 +62,7 @@ public class EditorModel(
     public string? SpecsLines { get; set; }
 
     [BindProperty]
-    public VariantInput VariantForm { get; set; } = new();
-
-    [BindProperty]
-    public ColorInput NewColor { get; set; } = new();
+    public VariantFormInput VariantForm { get; set; } = new();
 
     [BindProperty]
     public FeatureInput NewFeature { get; set; } = new();
@@ -85,7 +82,7 @@ public class EditorModel(
 
     public record VariantRow(Guid Id, string Name, decimal Price, int StockQuantity, bool IsAvailable);
 
-    public class VariantInput
+    public class VariantFormInput
     {
         public Guid? Id { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên phiên bản")]
@@ -95,15 +92,6 @@ public class EditorModel(
         [Range(0, int.MaxValue)]
         public int StockQuantity { get; set; }
         public bool IsAvailable { get; set; } = true;
-    }
-
-    public class ColorInput
-    {
-        [Required, StringLength(80)]
-        public string Name { get; set; } = string.Empty;
-        [Required, StringLength(20)]
-        public string HexCode { get; set; } = "#000000";
-        public int SortOrder { get; set; }
     }
 
     public class FeatureInput
@@ -139,7 +127,7 @@ public class EditorModel(
         {
             var v = Variants.FirstOrDefault(x => x.Id == edit.Value);
             if (v is not null)
-                VariantForm = new VariantInput
+                VariantForm = new VariantFormInput
                 {
                     Id = v.Id,
                     Name = v.Name,
@@ -157,12 +145,17 @@ public class EditorModel(
     {
         Tab = "general";
         SetViewData();
-        // SaveGeneral only consumes `Input.*` (+ ThumbnailFile / PublishStatus / Tab).
-        // Strip cross-tab nested BindProperty pollution so empty VariantForm /
-        // NewColor / NewFeature / NewTech default-constructed instances don't
-        // fail validation before we reach SaveCoreAsync.
-        EditorModelStateIsolation.RemoveFor(ModelState,
-            "VariantForm", "NewColor", "NewFeature", "NewTech");
+        // SaveGeneral consumes only `Input.*` (+ ThumbnailFile / PublishStatus /
+        // Tab / Id). Use the WHITELIST variant so cross-tab nested BindProperty
+        // pollution is stripped regardless of the key shape ASP.NET Core emits.
+        //
+        // Why whitelist and not blacklist: the runtime binding pipeline emits
+        // unprefixed nested keys (Key=Name carrying the VariantForm.Name
+        // message, Key=Title carrying NewFeature.Title / NewTech.Title).
+        // The blacklist-by-prefix helper cannot reach those, so we keep only
+        // the exact top-level form values this handler reads.
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "Input", "ThumbnailFile", "PublishStatus", "Tab", "Id");
         logger.LogInformation("SaveGeneral started. IsCreate={IsCreate} Id={Id} RequestId={RequestId}",
             IsCreate, Id, HttpContext.TraceIdentifier);
         if (!ModelState.IsValid)
@@ -215,9 +208,9 @@ public class EditorModel(
         Tab = "seo";
         SetViewData();
         // SaveSeo consumes only `Input.MetaTitle/MetaDescription/MetaKeywords/
-        // OgImageUrl/CanonicalUrl` — strip the unrelated nested models.
-        EditorModelStateIsolation.RemoveFor(ModelState,
-            "VariantForm", "NewColor", "NewFeature", "NewTech");
+        // OgImageUrl/CanonicalUrl` — keep only the whitelist.
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "Input", "PublishStatus", "Tab", "Id");
         if (IsCreate)
             return RedirectToPage(new { tab = "general" });
 
@@ -240,9 +233,10 @@ public class EditorModel(
     {
         Tab = "publish";
         SetViewData();
-        // SavePublish consumes only `Input.IsPublished/IsFeatured/SortOrder`.
-        EditorModelStateIsolation.RemoveFor(ModelState,
-            "VariantForm", "NewColor", "NewFeature", "NewTech");
+        // SavePublish consumes only `Input.IsPublished/IsFeatured/SortOrder` +
+        // `PublishStatus` — keep the whitelist.
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "Input", "PublishStatus", "Tab", "Id");
         ApplyPublishStatusToInput();
         if (IsCreate)
             return RedirectToPage(new { tab = "general" });
@@ -265,8 +259,8 @@ public class EditorModel(
         Tab = "features";
         SetViewData();
         // AddFeature consumes only `NewFeature.*` (+ imageFile).
-        EditorModelStateIsolation.RemoveFor(ModelState,
-            "VariantForm", "NewColor", "Input", "NewTech");
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "NewFeature", "PublishStatus", "Tab", "Id");
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
@@ -371,8 +365,8 @@ public class EditorModel(
         Tab = "features";
         SetViewData();
         // AddTech consumes only `NewTech.*` (+ imageFile).
-        EditorModelStateIsolation.RemoveFor(ModelState,
-            "VariantForm", "NewColor", "NewFeature", "Input");
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "NewTech", "PublishStatus", "Tab", "Id");
         if (IsCreate) return RedirectToPage(new { tab = "general" });
         if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
 
@@ -576,6 +570,156 @@ public class EditorModel(
 
         this.SetSuccess("Đã nhân bản xe (Draft).");
         return RedirectToPage(new { id = clone.Id, tab = "general" });
+    }
+
+    /// <summary>
+    /// Save Specifications tab. The Spec Builder UI posts the lines as
+    /// <c>SpecsLines</c>; serialize them with the existing project format
+    /// (see <see cref="SerializeSpecs"/>) and persist to
+    /// <c>Motorcycle.TechnicalSpecsJson</c>.
+    /// </summary>
+    public async Task<IActionResult> OnPostSaveSpecsAsync(CancellationToken ct)
+    {
+        Tab = "specifications";
+        SetViewData();
+
+        // SaveSpecs reads only SpecsLines + Id + Tab. Use the whitelist
+        // approach to drop any cross-tab BindProperty pollution regardless
+        // of the emitted key shape.
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "SpecsLines", "Tab", "Id", "PublishStatus");
+
+        if (IsCreate)
+            return RedirectToPage(new { tab = "general" });
+
+        // Capture the user-submitted SpecsLines BEFORE LoadMotorcycleAsync
+        // overwrites the instance property with the parsed DB value
+        // (ParseSpecsToLines(TechnicalSpecsJson)).
+        var submittedLines = SpecsLines;
+
+        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
+        var bike = await motorcycleRepo.GetByIdAsync(Id.Value, ct);
+        if (bike is null) return NotFound();
+
+        var json = SerializeSpecs(submittedLines);
+        if (string.IsNullOrWhiteSpace(json) && !string.IsNullOrWhiteSpace(submittedLines))
+        {
+            // Lines were provided but serialized to nothing (all-blank) — keep the
+            // original string so the user doesn't lose data on accidental trim.
+            bike.TechnicalSpecsJson = submittedLines;
+        }
+        else
+        {
+            bike.TechnicalSpecsJson = json;
+        }
+
+        await motorcycleRepo.UpdateAsync(bike, ct);
+        await uow.SaveChangesAsync(ct);
+        this.SetSuccess("Đã lưu thông số kỹ thuật.");
+        return RedirectToPage(new { id = Id, tab = "specifications" });
+    }
+
+    /// <summary>
+    /// Save (create or update) a variant from the Finance tab. The
+    /// <c>VariantForm.Id</c> field decides which path is taken:
+    ///   - null/empty → create a new variant for the current motorcycle.
+    ///   - set        → update the matching variant's editable fields.
+    /// </summary>
+    public async Task<IActionResult> OnPostSaveVariantAsync(CancellationToken ct)
+    {
+        Tab = "finance";
+        SetViewData();
+
+        // SaveVariant reads VariantForm.* + Id + Tab. Whitelist-isolate so
+        // unrelated nested BindProperty pollution cannot block the save.
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "VariantForm", "Tab", "Id", "PublishStatus");
+
+        if (IsCreate)
+            return RedirectToPage(new { tab = "general" });
+
+        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
+
+        var name = (VariantForm.Name ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            ModelState.AddModelError("VariantForm.Name", "Vui lòng nhập tên phiên bản.");
+            return Page();
+        }
+
+        if (VariantForm.Id.HasValue && VariantForm.Id.Value != Guid.Empty)
+        {
+            var variantId = VariantForm.Id.Value;
+            var existing = await variantRepo.GetByIdAsync(variantId, ct);
+            if (existing is null || existing.IsDeleted || existing.MotorcycleId != Id!.Value)
+                return NotFound();
+
+            existing.Name = name;
+            existing.Price = VariantForm.Price;
+            existing.StockQuantity = VariantForm.StockQuantity;
+            existing.IsAvailable = VariantForm.IsAvailable;
+            // Slug stays stable on edit; consumers reference it on the public detail page.
+            await variantRepo.UpdateAsync(existing, ct);
+            await uow.SaveChangesAsync(ct);
+            this.SetSuccess("Đã cập nhật phiên bản.");
+            return RedirectToPage(new { id = Id, tab = "finance" });
+        }
+
+        // Create a new variant. Slug defaults to a slugified name; uniqueness
+        // is scoped per-motorcycle by appending "-2", "-3", … if needed.
+        var baseSlug = SlugHelper.Generate(name);
+        var slug = baseSlug;
+        var n = 2;
+        while (await db.MotorcycleVariants.AnyAsync(v =>
+            v.MotorcycleId == Id!.Value && v.Slug == slug && !v.IsDeleted, ct))
+        {
+            slug = $"{baseSlug}-{n++}";
+        }
+
+        var entity = new MotorcycleVariant
+        {
+            MotorcycleId = Id!.Value,
+            Name = name,
+            Slug = slug,
+            Price = VariantForm.Price,
+            StockQuantity = VariantForm.StockQuantity,
+            IsAvailable = VariantForm.IsAvailable
+        };
+        await variantRepo.AddAsync(entity, ct);
+        await uow.SaveChangesAsync(ct);
+        this.SetSuccess("Đã thêm phiên bản.");
+        return RedirectToPage(new { id = Id, tab = "finance" });
+    }
+
+    /// <summary>
+    /// Soft-delete a variant via the existing repository conventions
+    /// (<c>IRepository&lt;T&gt;.SoftDeleteAsync</c> flips <c>IsDeleted</c>
+    /// + updates <c>UpdatedAt</c>).
+    /// </summary>
+    public async Task<IActionResult> OnPostDeleteVariantAsync(Guid variantId, CancellationToken ct)
+    {
+        Tab = "finance";
+        SetViewData();
+
+        // Drop any nested BindProperty pollution. The handler reads only
+        // Id / Tab / variantId from the form.
+        EditorModelStateIsolation.RemoveAllExcept(ModelState,
+            "VariantForm", "Tab", "Id", "PublishStatus");
+
+        if (IsCreate)
+            return RedirectToPage(new { tab = "general" });
+
+        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
+        if (variantId == Guid.Empty) return NotFound();
+
+        var existing = await variantRepo.GetByIdAsync(variantId, ct);
+        if (existing is null || existing.IsDeleted || existing.MotorcycleId != Id!.Value)
+            return NotFound();
+
+        await variantRepo.SoftDeleteAsync(existing, ct);
+        await uow.SaveChangesAsync(ct);
+        this.SetSuccess("Đã xóa phiên bản.");
+        return RedirectToPage(new { id = Id, tab = "finance" });
     }
 
     private async Task<IActionResult> SaveCoreAsync(CancellationToken ct, string returnTab)
