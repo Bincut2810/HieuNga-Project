@@ -38,16 +38,14 @@
                     </div>
                 </div>
                 <div>
-                    <label class="admin-label">Ảnh đại diện <span class="admin-label-required">*</span></label>
-                    <div class="mm-dropzone mm-dropzone-thumb" data-dropzone="thumbnail" tabindex="0">
-                        <img data-thumb-preview src="" alt="" class="mm-thumb-preview" hidden />
-                        <div class="mm-dropzone-placeholder" data-thumb-placeholder>
-                            <strong>Thả / chọn / Ctrl+V</strong>
-                            <span>Ảnh đại diện bắt buộc</span>
-                        </div>
-                        <input type="file" name="ThumbnailFile" accept="image/*" class="mm-file-input" data-thumb-input required />
-                    </div>
-                    <span asp-validation-for="ThumbnailFile" class="admin-validation"></span>
+                    <partial name="Admin/Shared/_ImageUploader" model='new HieuNga.Web.Pages.Admin.Extensions.ImageUploaderField(
+                        Kind: "motorcycle-thumbnail",
+                        AspFor: "Input.ThumbnailUrl",
+                        Label: "Ảnh đại diện *",
+                        Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
+                        HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB. Ảnh đại diện hiển thị ở danh sách xe và trang chi tiết.",
+                        CurrentValue: Model.Input.ThumbnailUrl)' />
+                    <span asp-validation-for="Input.ThumbnailUrl" class="admin-validation"></span>
                 </div>
             </div>
         </div>

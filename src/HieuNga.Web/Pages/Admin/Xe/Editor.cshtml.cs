@@ -550,7 +550,7 @@ public class EditorModel(
             var thumb = uploadedUrl ?? Input.ThumbnailUrl;
             if (string.IsNullOrWhiteSpace(thumb))
             {
-                ModelState.AddModelError("ThumbnailFile", "Tạo xe nhanh cần ảnh đại diện (kéo thả / chọn / dán ảnh).");
+                ModelState.AddModelError("Input.ThumbnailUrl", "Tạo xe nhanh cần ảnh đại diện (kéo thả / chọn / dán ảnh).");
                 return Page();
             }
 
