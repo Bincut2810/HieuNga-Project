@@ -1,7 +1,12 @@
 @using HieuNga.Web.Pages.Admin.Extensions
 @{
-    var success = TempData.Peek(AdminUi.SuccessKey) as string;
-    var error = TempData.Peek(AdminUi.ErrorKey) as string;
+    // Read via the indexer (not Peek) so the entry is marked for deletion
+    // after the first render. Without this, TempData.Peek(...) leaves the
+    // value stuck in the cookie / session and the error banner re-renders
+    // on every subsequent GET until the cookie expires — the source of
+    // stale "Đã xảy ra lỗi…" messages after the original failure is gone.
+    var success = TempData[AdminUi.SuccessKey] as string;
+    var error = TempData[AdminUi.ErrorKey] as string;
 }
 @if (!string.IsNullOrEmpty(success))
 {

@@ -237,14 +237,23 @@ public class EditorModel(
         // `PublishStatus` — keep the whitelist.
         EditorModelStateIsolation.RemoveAllExcept(ModelState,
             "Input", "PublishStatus", "Tab", "Id");
-        ApplyPublishStatusToInput();
         if (IsCreate)
             return RedirectToPage(new { tab = "general" });
 
-        if (!await LoadMotorcycleAsync(Id!.Value, ct)) return NotFound();
-        var bike = await motorcycleRepo.GetByIdAsync(Id.Value, ct);
-        if (bike is null) return NotFound();
+        // Load the bike directly — NOT through LoadMotorcycleAsync.
+        // LoadMotorcycleAsync calls Map(bike) which overwrites the user's
+        // form-bound Input.IsPublished / IsFeatured / SortOrder with the
+        // current DB row values. That silently discarded every publish-tab
+        // edit (the "Lưu bản nháp" button appeared to succeed but the DB
+        // stayed unchanged). SavePublish only writes those three fields, so
+        // it does not need the full re-mapping.
+        var bike = await motorcycleRepo.GetByIdAsync(Id!.Value, ct);
+        if (bike is null || bike.IsDeleted) return NotFound();
 
+        // PublishStatus is the source of truth for IsPublished / IsFeatured
+        // on this tab (radio buttons drive it; checkboxes do not exist for
+        // IsPublished on this tab). Translate first, then write.
+        ApplyPublishStatusToInput();
         bike.IsPublished = Input.IsPublished;
         bike.IsFeatured = Input.IsFeatured;
         bike.SortOrder = Input.SortOrder;
@@ -724,7 +733,15 @@ public class EditorModel(
 
     private async Task<IActionResult> SaveCoreAsync(CancellationToken ct, string returnTab)
     {
-        ApplyPublishStatusToInput();
+        // NOTE: We deliberately do NOT call ApplyPublishStatusToInput() here.
+        // The SaveGeneral handler is reached from the General tab where the
+        // user toggles IsPublished / IsFeatured via checkboxes on the form
+        // (no PublishStatus radio). The publish-status helper would
+        // unconditionally overwrite Input.IsPublished back to "draft" because
+        // PublishStatus is not posted from the General tab — silently
+        // un-publishing every motorcycle the admin saves from General.
+        // SavePublish has its own ApplyPublishStatusToInput call where the
+        // PublishStatus radio is the source of truth.
 
         // During edit, scope the motorcycle-thumbnail storage folder to this bike.
         // During create, the thumbnail goes to a generic folder — the user will
@@ -829,11 +846,16 @@ public class EditorModel(
         bike.SortOrder = Input.SortOrder;
         if (uploadedUrl is not null || !string.IsNullOrWhiteSpace(Input.ThumbnailUrl))
             bike.ThumbnailUrl = uploadedUrl ?? Input.ThumbnailUrl;
-        bike.MetaTitle = Input.MetaTitle;
-        bike.MetaDescription = Input.MetaDescription;
-        bike.MetaKeywords = Input.MetaKeywords;
-        bike.OgImageUrl = Input.OgImageUrl;
-        bike.CanonicalUrl = Input.CanonicalUrl;
+        // SEO fields are owned by the SEO tab's SaveSeo handler. The General
+        // tab form does not post them, so we must not blindly overwrite
+        // them with the default null values from a fresh MotorcycleInputModel
+        // (otherwise every General save would wipe out MetaTitle /
+        // MetaDescription / MetaKeywords / OgImageUrl / CanonicalUrl).
+        if (Input.MetaTitle is not null) bike.MetaTitle = Input.MetaTitle;
+        if (Input.MetaDescription is not null) bike.MetaDescription = Input.MetaDescription;
+        if (Input.MetaKeywords is not null) bike.MetaKeywords = Input.MetaKeywords;
+        if (Input.OgImageUrl is not null) bike.OgImageUrl = Input.OgImageUrl;
+        if (Input.CanonicalUrl is not null) bike.CanonicalUrl = Input.CanonicalUrl;
 
         await motorcycleRepo.UpdateAsync(bike, ct);
         await uow.SaveChangesAsync(ct);

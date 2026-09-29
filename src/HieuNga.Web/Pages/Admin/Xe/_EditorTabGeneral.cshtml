@@ -79,9 +79,14 @@ else
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                         <div>
                             <label asp-for="Input.Category" class="admin-label">Loại xe <span class="admin-label-required">*</span></label>
-                            <select asp-for="Input.Category" asp-items="categoryOptions" class="admin-select">
-                                <option value="">-- Chọn loại xe --</option>
-                            </select>
+                            @* Edit mode: the motorcycle already has a category, so the
+                               empty "-- Chọn loại xe --" placeholder is removed.
+                               Without this, selecting the placeholder would post
+                               Input.Category="" which fails enum binding and silently
+                               aborts the save (no validation span shown to the user)
+                               — the production "UI says save, DB doesn't change" bug. *@
+                            <select asp-for="Input.Category" asp-items="categoryOptions" class="admin-select" required></select>
+                            <span asp-validation-for="Input.Category" class="admin-validation"></span>
                         </div>
                         <div>
                             <label asp-for="Input.BasePrice" class="admin-label">Giá (VNĐ)</label>

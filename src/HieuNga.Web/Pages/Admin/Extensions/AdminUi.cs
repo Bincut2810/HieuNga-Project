@@ -8,11 +8,29 @@ public static class AdminUi
     public const string SuccessKey = "AdminSuccess";
     public const string ErrorKey = "AdminError";
 
-    public static void SetSuccess(this PageModel page, string message) =>
+    /// <summary>
+    /// Write a success flash and drop any pending error so a previous failed
+    /// save's banner cannot re-render alongside the new success message.
+    /// Without the explicit Remove, the cookie would still carry the stale
+    /// ErrorKey if the previous response did not reach the _AdminFlash
+    /// partial (e.g. page render failed before the layout ran).
+    /// </summary>
+    public static void SetSuccess(this PageModel page, string message)
+    {
         page.TempData[SuccessKey] = message;
+        page.TempData.Remove(ErrorKey);
+    }
 
-    public static void SetError(this PageModel page, string message) =>
+    /// <summary>
+    /// Write an error flash and drop any pending success for the same
+    /// lifecycle reason as <see cref="SetSuccess"/>: only the most recent
+    /// message should be visible on the next render.
+    /// </summary>
+    public static void SetError(this PageModel page, string message)
+    {
         page.TempData[ErrorKey] = message;
+        page.TempData.Remove(SuccessKey);
+    }
 
     public static string? PeekSuccess(this PageModel page) =>
         page.TempData.Peek(SuccessKey) as string;
