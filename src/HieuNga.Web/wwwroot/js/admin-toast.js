@@ -1,24 +1,32 @@
 /**
- * Admin Toast + Confirm Modal widget (Phase 1 — Hieu Nga CMS).
+ * Admin Toast + Confirm Modal widget (Phase 2 — Hieu Nga CMS).
  *
  * Public API (window.HieuNgaAdmin):
- *   - toast(message, { type, title, duration })
- *       type: 'success' | 'error' | 'info'  (default: 'info')
- *       duration: ms before auto-dismiss (default: 5000, 0 = sticky)
+ *   - toast(message, { type, title, duration, sticky })
+ *       type     : 'success' | 'error' | 'info' (default 'info')
+ *       title    : optional bold caption rendered above the message
+ *       duration : ms before auto-dismiss (default: 4500 success / 0 error)
+ *       sticky   : true → manual dismiss only (overrides duration)
  *
  *   - confirm({ title, body, confirmText, cancelText, danger })
- *       returns a Promise<boolean>.
- *       Used to replace native window.confirm() with a styled modal.
+ *       returns a Promise<boolean> — the styled replacement for native
+ *       window.confirm(). Used by the data-confirm widgets.
  *
- * Auto-wiring:
- *   - On DOMContentLoaded, scans for [data-confirm] on submit buttons and
- *     <form data-confirm-form> to intercept the submit and show the modal.
- *   - On DOMContentLoaded, scans for [data-toast] on hidden inputs to fire
- *     a toast from a server-rendered message (used by _AdminFlash).
- *   - Also, any existing [data-admin-flash] success/error banner is mirrored
- *     as a toast on the next page render.
+ * Auto-wiring (DOMContentLoaded):
+ *   - Scans for [data-toast] hidden inputs / [data-toast-text] divs and
+ *     emits a toast from the TempData payload written by _AdminFlash.
+ *   - Scans for [data-admin-flash] banners and mirrors them as toasts
+ *     (then hides the inline banner so JS users don't see duplicates).
+ *   - Scans for [data-confirm] (submit button or form) and intercepts
+ *     submit until the modal confirms.
  *
- * No jQuery, no CDN. Vanilla DOM.
+ * Accessibility:
+ *   - Toasts use role=status for success/info and role=alert for errors.
+ *   - aria-live="polite" for success, aria-live="assertive" for errors.
+ *   - Close buttons have aria-label="Đóng".
+ *   - prefers-reduced-motion disables the slide animation.
+ *
+ * No jQuery, no CDN. Vanilla DOM + inline SVG icons.
  */
 (function () {
   'use strict';
@@ -32,17 +40,48 @@
     });
   }
 
-  var TOAST_DEFAULT_DURATION = 5000;
+  // Default timings: errors are sticky (staff must dismiss), success auto-dismisses.
   var TOAST_DURATION_BY_TYPE = {
     success: 4500,
-    error: 0,        // sticky — staff must dismiss explicitly
-    info: 5000
+    info:    5000,
+    error:   0   // sticky
   };
-  var ICON_BY_TYPE = {
-    success: '\u2713',  // ✓
-    error: '!',
-    info: 'i'
+  var TOAST_DEFAULT_DURATION = 5000;
+
+  // Inline SVG icons — no external library.
+  var ICON_SVG = {
+    success:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<polyline points="20 6 9 17 4 12"/></svg>',
+    error:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<line x1="12" y1="8" x2="12" y2="13"/>' +
+      '<circle cx="12" cy="17.2" r="1.05" fill="currentColor"/></svg>',
+    info:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<line x1="12" y1="11" x2="12" y2="16"/>' +
+      '<circle cx="12" cy="7.6" r="1.05" fill="currentColor"/></svg>'
   };
+  var TITLE_BY_TYPE = {
+    success: 'Thành công',
+    error:   'Có lỗi',
+    info:    'Thông báo'
+  };
+  var CLOSE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" aria-hidden="true">' +
+    '<line x1="6" y1="6" x2="18" y2="18"/>' +
+    '<line x1="18" y1="6" x2="6" y2="18"/></svg>';
+
+  function reducedMotion() {
+    try {
+      return window.matchMedia &&
+             window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) { return false; }
+  }
 
   function buildToastStack() {
     var stack = qs('.admin-toast-stack');
@@ -55,34 +94,50 @@
     return stack;
   }
 
+  /**
+   * Render and show a single toast.
+   * Returns { dismiss(), element } so callers can manually close it.
+   */
   function toast(message, options) {
     options = options || {};
-    var type = options.type || 'info';
-    var title = options.title || null;
+    var type   = options.type || 'info';
+    var title  = options.title || (options.title === null ? null : TITLE_BY_TYPE[type] || TITLE_BY_TYPE.info);
     var duration = options.duration != null
       ? options.duration
-      : (TOAST_DURATION_BY_TYPE[type] != null ? TOAST_DURATION_BY_TYPE[type] : TOAST_DEFAULT_DURATION);
+      : (options.sticky ? 0 : (TOAST_DURATION_BY_TYPE[type] != null ? TOAST_DURATION_BY_TYPE[type] : TOAST_DEFAULT_DURATION));
+    var isSticky = !!options.sticky || duration <= 0;
 
     var stack = buildToastStack();
     var el = document.createElement('div');
-    el.className = 'admin-toast is-' + type;
+    el.className = 'admin-toast is-' + type + (isSticky ? ' is-sticky' : '');
     el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+    if (isSticky) el.setAttribute('data-sticky', 'true');
+
     el.innerHTML =
-      '<span class="admin-toast-icon" aria-hidden="true">' + esc(ICON_BY_TYPE[type] || 'i') + '</span>' +
+      '<span class="admin-toast-icon" aria-hidden="true">' + (ICON_SVG[type] || ICON_SVG.info) + '</span>' +
       '<div class="admin-toast-body">' +
         (title ? '<p class="admin-toast-title">' + esc(title) + '</p>' : '') +
         '<p class="admin-toast-text">' + esc(message) + '</p>' +
       '</div>' +
-      '<button type="button" class="admin-toast-close" aria-label="Đóng">&times;</button>';
+      '<button type="button" class="admin-toast-close" aria-label="Đóng">' + CLOSE_SVG + '</button>';
 
     var closeBtn = qs('.admin-toast-close', el);
+    var dismissed = false;
+    var timer = null;
+
     function dismiss() {
+      if (dismissed) return;
+      dismissed = true;
+      if (timer) { clearTimeout(timer); timer = null; }
       if (!el || !el.parentNode) return;
       el.classList.add('is-leaving');
       setTimeout(function () {
         if (el.parentNode) el.parentNode.removeChild(el);
-        if (!stack.firstChild) stack.parentNode && stack.parentNode.removeChild(stack);
-      }, 220);
+        // Keep the stack element in DOM (so role=region stays discoverable)
+        // but make sure pointer-events stays none. The :empty CSS rule also
+        // hides it once emptied.
+      }, 240);
     }
     closeBtn.addEventListener('click', dismiss);
 
@@ -92,8 +147,8 @@
       el.classList.add('is-shown');
     });
 
-    if (duration > 0) {
-      setTimeout(dismiss, duration);
+    if (!isSticky && !reducedMotion()) {
+      timer = setTimeout(dismiss, duration);
     }
 
     return { dismiss: dismiss, element: el };
@@ -108,9 +163,10 @@
     backdrop.className = 'admin-modal-backdrop';
     backdrop.setAttribute('role', 'dialog');
     backdrop.setAttribute('aria-modal', 'true');
+    backdrop.setAttribute('aria-labelledby', 'admin-modal-title');
     backdrop.innerHTML =
       '<div class="admin-modal" role="document">' +
-        '<h2 class="admin-modal-title" data-modal-title></h2>' +
+        '<h2 id="admin-modal-title" class="admin-modal-title" data-modal-title></h2>' +
         '<p class="admin-modal-body" data-modal-body></p>' +
         '<div class="admin-modal-actions">' +
           '<button type="button" class="admin-btn admin-btn-ghost" data-modal-cancel></button>' +
@@ -124,14 +180,14 @@
   function confirmDialog(options) {
     options = options || {};
     var backdrop = buildModal();
-    var title = qs('[data-modal-title]', backdrop);
-    var body = qs('[data-modal-body]', backdrop);
-    var cancelBtn = qs('[data-modal-cancel]', backdrop);
+    var title    = qs('[data-modal-title]', backdrop);
+    var body     = qs('[data-modal-body]', backdrop);
+    var cancelBtn  = qs('[data-modal-cancel]', backdrop);
     var confirmBtn = qs('[data-modal-confirm]', backdrop);
 
     title.textContent = options.title || 'Xác nhận';
-    body.textContent = options.body || 'Bạn có chắc?';
-    cancelBtn.textContent = options.cancelText || 'Hủy';
+    body.textContent  = options.body  || 'Bạn có chắc muốn tiếp tục?';
+    cancelBtn.textContent  = options.cancelText  || 'Hủy';
     confirmBtn.textContent = options.confirmText || 'Xác nhận';
 
     confirmBtn.classList.remove('admin-btn-primary', 'admin-btn-danger');
@@ -151,28 +207,30 @@
       function onConfirm() { close(true); }
       function onCancel() { close(false); }
       function onBackdrop(e) { if (e.target === backdrop) close(false); }
-      function onKey(e) { if (e.key === 'Escape') close(false); }
+      function onKey(e) {
+        if (e.key === 'Escape') close(false);
+        else if (e.key === 'Enter') close(true);
+      }
       confirmBtn.addEventListener('click', onConfirm);
       cancelBtn.addEventListener('click', onCancel);
       backdrop.addEventListener('click', onBackdrop);
       document.addEventListener('keydown', onKey);
-      // Focus the cancel by default to keep destructive actions deliberate.
+      // Focus the cancel button by default to keep destructive actions
+      // deliberate (Escape stays available to abort).
       setTimeout(function () { cancelBtn.focus(); }, 0);
     });
   }
 
-  // ─── Wiring: [data-confirm] on submit buttons + forms ──────────
+  // ─── Wiring: [data-confirm] on submit buttons / [data-confirm-form] on forms
 
   function wireConfirmTriggers() {
     qsa('[data-confirm]').forEach(function (el) {
       if (el.dataset.confirmWired === '1') return;
       el.dataset.confirmWired = '1';
       el.addEventListener('click', function (e) {
-        // If the element is a submit button inside a form, intercept the
-        // submit and show the modal first. The modal promise decides
-        // whether to actually submit.
         var form = el.form || el.closest('form');
         if (!form) return;
+        // Skip if the user pressed the button while JS is mid-shutdown.
         e.preventDefault();
         e.stopPropagation();
         var opts = {
@@ -184,9 +242,8 @@
         };
         confirmDialog(opts).then(function (ok) {
           if (!ok) return;
-          // Re-submit bypassing this listener. The button retains its name/value
-          // and the form posts normally. We avoid re-entering the guard by
-          // checking the flag and re-cloning the click programmatically.
+          // Re-submit bypassing this listener. The button retains its
+          // name/value and the form posts normally.
           if (el.tagName === 'BUTTON' && el.type === 'submit') {
             form.submit();
           } else if (el.tagName === 'A' && el.getAttribute('href')) {
@@ -196,14 +253,13 @@
       });
     });
 
-    // Forms with [data-confirm-form] confirm the whole submit.
+    // Forms with [data-confirm-form] confirm the whole submit (e.g. when
+    // the user pressed Enter inside a field instead of clicking the
+    // button).
     qsa('form[data-confirm-form]').forEach(function (form) {
       if (form.dataset.confirmFormWired === '1') return;
       form.dataset.confirmFormWired = '1';
       form.addEventListener('submit', function (e) {
-        // If the form is already inside a [data-confirm] submit button path,
-        // the button's listener will handle it. Otherwise (e.g. the user
-        // pressed Enter in a field), confirm here.
         if (e.defaultPrevented) return;
         e.preventDefault();
         var opts = {
@@ -221,30 +277,38 @@
     });
   }
 
-  // ─── Wiring: [data-toast] server-rendered toast trigger ────────
+  // ─── Wiring: server-rendered toast triggers + fallback flash banners
 
   function wireFlashBanners() {
+    // Banner fallback (admin-flash-*). After the toast fires, hide the
+    // inline banner so JS users don't see the message twice.
     qsa('[data-admin-flash]').forEach(function (el) {
       if (el.dataset.toastFired === '1') return;
       el.dataset.toastFired = '1';
-      var type = el.dataset.adminFlash === 'success' ? 'success' : 'error';
-      var text = (el.textContent || '').trim();
-      if (!text) {
+      var type = el.dataset.adminFlash === 'success' ? 'success'
+               : el.dataset.adminFlash === 'error'   ? 'error'
+               : 'info';
+      var raw = (el.textContent || '').trim();
+      // Strip the legacy "✓ " prefix added by _AdminFlash.
+      raw = raw.replace(/^\s*[✓✔]\s*/, '').trim();
+      if (!raw) {
         el.style.display = 'none';
         return;
       }
-      toast(text, { type: type, title: type === 'success' ? 'Thành công' : 'Có lỗi' });
+      toast(raw, { type: type });
       el.style.display = 'none';
     });
 
-    // Also support an alternate trigger: hidden <input data-toast value="...">.
+    // Hidden toast triggers (data-toast on <input>, data-toast-text on <div>).
     qsa('input[data-toast], div[data-toast-text]').forEach(function (el) {
       if (el.dataset.toastFired === '1') return;
       el.dataset.toastFired = '1';
-      var msg = el.value || el.textContent || '';
-      if (!msg) return;
+      var raw = el.value || el.textContent || '';
+      if (!raw) return;
       var type = el.dataset.toastType || 'info';
-      toast(msg.trim(), { type: type });
+      var text = raw.replace(/^\s*[✓✔]\s*/, '').trim();
+      if (!text) return;
+      toast(text, { type: type });
     });
   }
 

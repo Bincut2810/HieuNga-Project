@@ -8,27 +8,18 @@
     var success = TempData[AdminUi.SuccessKey] as string;
     var error = TempData[AdminUi.ErrorKey] as string;
 
-    // Toast trigger payload: emitted as a hidden <input data-toast> so the
-    // admin-toast.js widget can pick it up and render a real toast. The
-    // inline banner is also rendered below as a non-blocking fallback for
-    // users with JS disabled (it is hidden client-side when the toast
-    // is shown, so the user never sees a duplicate message).
-    var successText = string.IsNullOrEmpty(success) ? null : "✓ " + success;
-    var errorText = string.IsNullOrEmpty(error) ? null : error;
+    // Phase 2 — JS-driven toast widget renders the polished notification.
+    // The inline banner below stays as a no-JS fallback (hidden via JS
+    // once the toast fires, never duplicated). The actual message text is
+    // placed verbatim — the JS strips any legacy leading glyph.
 }
 @if (!string.IsNullOrEmpty(success))
 {
     <div class="admin-flash admin-flash-success" data-admin-flash="success" role="status">@success</div>
+    <input type="hidden" data-toast data-toast-type="success" value="@success" />
 }
 @if (!string.IsNullOrEmpty(error))
 {
     <div class="admin-flash admin-flash-error" data-admin-flash="error" role="alert">@error</div>
-}
-@if (successText != null)
-{
-    <input type="hidden" data-toast data-toast-type="success" value="@successText" />
-}
-@if (errorText != null)
-{
-    <input type="hidden" data-toast data-toast-type="error" value="@errorText" />
+    <input type="hidden" data-toast data-toast-type="error" value="@error" />
 }

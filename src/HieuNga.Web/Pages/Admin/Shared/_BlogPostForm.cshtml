@@ -1,27 +1,52 @@
-@model HieuNga.Web.Pages.Admin.BlogPostInputModel
+@*
+    Staff-friendly Blog Post form (Phase 2).
+    ───────────────────────────────────────
+    The model of this partial is the PageModel class itself
+    (TinTucThemModel or TinTucSuaModel) so that asp-for can emit
+    fully-prefixed field names (Input.Title, Input.Content, …)
+    which is what model binding expects for the [BindProperty]
+    BlogPostInputModel Input on the parent PageModel.
+
+    Hidden from staff (still bound server-side): Slug, MetaTitle,
+    MetaDescription, MetaKeywords, OgImageUrl, CanonicalUrl.
+*@
+@model dynamic
 @{
-    // Phase 1 — Staff-friendly Blog form.
-    // Hidden from staff (still bound server-side): Slug, MetaTitle,
-    // MetaDescription, MetaKeywords, OgImageUrl, CanonicalUrl.
+    // Pull values through dynamic model — both TinTucThemModel and
+    // TinTucSuaModel expose an `Input` BlogPostInputModel property.
+    var input = Model.Input;
 }
 <div class="admin-form-stack">
     <section class="admin-form-section">
         <h2 class="admin-form-section-title">Nội dung chính</h2>
         <div>
-            <label asp-for="Title" class="admin-label">Tiêu đề <span class="admin-label-required">*</span></label>
-            <input asp-for="Title" class="admin-input" placeholder="Ví dụ: Hướng dẫn chọn xe ga phù hợp" maxlength="200" />
-            <span asp-validation-for="Title" class="admin-field-error"></span>
+            <label for="Input_Title" class="admin-label">Tiêu đề <span class="admin-label-required">*</span></label>
+            <input id="Input_Title"
+                   name="Input.Title"
+                   class="admin-input"
+                   placeholder="Ví dụ: Hướng dẫn chọn xe ga phù hợp"
+                   maxlength="200"
+                   value="@(input.Title ?? "")" />
+            <span class="admin-field-error" data-valmsg-for="Input.Title" data-valmsg-replace="true"></span>
         </div>
         <div>
-            <label asp-for="Summary" class="admin-label">Tóm tắt</label>
-            <textarea asp-for="Summary" rows="2" class="admin-textarea" maxlength="500"
-                      placeholder="Một vài câu mô tả ngắn hiển thị ở danh sách bài viết."></textarea>
+            <label for="Input_Summary" class="admin-label">Tóm tắt</label>
+            <textarea id="Input_Summary"
+                      name="Input.Summary"
+                      rows="2"
+                      class="admin-textarea"
+                      maxlength="500"
+                      placeholder="Một vài câu mô tả ngắn hiển thị ở danh sách bài viết.">@(input.Summary ?? "")</textarea>
         </div>
         <div>
-            <label asp-for="Content" class="admin-label">Nội dung <span class="admin-label-required">*</span></label>
-            <textarea asp-for="Content" rows="12" class="admin-textarea" style="white-space: pre-wrap;"
-                      placeholder="Viết nội dung ở đây. Xuống dòng sẽ được giữ nguyên khi hiển thị trên website."></textarea>
-            <span asp-validation-for="Content" class="admin-field-error"></span>
+            <label for="Input_Content" class="admin-label">Nội dung <span class="admin-label-required">*</span></label>
+            <textarea id="Input_Content"
+                      name="Input.Content"
+                      rows="12"
+                      class="admin-textarea"
+                      style="white-space: pre-wrap;"
+                      placeholder="Viết nội dung ở đây. Xuống dòng sẽ được giữ nguyên khi hiển thị trên website.">@(input.Content ?? "")</textarea>
+            <span class="admin-field-error" data-valmsg-for="Input.Content" data-valmsg-replace="true"></span>
             <p class="admin-hint" style="margin: 0.3rem 0 0;">Mỗi đoạn cách nhau một dòng trống sẽ hiển thị thành đoạn riêng trên website.</p>
         </div>
     </section>
@@ -30,24 +55,34 @@
         <h2 class="admin-form-section-title">Ảnh đại diện &amp; Danh mục</h2>
         <div class="admin-grid-2">
             <div>
-                <label asp-for="CategoryId" class="admin-label">Chuyên mục</label>
-                <select asp-for="CategoryId" asp-items="@(ViewData["CategoryOptions"] as SelectList)" class="admin-select">
+                <label for="Input_CategoryId" class="admin-label">Chuyên mục</label>
+                <select id="Input_CategoryId"
+                        name="Input.CategoryId"
+                        asp-items="@(ViewData["CategoryOptions"] as SelectList)"
+                        class="admin-select">
                     <option value="">— Chưa phân loại —</option>
                 </select>
             </div>
             <div>
-                <label asp-for="AuthorName" class="admin-label">Tác giả</label>
-                <input asp-for="AuthorName" class="admin-input" placeholder="Tên hiển thị" />
+                <label for="Input_AuthorName" class="admin-label">Tác giả</label>
+                <input id="Input_AuthorName"
+                       name="Input.AuthorName"
+                       class="admin-input"
+                       placeholder="Tên hiển thị"
+                       value="@(input.AuthorName ?? "")" />
             </div>
         </div>
         <div>
+            @* Phase 2 — the image uploader's hidden input is bound to
+               "Input.ThumbnailUrl" so the post uploader writes its URL
+               into a field the model binder recognizes. *@
             <partial name="Admin/Shared/_ImageUploader" model='new HieuNga.Web.Pages.Admin.Extensions.ImageUploaderField(
                 Kind: "blog-thumbnail",
-                AspFor: "ThumbnailUrl",
+                AspFor: "Input.ThumbnailUrl",
                 Label: "Ảnh đại diện",
                 Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
                 HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB.",
-                CurrentValue: Model.ThumbnailUrl)' />
+                CurrentValue: input.ThumbnailUrl as string)' />
         </div>
     </section>
 
@@ -55,13 +90,21 @@
         <h2 class="admin-form-section-title">Xuất bản</h2>
         <div class="admin-grid-2">
             <label class="admin-check" style="padding-top: 0.5rem;">
-                <input asp-for="IsPublished" type="checkbox" style="accent-color: var(--admin-honda-red);" />
+                <input id="Input_IsPublished"
+                       name="Input.IsPublished"
+                       type="checkbox"
+                       @(input.IsPublished ? "checked=\"checked\"" : "")
+                       value="true"
+                       style="accent-color: var(--admin-honda-red);" />
                 Đăng bài viết lên website
             </label>
             <div>
-                <label asp-for="PublishedAt" class="admin-label">Ngày đăng</label>
-                <input asp-for="PublishedAt" type="datetime-local" class="admin-input"
-                       value="@(Model.PublishedAt?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
+                <label for="Input_PublishedAt" class="admin-label">Ngày đăng</label>
+                <input id="Input_PublishedAt"
+                       name="Input.PublishedAt"
+                       type="datetime-local"
+                       class="admin-input"
+                       value="@(input.PublishedAt == null ? "" : ((DateTime)input.PublishedAt).ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
                 <p class="admin-hint" style="margin: 0.3rem 0 0;">Bỏ trống để dùng ngày hiện tại khi đăng.</p>
             </div>
         </div>
