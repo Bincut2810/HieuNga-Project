@@ -653,6 +653,179 @@ public class MotorcycleEditRegressionTests : IDisposable
         Assert.Equal(MotorcycleCategory.XeSo, page2.Input.Category);
     }
 
+    // ---------- CRITICAL TEST: Category + Price persistence ----------
+
+    [Fact]
+    public async Task Edit_ChangeCategoryAndPrice_BothPersist_AndSurviveReload()
+    {
+        // Exact production scenario from the bug report:
+        //   1. Existing:  Category=Scooter,  Price=oldValue
+        //   2. Edit:      Category=ConTay,  Price=newValue
+        //   3. Save       → HTTP 200 (RedirectToPage)
+        //   4. Reload from DB → Category=ConTay, Price=newValue
+        const decimal oldPrice = 41_290_000m;
+        const decimal newPrice = 50_500_000m;
+
+        var seed = SeedBike(basePrice: oldPrice); // Category=Scooter by default
+        Assert.Equal(MotorcycleCategory.Scooter, seed.Category);
+        Assert.Equal(oldPrice, seed.BasePrice);
+
+        var page = CreatePage(seed);
+        page.Id = seed.Id;
+        await page.OnGetAsync(null, CancellationToken.None);
+
+        // Simulate the admin changing Category + Price in the form.
+        page.Input.Category = MotorcycleCategory.ConTay;
+        page.Input.BasePrice = newPrice;
+
+        var result = await page.OnPostSaveGeneralAsync(CancellationToken.None);
+
+        // Step 3: must not be a 200 page-result; the production handler
+        // redirects after a successful save.
+        Assert.IsType<RedirectToPageResult>(result);
+
+        // Step 4: reload from the same context with AsNoTracking → fresh
+        // snapshot from the DB, no in-memory caching.
+        var reloaded = await _db.Motorcycles.AsNoTracking()
+            .FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(MotorcycleCategory.ConTay, reloaded.Category);
+        Assert.Equal(newPrice, reloaded.BasePrice);
+
+        // Step 5: another AsNoTracking read to prove stability.
+        var freshRead = await _db.Motorcycles.AsNoTracking()
+            .FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(MotorcycleCategory.ConTay, freshRead.Category);
+        Assert.Equal(newPrice, freshRead.BasePrice);
+
+        // Other fields must remain untouched (no collateral damage).
+        Assert.Equal(seed.Name, freshRead.Name);
+        Assert.Equal(seed.ShortDescription, freshRead.ShortDescription);
+        Assert.Equal(seed.Description, freshRead.Description);
+        Assert.Equal(seed.IsFeatured, freshRead.IsFeatured);
+        Assert.Equal(seed.IsPublished, freshRead.IsPublished);
+        Assert.Equal(seed.SortOrder, freshRead.SortOrder);
+        Assert.Equal(seed.ThumbnailUrl, freshRead.ThumbnailUrl);
+    }
+
+    [Fact]
+    public async Task Edit_ChangeCategoryOnly_Persists_AndPriceUnchanged()
+    {
+        var seed = SeedBike(basePrice: 41_290_000m);
+        var page = CreatePage(seed);
+        page.Id = seed.Id;
+        await page.OnGetAsync(null, CancellationToken.None);
+
+        page.Input.Category = MotorcycleCategory.PhanKhoiLon;
+        // BasePrice intentionally NOT touched.
+
+        var result = await page.OnPostSaveGeneralAsync(CancellationToken.None);
+        Assert.IsType<RedirectToPageResult>(result);
+
+        var reloaded = await _db.Motorcycles.AsNoTracking().FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(MotorcycleCategory.PhanKhoiLon, reloaded.Category);
+        Assert.Equal(41_290_000m, reloaded.BasePrice); // unchanged
+    }
+
+    [Fact]
+    public async Task Edit_ChangePriceOnly_Persists_AndCategoryUnchanged()
+    {
+        var seed = SeedBike(); // Category=Scooter
+        var page = CreatePage(seed);
+        page.Id = seed.Id;
+        await page.OnGetAsync(null, CancellationToken.None);
+
+        page.Input.BasePrice = 39_990_000m;
+        // Category intentionally NOT touched.
+
+        var result = await page.OnPostSaveGeneralAsync(CancellationToken.None);
+        Assert.IsType<RedirectToPageResult>(result);
+
+        var reloaded = await _db.Motorcycles.AsNoTracking().FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(39_990_000m, reloaded.BasePrice);
+        Assert.Equal(MotorcycleCategory.Scooter, reloaded.Category); // unchanged
+    }
+
+    [Fact]
+    public async Task Edit_NoChanges_Succeeds_AndPersistsUntouched()
+    {
+        // Admin opens Edit, makes no changes, hits Save. The handler must
+        // redirect (200) without disturbing any field.
+        var seed = SeedBike();
+        var page = CreatePage(seed);
+        page.Id = seed.Id;
+        await page.OnGetAsync(null, CancellationToken.None);
+
+        var result = await page.OnPostSaveGeneralAsync(CancellationToken.None);
+
+        Assert.IsType<RedirectToPageResult>(result);
+        var reloaded = await _db.Motorcycles.AsNoTracking().FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(seed.Name, reloaded.Name);
+        Assert.Equal(seed.Category, reloaded.Category);
+        Assert.Equal(seed.BasePrice, reloaded.BasePrice);
+        Assert.Equal(seed.ShortDescription, reloaded.ShortDescription);
+        Assert.Equal(seed.Description, reloaded.Description);
+        Assert.Equal(seed.IsFeatured, reloaded.IsFeatured);
+        Assert.Equal(seed.IsPublished, reloaded.IsPublished);
+        Assert.Equal(seed.SortOrder, reloaded.SortOrder);
+        Assert.Equal(seed.ThumbnailUrl, reloaded.ThumbnailUrl);
+    }
+
+    [Fact]
+    public async Task Edit_DecimalBasePrice_WithSubVndAmounts_PersistsExactly()
+    {
+        // BasePrice is decimal. Verify sub-đồng values (theoretical, since
+        // VNĐ has no fractional unit but the type allows it) and values that
+        // step outside round thousands — both must round-trip through EF
+        // without truncation.
+        var seed = SeedBike(basePrice: 41_290_000m);
+        var page = CreatePage(seed);
+        page.Id = seed.Id;
+        await page.OnGetAsync(null, CancellationToken.None);
+
+        page.Input.BasePrice = 32_500_500.75m; // sub-thousand fractional
+        var result = await page.OnPostSaveGeneralAsync(CancellationToken.None);
+        Assert.IsType<RedirectToPageResult>(result);
+
+        var reloaded = await _db.Motorcycles.AsNoTracking().FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(32_500_500.75m, reloaded.BasePrice);
+
+        // A second value with different fractional digits.
+        page.Input.BasePrice = 18_750_000.99m;
+        await page.OnPostSaveGeneralAsync(CancellationToken.None);
+        var reloaded2 = await _db.Motorcycles.AsNoTracking().FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(18_750_000.99m, reloaded2.BasePrice);
+    }
+
+    [Fact]
+    public async Task Edit_KeepExistingThumbnail_WhenNoNewFileUploaded()
+    {
+        // Save without uploading a thumbnail must NOT wipe the stored one.
+        // The production handler guards this with the
+        //   `if (uploadedUrl is not null || !string.IsNullOrWhiteSpace(Input.ThumbnailUrl))`
+        // condition; this test pins the behavior.
+        var seed = SeedBike();
+        const string existingThumb = "https://res.cloudinary.com/demo/seed.jpg";
+        Assert.Equal(existingThumb, seed.ThumbnailUrl);
+
+        var page = CreatePage(seed);
+        page.Id = seed.Id;
+        // ThumbnailFile is null (no upload) — we do not assign it.
+        page.ThumbnailFile = null;
+        await page.OnGetAsync(null, CancellationToken.None);
+
+        // Admin edits Category + Price only.
+        page.Input.Category = MotorcycleCategory.Electric;
+        page.Input.BasePrice = 99_000_000m;
+
+        var result = await page.OnPostSaveGeneralAsync(CancellationToken.None);
+        Assert.IsType<RedirectToPageResult>(result);
+
+        var reloaded = await _db.Motorcycles.AsNoTracking().FirstAsync(m => m.Id == seed.Id);
+        Assert.Equal(existingThumb, reloaded.ThumbnailUrl);
+        Assert.Equal(MotorcycleCategory.Electric, reloaded.Category);
+        Assert.Equal(99_000_000m, reloaded.BasePrice);
+    }
+
     // ---------- Silent validation regression guards ----------
 
     [Fact]

@@ -9,7 +9,8 @@
     @Html.AntiForgeryToken()
     <partial name="Admin/Shared/_BlogPostForm" model="Model.Input" />
     <div class="admin-form-actions">
-        <button type="submit" class="admin-btn admin-btn-primary">Lưu</button>
+        <a href="/admin/tin-tuc" class="admin-btn admin-btn-ghost">Hủy</a>
+        <button type="submit" class="admin-btn admin-btn-primary">Đăng bài</button>
     </div>
 </form>
 

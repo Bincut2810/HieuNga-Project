@@ -74,7 +74,6 @@ else
     <div class="admin-inventory-list">
         @foreach (var item in Model.Items)
         {
-            var mediaPct = item.MediaPercent;
             <article class="admin-moto-row">
                 <div class="admin-moto-thumb">
                     @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl))
@@ -88,7 +87,6 @@ else
                 </div>
                 <div>
                     <h2 class="admin-moto-title">@item.Name</h2>
-                    <p class="admin-moto-slug">/@item.Slug</p>
                     <p class="admin-price" style="margin:0.35rem 0 0;font-size:0.875rem;">@item.BasePrice.ToVnd()</p>
                 </div>
                 <div class="admin-moto-row-meta">
@@ -101,10 +99,6 @@ else
                     {
                         <span class="admin-badge admin-badge-muted">Đang ẩn</span>
                     }
-                    <span class="admin-media-meter" title="Mức độ hoàn thiện hình ảnh">
-                        <span class="admin-media-meter-bar"><span class="admin-media-meter-fill" style="width:@mediaPct%"></span></span>
-                        <span>Ảnh @mediaPct%</span>
-                    </span>
                     <span>Cập nhật @(item.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy") ?? "—")</span>
                 </div>
                 <div class="admin-moto-row-actions">
@@ -117,7 +111,11 @@ else
                         <input type="hidden" name="category" value="@((int?)Model.Category)" />
                         <input type="hidden" name="status" value="@Model.Status" />
                         <button type="submit" class="admin-btn admin-btn-secondary"
-                                onclick="return confirm('@(item.IsPublished ? "Ẩn xe này khỏi website?" : "Hiển thị lại xe này?")')">
+                                data-confirm="true"
+                                data-confirm-title="@(item.IsPublished ? "Ẩn xe này?" : "Hiện xe này?")"
+                                data-confirm-body="@(item.IsPublished ? "Xe sẽ không còn hiển thị trên website." : "Xe sẽ hiển thị lại trên website.")"
+                                data-confirm-ok="@(item.IsPublished ? "Ẩn" : "Hiện")"
+                                data-confirm-cancel="Hủy">
                             @(item.IsPublished ? "Ẩn" : "Hiện")
                         </button>
                     </form>

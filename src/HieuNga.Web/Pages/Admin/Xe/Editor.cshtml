@@ -22,8 +22,8 @@
         <h1 class="admin-page-title">@(isCreate ? "Thêm xe mới" : Model.MotorcycleName)</h1>
         <p class="admin-page-subtitle">
             @(isCreate
-                ? "Tạo xe nhanh — lưu bản nháp trước, rồi bổ sung Hình ảnh · Thông số · Bảng giá · SEO."
-                : "Chỉnh sửa xe — Thông tin · Hình ảnh · Thông số · Tính năng · Giá/Trả góp · SEO · Đăng bán.")
+                ? "Tạo xe nhanh — lưu bản nháp trước, rồi bổ sung Hình ảnh · Thông số · Bảng giá."
+                : "Chỉnh sửa xe — Thông tin · Hình ảnh · Thông số · Tính năng · Giá/Trả góp · Đăng bán.")
             @if (!string.IsNullOrEmpty(previewUrl))
             {
                 <span> · </span>
@@ -35,14 +35,17 @@
 
 <nav class="admin-editor-tabs is-sticky" aria-label="Các mục chỉnh sửa xe" data-editor-tabs>
     @{
-        string TabHref(string t) => isCreate && t is not ("general" or "seo" or "publish")
-            ? "#"
-            : (isCreate ? $"/admin/xe/editor?tab={t}" : $"/admin/xe/editor/{editorId}?tab={t}");
+        // Phase 1: SEO tab removed from staff UI. SEO fields remain in the
+        // database/backend (public website still reads them) but staff no
+        // longer manages them here. ValidTabs in Editor.cshtml.cs reflects
+        // the visible set.
+        string TabHref(string t) => isCreate
+            ? $"/admin/xe/editor?tab={t}"
+            : $"/admin/xe/editor/{editorId}?tab={t}";
         string TabClass(string t)
         {
             var active = tab == t ? " is-active" : "";
-            var disabled = isCreate && t is not ("general" or "seo" or "publish") ? " is-disabled" : "";
-            return "admin-editor-tab" + active + disabled;
+            return "admin-editor-tab" + active;
         }
     }
     <a class="@TabClass("general")" href="@TabHref("general")" data-tab="general">Thông tin</a>
@@ -50,7 +53,6 @@
     <a class="@TabClass("specifications")" href="@TabHref("specifications")" data-tab="specifications">Thông số kỹ thuật</a>
     <a class="@TabClass("features")" href="@TabHref("features")" data-tab="features">Tính năng nổi bật</a>
     <a class="@TabClass("finance")" href="@TabHref("finance")" data-tab="finance">Giá &amp; Trả góp</a>
-    <a class="@TabClass("seo")" href="@TabHref("seo")" data-tab="seo">SEO</a>
     <a class="@TabClass("publish")" href="@TabHref("publish")" data-tab="publish">Đăng bán</a>
 </nav>
 
@@ -78,13 +80,21 @@
         {
             <partial name="Admin/Xe/_EditorTabFinance" />
         }
-        else if (tab == "seo")
-        {
-            <partial name="Admin/Xe/_EditorTabSeo" />
-        }
         else if (tab == "publish")
         {
             <partial name="Admin/Xe/_EditorTabPublish" />
+        }
+        else if (tab == "seo")
+        {
+            // Phase 1: SEO tab hidden from staff. Any direct link to
+            // ?tab=seo (e.g. a bookmarked URL) shows a soft notice rather
+            // than the old SEO form. SEO fields are still saved via the
+            // backend handler if a future tool re-exposes them.
+            <div class="admin-card admin-card-padded" style="max-width: 36rem;">
+                <h2 class="admin-form-section-title">Cấu hình nâng cao</h2>
+                <p class="admin-hint" style="margin: 0.5rem 0 1rem;">Phần này do quản trị viên hệ thống quản lý, không cần chỉnh sửa thường xuyên.</p>
+                <a href="@(isCreate ? "/admin/xe/editor?tab=general" : $"/admin/xe/editor/{editorId}?tab=general")" class="admin-btn admin-btn-secondary">Về Thông tin</a>
+            </div>
         }
     </div>
     @if (!isCreate)

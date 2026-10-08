@@ -6,24 +6,19 @@
 
 @if (Model.IsCreate)
 {
-    <form method="post" enctype="multipart/form-data" asp-page-handler="SaveGeneral" id="moto-quick-create" class="admin-editor-panel" data-dirty-form data-upload-form data-upload-label="Đang tạo Draft…">
+    <form method="post" enctype="multipart/form-data" asp-page-handler="SaveGeneral" id="moto-quick-create" class="admin-editor-panel" data-dirty-form data-upload-form data-upload-label="Đang tạo xe mới…">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Tab" value="general" />
         <input type="hidden" name="PublishStatus" value="draft" />
 
         <div class="admin-form-card" style="max-width: 36rem;">
-            <h2 class="admin-form-section-title">Tạo xe nhanh</h2>
-            <p class="admin-hint" style="margin: 0.5rem 0 1.25rem;">Chỉ cần Tên · Loại xe · Giá · Ảnh đại diện — lưu bản nháp và mở Hình ảnh ngay.</p>
+            <h2 class="admin-form-section-title">Thêm xe mới</h2>
+            <p class="admin-hint" style="margin: 0.5rem 0 1.25rem;">Chỉ cần Tên · Loại xe · Giá bán · Ảnh đại diện — lưu bản nháp và mở Hình ảnh ngay.</p>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div>
                     <label asp-for="Input.Name" class="admin-label">Tên xe <span class="admin-label-required">*</span></label>
-                    <input asp-for="Input.Name" id="moto-name" class="admin-input" required />
-                    <span asp-validation-for="Input.Name" class="admin-validation"></span>
-                </div>
-                <div>
-                    <label asp-for="Input.Slug" class="admin-label">Slug</label>
-                    <input asp-for="Input.Slug" id="moto-slug" class="admin-input" placeholder="tự-động-theo-tên" />
-                    <span asp-validation-for="Input.Slug" class="admin-validation"></span>
+                    <input asp-for="Input.Name" id="moto-name" class="admin-input" required maxlength="200" placeholder="Ví dụ: Honda Vision 2026" />
+                    <span asp-validation-for="Input.Name" class="admin-field-error"></span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
@@ -31,12 +26,12 @@
                         <select asp-for="Input.Category" asp-items="categoryOptions" class="admin-select" required>
                             <option value="">-- Chọn loại xe --</option>
                         </select>
-                        <span asp-validation-for="Input.Category" class="admin-validation"></span>
+                        <span asp-validation-for="Input.Category" class="admin-field-error"></span>
                     </div>
                     <div>
-                        <label asp-for="Input.BasePrice" class="admin-label">Giá (VNĐ) <span class="admin-label-required">*</span></label>
-                        <input asp-for="Input.BasePrice" type="number" step="1000" min="0" class="admin-input" required />
-                        <span asp-validation-for="Input.BasePrice" class="admin-validation"></span>
+                        <label asp-for="Input.BasePrice" class="admin-label">Giá bán (VNĐ) <span class="admin-label-required">*</span></label>
+                        <input asp-for="Input.BasePrice" type="number" step="1000" min="0" class="admin-input" required placeholder="35000000" />
+                        <span asp-validation-for="Input.BasePrice" class="admin-field-error"></span>
                     </div>
                 </div>
                 <div>
@@ -45,13 +40,13 @@
                         AspFor: "Input.ThumbnailUrl",
                         Label: "Ảnh đại diện *",
                         Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
-                        HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB. Ảnh đại diện hiển thị ở danh sách xe và trang chi tiết.",
+                        HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB.",
                         CurrentValue: Model.Input.ThumbnailUrl)' />
-                    <span asp-validation-for="Input.ThumbnailUrl" class="admin-validation"></span>
+                    <span asp-validation-for="Input.ThumbnailUrl" class="admin-field-error"></span>
                 </div>
             </div>
         </div>
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(null, "Lưu bản nháp", null, false)' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(null, "Thêm xe", null, false)' />
     </form>
 }
 else
@@ -67,14 +62,8 @@ else
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <div>
                         <label asp-for="Input.Name" class="admin-label">Tên xe <span class="admin-label-required">*</span></label>
-                        <input asp-for="Input.Name" id="moto-name" class="admin-input" />
-                        <span asp-validation-for="Input.Name" class="admin-validation"></span>
-                    </div>
-                    <div>
-                        <label asp-for="Input.Slug" class="admin-label">Slug</label>
-                        <input asp-for="Input.Slug" id="moto-slug" class="admin-input" placeholder="tự-động-theo-tên" />
-                        <span asp-validation-for="Input.Slug" class="admin-validation"></span>
-                        <p class="admin-hint">Để trống để tự tạo slug từ tên xe.</p>
+                        <input asp-for="Input.Name" id="moto-name" class="admin-input" maxlength="200" />
+                        <span asp-validation-for="Input.Name" class="admin-field-error"></span>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                         <div>
@@ -83,42 +72,44 @@ else
                                empty "-- Chọn loại xe --" placeholder is removed.
                                Without this, selecting the placeholder would post
                                Input.Category="" which fails enum binding and silently
-                               aborts the save (no validation span shown to the user)
-                               — the production "UI says save, DB doesn't change" bug. *@
+                               aborts the save. *@
                             <select asp-for="Input.Category" asp-items="categoryOptions" class="admin-select" required></select>
-                            <span asp-validation-for="Input.Category" class="admin-validation"></span>
+                            <span asp-validation-for="Input.Category" class="admin-field-error"></span>
                         </div>
                         <div>
-                            <label asp-for="Input.BasePrice" class="admin-label">Giá (VNĐ)</label>
+                            <label asp-for="Input.BasePrice" class="admin-label">Giá bán (VNĐ)</label>
                             <input asp-for="Input.BasePrice" type="number" step="1000" class="admin-input" />
-                            <span asp-validation-for="Input.BasePrice" class="admin-validation"></span>
+                            <span asp-validation-for="Input.BasePrice" class="admin-field-error"></span>
                         </div>
                     </div>
                     <div>
                         <label asp-for="Input.ShortDescription" class="admin-label">Mô tả ngắn</label>
-                        <textarea asp-for="Input.ShortDescription" rows="2" class="admin-textarea"></textarea>
+                        <textarea asp-for="Input.ShortDescription" rows="2" class="admin-textarea" maxlength="500"
+                                  placeholder="Một câu giới thiệu ngắn gọn về xe."></textarea>
                     </div>
                     <div>
                         <label asp-for="Input.Description" class="admin-label">Mô tả chi tiết</label>
-                        <textarea asp-for="Input.Description" rows="5" class="admin-textarea"></textarea>
+                        <textarea asp-for="Input.Description" rows="5" class="admin-textarea"
+                                  placeholder="Mô tả đầy đủ về xe. Xuống dòng sẽ được giữ nguyên khi hiển thị."></textarea>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; align-items: end;">
                         <div>
                             <label asp-for="Input.SortOrder" class="admin-label">Thứ tự hiển thị</label>
                             <input asp-for="Input.SortOrder" type="number" class="admin-input" />
+                            <p class="admin-hint" style="margin: 0.3rem 0 0;">Số nhỏ hiển thị trước.</p>
                         </div>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding-top: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; padding-top: 1.5rem;">
                             <input asp-for="Input.IsFeatured" type="checkbox" style="accent-color: var(--admin-honda-red);" />
                             Xe nổi bật
                         </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding-top: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; padding-top: 1.5rem;">
                             <input asp-for="Input.IsPublished" type="checkbox" style="accent-color: var(--admin-honda-red);" />
-                            Đã đăng bán
+                            Đang bán trên website
                         </label>
                     </div>
                 </div>
             </section>
         </div>
-        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu bản nháp", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
+        <partial name="Admin/Xe/_EditorSaveBar" model='new EditorSaveBarModel(Model.PublicSlug, "Lưu thay đổi", $"/admin/xe/editor/{Model.Id}?tab=publish")' />
     </form>
 }

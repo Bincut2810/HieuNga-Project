@@ -65,7 +65,7 @@ public record AdminListItemModel(
 
 public record EditorSaveBarModel(
     string? PreviewSlug,
-    string SaveText = "Lưu bản nháp",
+    string SaveText = "Lưu thay đổi",
     string? PublishTabUrl = null,
     bool IsPublishTab = false)
 {

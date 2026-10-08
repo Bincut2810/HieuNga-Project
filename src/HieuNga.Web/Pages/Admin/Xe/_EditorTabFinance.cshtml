@@ -4,7 +4,7 @@
 @if (Model.IsCreate)
 {
     <partial name="Admin/Shared/_AdminEmptyState"
-             model='new AdminEmptyStateModel("Lưu xe trước", "Tab giá mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Tạo xe nhanh")' />
+             model='new AdminEmptyStateModel("Lưu xe trước", "Mục giá mở sau khi tạo xe.", "/admin/xe/editor?tab=general", "Tạo xe nhanh")' />
 }
 else
 {
@@ -12,13 +12,13 @@ else
         <div class="admin-form-card" style="margin-bottom:1.25rem;">
             <h2 class="admin-form-section-title">Giá tham khảo</h2>
             <p class="admin-hint" style="margin:0.35rem 0 0;">
-                Máy tính trả góp dùng giá phiên bản dương đầu tiên; nếu không có thì dùng BasePrice.
-                Ngân hàng / lãi suất quản lý tại <a href="/admin/tra-gop/ngan-hang">Quản trị · Ngân hàng</a>.
+                Máy tính trả góp dùng giá phiên bản dương đầu tiên; nếu không có thì dùng giá bán cơ bản.
+                Ngân hàng và lãi suất quản lý tại <a href="/admin/tra-gop/ngan-hang">Quản trị · Ngân hàng</a>.
             </p>
             <p style="margin-top:0.75rem;font-size:1.25rem;font-weight:700;color:var(--admin-honda-red);">
                 @Model.Input.BasePrice.ToVnd()
             </p>
-            <p class="admin-hint">Sửa giá cơ bản ở tab Thông tin.</p>
+            <p class="admin-hint">Sửa giá bán cơ bản ở mục Thông tin.</p>
         </div>
 
         <div class="admin-finance-grid">
@@ -29,30 +29,30 @@ else
                 <h2 class="admin-form-section-title">@(Model.VariantForm.Id.HasValue ? "Sửa phiên bản" : "Thêm phiên bản")</h2>
                 <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">
                     <div>
-                        <label class="admin-label">Tên phiên bản *</label>
-                        <input asp-for="VariantForm.Name" class="admin-input" />
-                        <span asp-validation-for="VariantForm.Name" class="admin-validation"></span>
+                        <label class="admin-label">Tên phiên bản <span class="admin-label-required">*</span></label>
+                        <input asp-for="VariantForm.Name" class="admin-input" placeholder="Ví dụ: Phiên bản Cao cấp" />
+                        <span asp-validation-for="VariantForm.Name" class="admin-field-error"></span>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                         <div>
-                            <label class="admin-label">Giá (VNĐ)</label>
-                            <input asp-for="VariantForm.Price" type="number" step="1000" class="admin-input" />
+                            <label class="admin-label">Giá bán (VNĐ)</label>
+                            <input asp-for="VariantForm.Price" type="number" step="1000" min="0" class="admin-input" />
                         </div>
                         <div>
-                            <label class="admin-label">Tồn kho</label>
-                            <input asp-for="VariantForm.StockQuantity" type="number" class="admin-input" />
+                            <label class="admin-label">Số lượng trong kho</label>
+                            <input asp-for="VariantForm.StockQuantity" type="number" min="0" class="admin-input" />
                         </div>
                     </div>
-                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;">
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;">
                         <input asp-for="VariantForm.IsAvailable" type="checkbox" style="accent-color:var(--admin-honda-red);" />
                         Còn hàng
                     </label>
                 </div>
                 <div class="admin-form-actions">
-                    <button type="submit" class="admin-btn-primary">Lưu phiên bản</button>
+                    <button type="submit" class="admin-btn-primary">@(Model.VariantForm.Id.HasValue ? "Lưu thay đổi" : "Thêm phiên bản")</button>
                     @if (Model.VariantForm.Id.HasValue)
                     {
-                        <a href="/admin/xe/editor/@Model.Id?tab=finance" class="admin-btn-secondary">Hủy sửa</a>
+                        <a href="/admin/xe/editor/@Model.Id?tab=finance" class="admin-btn-secondary">Hủy</a>
                     }
                 </div>
             </form>
@@ -70,8 +70,8 @@ else
                             <thead>
                                 <tr>
                                     <th>Phiên bản</th>
-                                    <th>Giá</th>
-                                    <th>Kho</th>
+                                    <th>Giá bán</th>
+                                    <th>Tồn kho</th>
                                     <th class="text-right">Thao tác</th>
                                 </tr>
                             </thead>
@@ -88,11 +88,12 @@ else
                                         <td class="text-right">
                                             <div class="admin-actions">
                                                 <a href="/admin/xe/editor/@Model.Id?tab=finance&edit=@v.Id" class="admin-action admin-action-edit">Sửa</a>
-                                                <form method="post" asp-page-handler="DeleteVariant" class="inline">
+                                                <form method="post" asp-page-handler="DeleteVariant" class="inline"
+                                                      data-confirm-form data-confirm-title="Xóa phiên bản?" data-confirm-body="Phiên bản sẽ bị ẩn khỏi trang chi tiết." data-confirm-ok="Xóa" data-confirm-cancel="Hủy" data-confirm-danger="true">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="Id" value="@Model.Id" />
                                                     <input type="hidden" name="variantId" value="@v.Id" />
-                                                    <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa phiên bản này?')">Xóa</button>
+                                                    <button type="submit" class="admin-action admin-action-danger">Xóa</button>
                                                 </form>
                                             </div>
                                         </td>
@@ -107,7 +108,7 @@ else
 
         <div class="admin-editor-savebar" data-editor-savebar>
             <div class="admin-editor-savebar-inner">
-                <p class="admin-muted" style="margin:0;">Giá phiên bản lưu theo form</p>
+                <p class="admin-muted" style="margin:0;">Giá phiên bản lưu theo từng dòng</p>
                 <div class="admin-editor-savebar-actions">
                     <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
                     @if (!string.IsNullOrEmpty(Model.PublicSlug))

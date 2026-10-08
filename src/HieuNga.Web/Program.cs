@@ -147,11 +147,19 @@ app.MapSitemap();
 app.MapRazorPages();
 
 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+var skipDbInit = builder.Configuration.GetValue<bool>("HieuNga:Tests:SkipDatabaseInit");
 try
 {
-    using var scope = app.Services.CreateScope();
-    await DbInitializer.InitializeAsync(scope.ServiceProvider);
-    logger.LogInformation("Database initialization completed.");
+    if (!skipDbInit)
+    {
+        using var scope = app.Services.CreateScope();
+        await DbInitializer.InitializeAsync(scope.ServiceProvider);
+        logger.LogInformation("Database initialization completed.");
+    }
+    else
+    {
+        logger.LogInformation("Database initialization skipped (HieuNga:Tests:SkipDatabaseInit=true).");
+    }
 }
 catch (Exception ex)
 {

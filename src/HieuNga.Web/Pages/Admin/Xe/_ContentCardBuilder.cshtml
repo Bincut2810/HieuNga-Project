@@ -50,11 +50,12 @@
                                 <input type="hidden" name="itemId" value="@item.Id" />
                                 <button type="submit" class="admin-action admin-action-edit">Nhân bản</button>
                             </form>
-                            <form method="post" asp-page-handler="@Model.DeleteHandler" class="inline">
+                            <form method="post" asp-page-handler="@Model.DeleteHandler" class="inline"
+                                  data-confirm-form data-confirm-title="Xóa thẻ này?" data-confirm-body="Thẻ sẽ bị ẩn khỏi trang chi tiết." data-confirm-ok="Xóa" data-confirm-cancel="Hủy" data-confirm-danger="true">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="Id" value="@Model.MotorcycleId" />
                                 <input type="hidden" name="@(Model.Kind == "feature" ? "featureId" : "techId")" value="@item.Id" />
-                                <button type="submit" class="admin-action admin-action-danger" onclick="return confirm('Xóa thẻ này?')">Xóa</button>
+                                <button type="submit" class="admin-action admin-action-danger">Xóa</button>
                             </form>
                         </div>
                     </div>
@@ -68,9 +69,10 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="Id" value="@Model.MotorcycleId" />
         <h3 class="admin-form-section-title" style="font-size:0.95rem;">Thêm @Model.Title.ToLower()</h3>
-        <input name="@(Model.Kind == "feature" ? "NewFeature.Title" : "NewTech.Title")" class="admin-input" placeholder="Tiêu đề *" required />
-        <textarea name="@(Model.Kind == "feature" ? "NewFeature.Description" : "NewTech.Description")" rows="2" class="admin-textarea" placeholder="Mô tả"></textarea>
+        <input name="@(Model.Kind == "feature" ? "NewFeature.Title" : "NewTech.Title")" class="admin-input" placeholder="Tên tính năng *" required maxlength="200" />
+        <textarea name="@(Model.Kind == "feature" ? "NewFeature.Description" : "NewTech.Description")" rows="2" class="admin-textarea" placeholder="Mô tả ngắn"></textarea>
+        <label class="admin-hint" style="display:block; margin-top: 0.5rem;">Ảnh minh hoạ *</label>
         <input type="file" name="imageFile" accept="image/*" class="admin-input" required />
-        <button type="submit" class="admin-btn-primary" @(Model.SupportsUpload ? null : "disabled")>Thêm</button>
+        <button type="submit" class="admin-btn-primary" style="margin-top: 0.75rem;" @(Model.SupportsUpload ? null : "disabled")>Thêm</button>
     </form>
 </section>

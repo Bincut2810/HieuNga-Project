@@ -52,7 +52,6 @@ else
             var publishedLabel = post.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
             string statusBadgeClass = isPub ? "admin-badge-success" : "admin-badge-muted";
             string statusLabel = isPub ? "Đã xuất bản" : "Bản nháp";
-            string? viewUrl = isPub ? $"/tin-tuc/{post.Slug}" : null;
             string editUrl = $"/admin/tin-tuc/sua/{post.Id}";
             <article class="admin-thumb-row">
                 <div class="admin-thumb-row-img">
@@ -69,26 +68,33 @@ else
                     <h2 class="admin-thumb-row-title">@post.Title</h2>
                     <p class="admin-thumb-row-meta">
                         <span class="admin-badge @statusBadgeClass">@statusLabel</span>
+                        @if (!string.IsNullOrWhiteSpace(post.CategoryName))
+                        {
+                            <span class="admin-badge admin-badge-category">@post.CategoryName</span>
+                        }
                         @if (isPub && !string.IsNullOrEmpty(publishedLabel))
                         {
-                            <span>Xuất bản: @publishedLabel</span>
+                            <span>Đăng: @publishedLabel</span>
                         }
                         else if (!isPub)
                         {
-                            <span>Chưa xuất bản — bài viết ở chế độ nháp</span>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(post.Slug))
-                        {
-                            <span style="font-family: ui-monospace, monospace; color: var(--admin-text-faint);">/@post.Slug</span>
+                            <span>Chưa đăng — bài viết ở chế độ nháp</span>
                         }
                     </p>
                 </div>
                 <div class="admin-thumb-row-actions">
                     <a href="@editUrl" class="admin-action admin-action-edit">Sửa</a>
-                    @if (!string.IsNullOrEmpty(viewUrl))
-                    {
-                        <a href="@viewUrl" class="admin-action admin-action-view" target="_blank" rel="noopener">Xem →</a>
-                    }
+                    <form method="post" asp-page-handler="Delete" class="inline"
+                          data-confirm="true"
+                          data-confirm-title="Xóa bài viết?"
+                          data-confirm-body="Bạn có chắc muốn xóa bài viết này không? Bài viết sẽ bị ẩn khỏi website."
+                          data-confirm-ok="Xóa bài"
+                          data-confirm-cancel="Hủy"
+                          data-confirm-danger="true">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@post.Id" />
+                        <button type="submit" class="admin-action admin-action-danger">Xóa</button>
+                    </form>
                 </div>
             </article>
         }

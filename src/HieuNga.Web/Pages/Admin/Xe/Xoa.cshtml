@@ -3,13 +3,15 @@
 @model HieuNga.Web.Pages.Admin.Xe.XoaModel
 
 <partial name="Admin/Shared/_AdminPageHeader"
-         model='new AdminPageHeaderModel("Xóa xe", "Xác nhận xóa xe khỏi danh sách quản trị.")' />
+         model='new AdminPageHeaderModel("Xóa xe")' />
 
 <div class="admin-card admin-card-padded" style="max-width: 32rem;">
-    <p>Bạn có chắc muốn xóa xe <strong>@Model.Name</strong>? Hành động này có thể hoàn tác trong database.</p>
-    <form method="post" class="admin-form-actions" style="border-top: none; margin-top: 1.25rem; padding-top: 0;">
+    <h2 class="admin-form-section-title" style="color: #B91C1C;">Bạn có chắc muốn xóa xe này không?</h2>
+    <p style="margin: 0.5rem 0 1rem;">Xe <strong>@Model.Name</strong> sẽ không còn hiển thị trong danh sách xe.</p>
+    <p class="admin-hint" style="margin: 0 0 1rem;">Có thể khôi phục lại trong cơ sở dữ liệu nếu cần.</p>
+    <form method="post" class="admin-form-actions" style="border-top: none; margin-top: 1rem; padding-top: 0;">
         @Html.AntiForgeryToken()
-        <button type="submit" class="admin-btn admin-btn-danger">Xác nhận xóa</button>
-        <a href="/admin/xe/editor/@Model.Id" class="admin-btn admin-btn-secondary">Hủy</a>
+        <a href="/admin/xe" class="admin-btn admin-btn-ghost">Hủy</a>
+        <button type="submit" class="admin-btn admin-btn-danger">Xóa xe</button>
     </form>
 </div>

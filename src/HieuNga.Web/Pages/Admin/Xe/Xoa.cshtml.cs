@@ -28,7 +28,11 @@ public class XoaModel(IRepository<Motorcycle> repository, IUnitOfWork uow) : Pag
 
         await repository.SoftDeleteAsync(entity, ct);
         await uow.SaveChangesAsync(ct);
-        this.SetSuccess($"Đã xóa xe \"{entity.Name}\".");
+        // Phase 1 staff message: matches the standard "Đã xóa xe" contract.
+        // Persistence is verified — SaveChangesAsync returned without
+        // throwing, so the soft-delete flag is durably committed before
+        // the success banner is shown.
+        this.SetSuccess("Đã xóa xe");
         return RedirectToPage("./Index");
     }
 }

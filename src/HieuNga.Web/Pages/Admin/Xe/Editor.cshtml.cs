@@ -35,7 +35,7 @@ public class EditorModel(
     private const int SlugCollisionMaxTries = 1000;
 
     public static readonly string[] ValidTabs =
-        ["general", "media", "specifications", "features", "finance", "seo", "publish"];
+        ["general", "media", "specifications", "features", "finance", "publish"];
 
     [BindProperty(SupportsGet = true)]
     public Guid? Id { get; set; }
@@ -56,7 +56,7 @@ public class EditorModel(
     public IFormFile? ThumbnailFile { get; set; }
 
     [BindProperty]
-    public string PublishStatus { get; set; } = "draft";
+    public string? PublishStatus { get; set; } = "draft";
 
     [BindProperty]
     public string? SpecsLines { get; set; }
@@ -818,7 +818,10 @@ public class EditorModel(
             logger.LogInformation(
                 "SaveCoreAsync SaveChanges succeeded. NewMotorcycleId={NewId} Slug={Slug}",
                 entity.Id, resolvedSlug);
-            this.SetSuccess("Đã tạo Draft. Tiếp tục thêm ảnh đại diện, màu và góc xem.");
+            // Phase 1 staff message: matches the standard "Đã thêm xe thành công"
+            // contract used across the Admin CMS. Persistence is verified —
+            // SaveChangesAsync returned without throwing.
+            this.SetSuccess("Đã thêm xe thành công");
             return RedirectToPage(new { id = entity.Id, tab = "media" });
         }
 
@@ -862,7 +865,10 @@ public class EditorModel(
         logger.LogInformation(
             "SaveCoreAsync SaveChanges succeeded. IsCreate=false MotorcycleId={Id} Slug={Slug}",
             bike.Id, bike.Slug);
-        this.SetSuccess("Đã lưu thay đổi.");
+        // Phase 1 staff message: matches the standard "Đã cập nhật thông tin xe"
+        // contract used across the Admin CMS. Persistence is verified —
+        // SaveChangesAsync returned without throwing.
+        this.SetSuccess("Đã cập nhật thông tin xe");
         return RedirectToPage(new { id, tab = returnTab });
     }
 
@@ -908,7 +914,10 @@ public class EditorModel(
     {
         Tab = (Tab ?? "general").Trim().ToLowerInvariant();
         if (!ValidTabs.Contains(Tab)) Tab = "general";
-        if (IsCreate && Tab is not ("general" or "seo" or "publish"))
+        // Phase 1: SEO tab is hidden from staff. Any direct ?tab=seo is
+        // silently treated as ?tab=general so old bookmarks still work.
+        if (string.Equals(Tab, "seo", StringComparison.OrdinalIgnoreCase)) Tab = "general";
+        if (IsCreate && Tab is not ("general" or "publish"))
             Tab = "general";
     }
 
