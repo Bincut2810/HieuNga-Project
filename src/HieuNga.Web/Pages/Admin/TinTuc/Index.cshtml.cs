@@ -63,11 +63,14 @@ public class IndexModel(
     }
 
     /// <summary>
-    /// Delete from the listing. Mirrors the contract on the edit page
-    /// (<see cref="TinTucSuaModel.OnPostDeleteAsync"/>) so the list and
-    /// the edit form use the same soft-delete semantics. Persistence is
-    /// verified — SaveChangesAsync only returns when the soft-delete row
-    /// is durably committed; the success message is written AFTER.
+    /// Delete from the listing. Phase 3 — this is the SINGLE canonical
+    /// delete flow for Blog posts. There is no Xoa.cshtml and no
+    /// edit-page delete handler. The staff always deletes from
+    /// /admin/tin-tuc via the per-row [Xóa] button.
+    ///
+    /// Persistence is verified — SaveChangesAsync only returns when
+    /// the soft-delete row is durably committed; the success message
+    /// is written AFTER.
     /// </summary>
     public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct)
     {
@@ -77,7 +80,7 @@ public class IndexModel(
         entity.UpdatedAt = DateTime.UtcNow;
         await repo.UpdateAsync(entity, ct);
         await uow.SaveChangesAsync(ct);
-        this.SetSuccess("Đã xóa bài viết");
+        this.SetSuccess("Đã xóa bài viết.");
         return RedirectToPage(new { Search });
     }
 }

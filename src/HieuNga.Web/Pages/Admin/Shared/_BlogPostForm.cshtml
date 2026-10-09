@@ -1,32 +1,33 @@
 @*
-    Staff-friendly Blog Post form (Phase 2).
-    ───────────────────────────────────────
-    The model of this partial is the PageModel class itself
-    (TinTucThemModel or TinTucSuaModel) so that asp-for can emit
-    fully-prefixed field names (Input.Title, Input.Content, …)
-    which is what model binding expects for the [BindProperty]
-    BlogPostInputModel Input on the parent PageModel.
+    Staff-friendly Blog Post form partial.
 
-    Hidden from staff (still bound server-side): Slug, MetaTitle,
-    MetaDescription, MetaKeywords, OgImageUrl, CanonicalUrl.
+    Strongly typed to BlogPostInputModel so the field names are
+    statically correct and the model binder can pick them up.
+
+    The parent page renders this with:
+        <partial name="Admin/Shared/_BlogPostForm" model="Model.Input" />
+
+    Every input here uses the `Input.` prefix in its `name` attribute
+    so the form posts directly to BlogPostInputModel on the page model
+    via the [BindProperty] Input property.
+
+    No SEO / Slug fields are rendered — staff never edits them.
 *@
-@model dynamic
-@{
-    // Pull values through dynamic model — both TinTucThemModel and
-    // TinTucSuaModel expose an `Input` BlogPostInputModel property.
-    var input = Model.Input;
-}
+@model HieuNga.Web.Pages.Admin.TinTuc.BlogPostInputModel
+
 <div class="admin-form-stack">
     <section class="admin-form-section">
         <h2 class="admin-form-section-title">Nội dung chính</h2>
         <div>
-            <label for="Input_Title" class="admin-label">Tiêu đề <span class="admin-label-required">*</span></label>
+            <label for="Input_Title" class="admin-label">
+                Tiêu đề <span class="admin-label-required">*</span>
+            </label>
             <input id="Input_Title"
                    name="Input.Title"
                    class="admin-input"
                    placeholder="Ví dụ: Hướng dẫn chọn xe ga phù hợp"
                    maxlength="200"
-                   value="@(input.Title ?? "")" />
+                   value="@Model.Title" />
             <span class="admin-field-error" data-valmsg-for="Input.Title" data-valmsg-replace="true"></span>
         </div>
         <div>
@@ -36,16 +37,18 @@
                       rows="2"
                       class="admin-textarea"
                       maxlength="500"
-                      placeholder="Một vài câu mô tả ngắn hiển thị ở danh sách bài viết.">@(input.Summary ?? "")</textarea>
+                      placeholder="Một vài câu mô tả ngắn hiển thị ở danh sách bài viết.">@Model.Summary</textarea>
         </div>
         <div>
-            <label for="Input_Content" class="admin-label">Nội dung <span class="admin-label-required">*</span></label>
+            <label for="Input_Content" class="admin-label">
+                Nội dung <span class="admin-label-required">*</span>
+            </label>
             <textarea id="Input_Content"
                       name="Input.Content"
                       rows="12"
                       class="admin-textarea"
                       style="white-space: pre-wrap;"
-                      placeholder="Viết nội dung ở đây. Xuống dòng sẽ được giữ nguyên khi hiển thị trên website.">@(input.Content ?? "")</textarea>
+                      placeholder="Viết nội dung ở đây. Xuống dòng sẽ được giữ nguyên khi hiển thị trên website.">@Model.Content</textarea>
             <span class="admin-field-error" data-valmsg-for="Input.Content" data-valmsg-replace="true"></span>
             <p class="admin-hint" style="margin: 0.3rem 0 0;">Mỗi đoạn cách nhau một dòng trống sẽ hiển thị thành đoạn riêng trên website.</p>
         </div>
@@ -69,20 +72,17 @@
                        name="Input.AuthorName"
                        class="admin-input"
                        placeholder="Tên hiển thị"
-                       value="@(input.AuthorName ?? "")" />
+                       value="@Model.AuthorName" />
             </div>
         </div>
         <div>
-            @* Phase 2 — the image uploader's hidden input is bound to
-               "Input.ThumbnailUrl" so the post uploader writes its URL
-               into a field the model binder recognizes. *@
             <partial name="Admin/Shared/_ImageUploader" model='new HieuNga.Web.Pages.Admin.Extensions.ImageUploaderField(
                 Kind: "blog-thumbnail",
                 AspFor: "Input.ThumbnailUrl",
                 Label: "Ảnh đại diện",
                 Hint: "Kéo ảnh vào đây hoặc bấm để chọn ảnh",
                 HelpText: "JPG, PNG hoặc WebP • Tối đa 5 MB.",
-                CurrentValue: input.ThumbnailUrl as string)' />
+                CurrentValue: Model.ThumbnailUrl)' />
         </div>
     </section>
 
@@ -93,7 +93,7 @@
                 <input id="Input_IsPublished"
                        name="Input.IsPublished"
                        type="checkbox"
-                       @(input.IsPublished ? "checked=\"checked\"" : "")
+                       @(Model.IsPublished ? "checked=\"checked\"" : "")
                        value="true"
                        style="accent-color: var(--admin-honda-red);" />
                 Đăng bài viết lên website
@@ -104,7 +104,7 @@
                        name="Input.PublishedAt"
                        type="datetime-local"
                        class="admin-input"
-                       value="@(input.PublishedAt == null ? "" : ((DateTime)input.PublishedAt).ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
+                       value="@(Model.PublishedAt == null ? "" : Model.PublishedAt.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
                 <p class="admin-hint" style="margin: 0.3rem 0 0;">Bỏ trống để dùng ngày hiện tại khi đăng.</p>
             </div>
         </div>

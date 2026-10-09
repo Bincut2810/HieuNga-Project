@@ -191,18 +191,11 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         // Lưu thay đổi button.
         Assert.Contains("Lưu thay đổi", html);
 
-        // A second delete form with handler=Delete and data-confirm-form.
-        // Razor Pages strips the asp-page-handler attribute after
-        // converting it to the action URL's ?handler=Delete query, so
-        // the rendered form has `action="...handler=Delete"` and a
-        // preserved data-confirm-form attribute. Match the FULL form
-        // body so the hidden id field is captured.
-        var deleteForm = Regex.Match(html,
-            @"<form\b[^>]*?action=""[^""]+?handler=Delete""[\s\S]*?</form>",
-            RegexOptions.IgnoreCase);
-        Assert.True(deleteForm.Success,
-            "Expected a delete form whose action URL contains handler=Delete on the Edit page.");
-        Assert.Contains("name=\"id\"", deleteForm.Value);
+        // Phase 3 — DELETE lives on the Index page only. The Edit page
+        // intentionally does NOT render a delete form so there is a
+        // single canonical delete flow. Verify the absence explicitly.
+        Assert.DoesNotContain("handler=Delete", html,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -385,28 +378,13 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
     }
 
     [Fact]
-    public async Task Step8_SlugCollisionAgainstSoftDeleted_ReturnsPageWithError()
+    public async Task Step8_Update_NeverRegeneratesSlug_EvenIfSoftDeletedHasSameSlug()
     {
-        // Reproduces the production 500: when an admin updates a Blog
-        // post and the resulting slug collides with a previously
-        // soft-deleted BlogPost's slug, the OLD code:
-        //   1. Excluded soft-deleted rows from the pre-check.
-        //   2. Let the new slug through to SaveChangesAsync.
-        //   3. The DB-level UNIQUE INDEX (which DOES include soft-deleted
-        //      rows) rejected the INSERT/UPDATE with Npgsql 23505.
-        //   4. EF Core surfaced the 23505 as a generic 500 to the admin.
-        //
-        // Phase 2 — the pre-check now uses IgnoreQueryFilters() so it
-        // matches the DB-level index, returns Page() with a model error,
-        // and the slug collision is shown as a friendly Vietnamese
-        // message instead of crashing the request.
-        //
-        // The InMemoryDatabase used by tests does NOT enforce unique
-        // constraints, so we cannot observe the 23505 here directly.
-        // This test instead verifies the application-level pre-check
-        // catches the collision and turns the request into a Page
-        // (not a 302 success) — which is the same code path that
-        // protects the production PostgreSQL instance from the 500.
+        // Phase 3 — UPDATE must NEVER regenerate the Slug, even when
+        // another (possibly soft-deleted) row already occupies the
+        // canonical slug for the new title. The Slug is the public URL
+        // contract; renaming a post must not break it. This test pins
+        // the invariant: rename → same slug → 302 success → persisted.
         var blockedSlug = "blocked-collision";
         using (var seedDb = _factory.CreateDbContext())
         {
@@ -421,26 +399,25 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             await seedDb.SaveChangesAsync();
         }
 
-        var post = await SeedAsync(title: "Trùng đề số đã xóa");
-        // The SeedAsync helper appends a unique GUID to the title. Force
-        // the title to the exact value we want, and pin the slug to
-        // match the blocked soft-deleted slug above.
+        var post = await SeedAsync(title: "Trung de so da xoa");
+        // Pin the post's slug to the blocked value so a hypothetical
+        // slug-regeneration would collide. The new implementation must
+        // never regenerate the slug, so the save MUST succeed.
         using (var updateDb = _factory.CreateDbContext())
         {
             var tracked = await updateDb.BlogPosts.FirstAsync(p => p.Id == post.Id);
-            tracked.Title = "Trùng đề số đã xóa";
             tracked.Slug = blockedSlug;
             await updateDb.SaveChangesAsync();
         }
 
         var (client, token, _, _) = await GetEditorAsync(post.Id);
 
-        // Update with the SAME title (so slug stays the same → collides
-        // with the soft-deleted row above). The application pre-check
-        // must detect the collision and return a Page() with an error.
+        // Update with a brand-new title. Even though SlugHelper.Generate
+        // would produce "trung-de-so-da-xoa" for the new title, the
+        // implementation must keep the original slug ("blocked-collision").
         using var form = BuildEditForm(
             post.Id,
-            "Trùng đề số đã xóa",
+            "Ten moi hoan toan",
             post.Content,
             post.Summary,
             null,
@@ -451,23 +428,17 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             token);
 
         var response = await client.PostAsync($"/admin/tin-tuc/sua/{post.Id}", form);
-
-        // The key invariant: a duplicate-slug collision must NOT redirect
-        // with a 302 success, must NOT write a success toast. The InMemory
-        // provider cannot reproduce the 23505, so we only verify the
-        // application-level guard.
-        Assert.False(
-            response.StatusCode is HttpStatusCode.Redirect
+        Assert.True(response.StatusCode is HttpStatusCode.Redirect
                                 or HttpStatusCode.Found
                                 or HttpStatusCode.RedirectMethod,
-            "Collision save must return a Page (200), not a 302 success.");
+            "Update must succeed (302) without touching the slug, regardless of soft-deleted collisions.");
 
-        // The DB row must remain unchanged because no commit happened.
+        // Slug is preserved exactly.
         using var verifyDb = _factory.CreateDbContext();
         var reloaded = await verifyDb.BlogPosts.AsNoTracking()
             .IgnoreQueryFilters()
             .FirstAsync(p => p.Id == post.Id);
-        Assert.Equal("Trùng đề số đã xóa", reloaded.Title);
+        Assert.Equal("Ten moi hoan toan", reloaded.Title);
         Assert.Equal(blockedSlug, reloaded.Slug);
     }
 
@@ -525,53 +496,25 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         Assert.True(all!.IsDeleted);
     }
 
-        [Fact]
-    public async Task EditPage_DeleteForm_HasExpectedShape()
+    [Fact]
+    public async Task EditPage_DoesNotRender_DeleteForm()
     {
-        // The Edit page renders a second form with asp-page-handler="Delete"
-        // for staff who land on the edit page and want to delete from
-        // there. The delete is functionally identical to the Index-page
-        // delete (same handler, same soft-delete semantics, same
-        // antiforgery cookie), but the rendered form action URL embeds
-        // the route's required {id:guid} parameter. This test pins the
-        // rendered shape so a future regression (e.g. accidentally
-        // removing asp-page-handler) is caught here. The actual end-to-
-        // end delete is exercised by Delete_FromIndex_SoftDeletes_And…
-        // above.
-        var post = await SeedAsync(title: "Edit-page delete shape");
+        // Phase 3 — the canonical delete flow lives ONLY on the Index
+        // page (/admin/tin-tuc). The Edit page must NOT render a second
+        // competing delete form so staff can never silently fall through
+        // to a stale duplicate handler. The action URL pattern is the
+        // strongest invariant — `handler=Delete` should appear nowhere
+        // in the Edit page's HTML.
+        var post = await SeedAsync(title: "Edit page shape check");
         var (_, _, html, _) = await GetEditorAsync(post.Id);
 
-        // Delete form is present and has the expected shape. We match
-        // the entire <form>…</form> body (lazy) so the antiforgery
-        // input and the hidden id field are inside the captured span.
-        var deleteFormMatch = Regex.Match(html,
-            @"<form\b[^>]*?action=""(?<action>[^""]+?handler=Delete)""[^>]*?>[\s\S]*?</form>",
-            RegexOptions.IgnoreCase);
-        if (!deleteFormMatch.Success)
-        {
-            deleteFormMatch = Regex.Match(html,
-                @"<form\b[^>]*?>[\s\S]*?handler=Delete[\s\S]*?</form>",
-                RegexOptions.IgnoreCase);
-        }
-        Assert.True(deleteFormMatch.Success,
-            "Edit page must render a delete form with action URL containing handler=Delete.");
-        var action = deleteFormMatch.Groups["action"].Success
-            ? deleteFormMatch.Groups["action"].Value
-            : "";
-        Assert.Contains($"/admin/tin-tuc/sua/{post.Id}", action);
-        Assert.Contains("handler=Delete", action);
+        Assert.DoesNotContain("handler=Delete", html,
+            StringComparison.OrdinalIgnoreCase);
 
-        // Antiforgery token + hidden id are present in the form body.
-        Assert.Contains("__RequestVerificationToken", deleteFormMatch.Value);
-        var idField = Regex.Match(deleteFormMatch.Value,
-            @"<input[^>]*type=""hidden""[^>]*name=""id""[^>]*value=""(?<id>[^""]+)""",
-            RegexOptions.IgnoreCase);
-        Assert.True(idField.Success,
-            "Delete form must carry a hidden id field.");
-        Assert.Equal(post.Id.ToString(), idField.Groups["id"].Value);
-
-        // POST button labelled "Xóa bài viết".
-        Assert.Contains("Xóa bài viết", deleteFormMatch.Value);
+        // And there should be no hidden id field at all on the Edit page
+        // (the only place a delete form's id is posted is the Index page).
+        Assert.DoesNotContain("name=\"id\"", html,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
