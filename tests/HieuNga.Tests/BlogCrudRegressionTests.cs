@@ -63,7 +63,8 @@ public class BlogCrudRegressionTests : IDisposable
 
     private HieuNga.Web.Pages.Admin.TinTuc.IndexModel CreateIndexPage()
     {
-        var page = new HieuNga.Web.Pages.Admin.TinTuc.IndexModel(_db, _repo, _uow);
+        var page = new HieuNga.Web.Pages.Admin.TinTuc.IndexModel(
+            _db, _repo, _uow, NullLogger<HieuNga.Web.Pages.Admin.TinTuc.IndexModel>.Instance);
         AttachPage(page);
         return page;
     }
@@ -132,6 +133,13 @@ public class BlogCrudRegressionTests : IDisposable
         Assert.Equal("huong-dan-chon-xe-ga-phu-hop", reloaded.Slug);
         Assert.True(reloaded.IsPublished);
         Assert.NotNull(reloaded.PublishedAt);
+        // Phase 4 invariant: PublishedAt must be UTC so it survives the
+        // PostgreSQL `timestamp with time zone` mapping. The InMemory
+        // provider accepts any Kind, so the assertion is the strongest
+        // check the non-PostgreSQL test suite can make.
+        Assert.Equal(DateTimeKind.Utc, reloaded.PublishedAt!.Value.Kind);
+        // BaseEntity.CreatedAt is also timestamptz.
+        Assert.Equal(DateTimeKind.Utc, reloaded.CreatedAt.Kind);
         Assert.Equal("https://cdn.example.com/cover.jpg", reloaded.ThumbnailUrl);
         Assert.Equal("https://cdn.example.com/cover.jpg", reloaded.OgImageUrl);
         Assert.Equal("Hướng dẫn chọn xe ga phù hợp | Hiếu Nga", reloaded.MetaTitle);
@@ -393,22 +401,33 @@ public class BlogCrudRegressionTests : IDisposable
     }
 
     [Fact]
-    public async Task Update_PublishedAt_StaffOverride_Persists()
+    public async Task Update_PublishedAt_StaffOverride_NoLongerExposedViaForm()
     {
+        // The Edit form no longer renders a PublishedAt input — staff
+        // can't set an arbitrary date. The page-model owns the field
+        // and stamps it from DateTime.UtcNow when first publishing.
+        // This test pins the new contract: the page model never reads
+        // a PublishedAt from the form binding (the property is absent
+        // from BlogPostInputModel after the Phase 4 rebuild).
         var seed = SeedBlog(isPublished: true, publishedAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         _db.BlogPosts.Add(seed);
         await _db.SaveChangesAsync();
 
-        var newDate = new DateTime(2026, 6, 15, 10, 0, 0, DateTimeKind.Utc);
         var page = CreateSuaPage();
         await page.OnGetAsync(seed.Id, CancellationToken.None);
-        page.Input.PublishedAt = newDate;
 
+        // BlogPostInputModel does NOT expose PublishedAt anymore.
+        var inputType = page.Input.GetType();
+        Assert.Null(inputType.GetProperty("PublishedAt"));
+
+        // Saving without IsPublished change must preserve the historical date.
         var result = await page.OnPostAsync(seed.Id, CancellationToken.None);
         Assert.IsType<RedirectToPageResult>(result);
 
         var reloaded = await _db.BlogPosts.AsNoTracking().FirstAsync(p => p.Id == seed.Id);
-        Assert.Equal<DateTime?>(newDate, reloaded.PublishedAt);
+        Assert.Equal<DateTime?>(
+            new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            reloaded.PublishedAt);
     }
 
     [Fact]
@@ -441,7 +460,6 @@ public class BlogCrudRegressionTests : IDisposable
         var page = CreateSuaPage();
         await page.OnGetAsync(seed.Id, CancellationToken.None);
         page.Input.IsPublished = true;
-        page.Input.PublishedAt = null;
 
         var result = await page.OnPostAsync(seed.Id, CancellationToken.None);
         Assert.IsType<RedirectToPageResult>(result);
@@ -449,6 +467,14 @@ public class BlogCrudRegressionTests : IDisposable
         var reloaded = await _db.BlogPosts.AsNoTracking().FirstAsync(p => p.Id == seed.Id);
         Assert.True(reloaded.IsPublished);
         Assert.NotNull(reloaded.PublishedAt);
+        // Phase 4 invariant: the new PublishedAt must be UTC so it can
+        // be written to the PostgreSQL timestamptz column without an
+        // exception. The InMemory provider does not enforce Kind rules,
+        // so this assertion is the only thing the test suite can verify
+        // without a real PostgreSQL — a real PostgreSQL test would
+        // additionally observe that SaveChangesAsync did not throw
+        // InvalidCastException for Kind=Unspecified.
+        Assert.Equal(DateTimeKind.Utc, reloaded.PublishedAt!.Value.Kind);
     }
 
     [Fact]
@@ -462,7 +488,6 @@ public class BlogCrudRegressionTests : IDisposable
         var page = CreateSuaPage();
         await page.OnGetAsync(seed.Id, CancellationToken.None);
         page.Input.IsPublished = false;
-        page.Input.PublishedAt = null;
 
         var result = await page.OnPostAsync(seed.Id, CancellationToken.None);
         Assert.IsType<RedirectToPageResult>(result);
@@ -483,7 +508,6 @@ public class BlogCrudRegressionTests : IDisposable
         var page = CreateSuaPage();
         await page.OnGetAsync(seed.Id, CancellationToken.None);
         page.Input.IsPublished = true;
-        page.Input.PublishedAt = null; // staff did not change the date
 
         var result = await page.OnPostAsync(seed.Id, CancellationToken.None);
         Assert.IsType<RedirectToPageResult>(result);
@@ -669,6 +693,9 @@ public class BlogCrudRegressionTests : IDisposable
             .FirstAsync(p => p.Id == seed.Id);
         Assert.True(reloaded.IsDeleted);
         Assert.NotNull(reloaded.UpdatedAt);
+        // Phase 4 invariant: UpdatedAt is set by the repository to
+        // DateTime.UtcNow, which is valid for the timestamptz column.
+        Assert.Equal(DateTimeKind.Utc, reloaded.UpdatedAt!.Value.Kind);
     }
 
     [Fact]

@@ -12,7 +12,8 @@ namespace HieuNga.Web.Pages.Admin.TinTuc;
 public class IndexModel(
     HieuNgaDbContext db,
     IRepository<BlogPost> repo,
-    IUnitOfWork uow) : PageModel
+    IUnitOfWork uow,
+    ILogger<IndexModel> logger) : PageModel
 {
     public IReadOnlyList<Row> Posts { get; private set; } = [];
 
@@ -63,23 +64,66 @@ public class IndexModel(
     }
 
     /// <summary>
-    /// Delete from the listing. Phase 3 — this is the SINGLE canonical
-    /// delete flow for Blog posts. There is no Xoa.cshtml and no
-    /// edit-page delete handler. The staff always deletes from
-    /// /admin/tin-tuc via the per-row [Xóa] button.
+    /// Single canonical delete flow for Blog posts — there is no Xoa.cshtml
+    /// and no edit-page delete handler. The staff always deletes from
+    /// <c>/admin/tin-tuc</c> via the per-row [Xóa] button.
     ///
-    /// Persistence is verified — SaveChangesAsync only returns when
-    /// the soft-delete row is durably committed; the success message
-    /// is written AFTER.
+    /// Rules:
+    /// <list type="bullet">
+    ///   <item><b>Route / antiforgery</b>: <c>asp-page-handler="Delete"</c>
+    ///   plus <c>[ValidateAntiForgeryToken]</c> via the layout pipeline.</item>
+    ///   <item><b>Confirmation</b>: the JS modal in
+    ///   <c>wwwroot/js/admin-toast.js</c> intercepts the click and posts
+    ///   only after the staff confirms.</item>
+    ///   <item><b>Soft delete only</b>: never physically delete database
+    ///   rows. The global EF query filter hides <c>IsDeleted</c> rows.</item>
+    ///   <item><b>UTC</b>: <c>UpdatedAt</c> is set in UTC by
+    ///   <see cref="Repository{T}.UpdateAsync"/>.</item>
+    ///   <item><b>No false success</b>: the success TempData is written
+    ///   ONLY after <c>SaveChangesAsync</c> returns successfully. A caught
+    ///   persistence failure logs and surfaces a friendly error to the
+    ///   staff.</item>
+    ///   <item><b>Search state preserved</b>: a successful delete
+    ///   redirects back to the list and keeps the active <c>Search</c>
+    ///   filter so the staff doesn't lose their place.</item>
+    /// </list>
     /// </summary>
     public async Task<IActionResult> OnPostDeleteAsync(Guid id, CancellationToken ct)
     {
+        // 1. Load the existing non-deleted entity. Missing IDs and
+        //    already-deleted rows both surface as 404 — same response so
+        //    we don't leak the existence of soft-deleted records.
         var entity = await repo.GetByIdAsync(id, ct);
-        if (entity is null || entity.IsDeleted) return NotFound();
+        if (entity is null || entity.IsDeleted)
+        {
+            return NotFound();
+        }
+
+        // 2. Soft-delete via the shared convention. UpdateAsync also
+        //    stamps UpdatedAt = DateTime.UtcNow (UTC) under the hood.
         entity.IsDeleted = true;
-        entity.UpdatedAt = DateTime.UtcNow;
-        await repo.UpdateAsync(entity, ct);
-        await uow.SaveChangesAsync(ct);
+
+        try
+        {
+            await repo.UpdateAsync(entity, ct);
+            await uow.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            // 3. Failure path: log + show a friendly VI error; do NOT
+            //    claim success. The entity may be tracked in Unchanged/
+            //    Modified state across the failed SaveChanges, so detach
+            //    it to keep a follow-up POST clean.
+            logger.LogError(ex, "Failed to soft-delete BlogPost. Id={Id}", id);
+            if (db.Entry(entity).State != EntityState.Detached)
+            {
+                db.Entry(entity).State = EntityState.Detached;
+            }
+            this.SetError("Không thể xóa bài viết. Vui lòng thử lại.");
+            return RedirectToPage(new { Search });
+        }
+
+        // 4. Success path.
         this.SetSuccess("Đã xóa bài viết.");
         return RedirectToPage(new { Search });
     }

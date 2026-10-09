@@ -84,16 +84,31 @@ else
                 </div>
                 <div class="admin-thumb-row-actions">
                     <a href="@editUrl" class="admin-action admin-action-edit">Sửa</a>
-                    <form method="post" asp-page-handler="Delete" class="inline"
-                          data-confirm="true"
-                          data-confirm-title="Xóa bài viết?"
-                          data-confirm-body="Bạn có chắc muốn xóa bài viết này không? Bài viết sẽ bị ẩn khỏi website."
-                          data-confirm-ok="Xóa bài"
-                          data-confirm-cancel="Hủy"
-                          data-confirm-danger="true">
+                    @*
+                        Single canonical delete flow for Blog posts. The
+                        data-confirm attributes live on the BUTTON (not the
+                        form) so the click handler in admin-toast.js picks up
+                        `el.tagName === 'BUTTON' && el.type === 'submit'` and
+                        calls `form.submit()`. When the attributes lived on
+                        the form, the click handler fired on the form itself
+                        and neither the BUTTON nor the A branch executed —
+                        the click was preventDefault'd, the modal confirmed,
+                        but the form was never posted. Moving the attributes
+                        here is the production bug-fix.
+                    *@
+                    <form method="post" asp-page-handler="Delete" class="inline">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@post.Id" />
-                        <button type="submit" class="admin-action admin-action-danger">Xóa</button>
+                        <button type="submit"
+                                class="admin-action admin-action-danger"
+                                data-confirm="true"
+                                data-confirm-title="Xóa bài viết?"
+                                data-confirm-body="Bạn có chắc muốn xóa bài viết này không? Bài viết sẽ bị ẩn khỏi website."
+                                data-confirm-ok="Xóa bài"
+                                data-confirm-cancel="Hủy"
+                                data-confirm-danger="true">
+                            Xóa
+                        </button>
                     </form>
                 </div>
             </article>

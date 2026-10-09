@@ -82,7 +82,13 @@ public class TinTucThemModel(
             ThumbnailUrl = string.IsNullOrWhiteSpace(Input.ThumbnailUrl) ? null : Input.ThumbnailUrl,
             CategoryId = Input.CategoryId,
             AuthorName = string.IsNullOrWhiteSpace(Input.AuthorName) ? null : Input.AuthorName.Trim(),
-            PublishedAt = Input.PublishedAt ?? (Input.IsPublished ? now : null),
+
+            // PublishedAt policy — system-managed, always UTC:
+            //   - Draft: leave null so the public site never shows it.
+            //   - Published: stamp the publish moment in UTC.
+            // No DateTimeKind.Unspecified is ever written: Npgsql rejects
+            // those for the blog_posts.published_at timestamptz column.
+            PublishedAt = Input.IsPublished ? now : null,
             IsPublished = Input.IsPublished,
             // Server-managed SEO. Staff never edits these.
             MetaTitle = $"{Input.Title.Trim()} | Hiếu Nga",

@@ -88,8 +88,8 @@
 
     <section class="admin-form-section">
         <h2 class="admin-form-section-title">Xuất bản</h2>
-        <div class="admin-grid-2">
-            <label class="admin-check" style="padding-top: 0.5rem;">
+        <div>
+            <label class="admin-check">
                 <input id="Input_IsPublished"
                        name="Input.IsPublished"
                        type="checkbox"
@@ -98,15 +98,9 @@
                        style="accent-color: var(--admin-honda-red);" />
                 Đăng bài viết lên website
             </label>
-            <div>
-                <label for="Input_PublishedAt" class="admin-label">Ngày đăng</label>
-                <input id="Input_PublishedAt"
-                       name="Input.PublishedAt"
-                       type="datetime-local"
-                       class="admin-input"
-                       value="@(Model.PublishedAt == null ? "" : Model.PublishedAt.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
-                <p class="admin-hint" style="margin: 0.3rem 0 0;">Bỏ trống để dùng ngày hiện tại khi đăng.</p>
-            </div>
+            <p class="admin-hint" style="margin: 0.3rem 0 0;">
+                Ngày đăng do hệ thống tự quản lý theo thời gian UTC để đồng bộ với cơ sở dữ liệu.
+            </p>
         </div>
     </section>
 </div>

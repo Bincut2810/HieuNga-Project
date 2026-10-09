@@ -101,7 +101,6 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         string? summary,
         Guid? categoryId,
         bool isPublished,
-        DateTime? publishedAt,
         string? thumbnailUrl,
         string? authorName,
         string antiforgeryToken)
@@ -111,6 +110,12 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             ["__RequestVerificationToken"] = antiforgeryToken,
 
             // Bound model fields (Input.X) — staff form posts ONLY these.
+            // Phase 4 — Input.PublishedAt is intentionally absent: the staff
+            // form has no datetime-local input anymore (the page model owns
+            // the field and stamps it from DateTime.UtcNow). Posting the key
+            // here would only be a no-op since the binder has nothing to
+            // populate anyway, but the test stops posting it to mirror the
+            // real browser form exactly.
             ["Input.Title"] = title,
             ["Input.Summary"] = summary ?? "",
             ["Input.Content"] = content,
@@ -118,9 +123,8 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             ["Input.CategoryId"] = categoryId?.ToString() ?? "",
             ["Input.AuthorName"] = authorName ?? "",
             ["Input.IsPublished"] = isPublished ? "true" : "false",
-            ["Input.PublishedAt"] = publishedAt?.ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) ?? "",
 
-            // SEO/Slug are NOT posted by the staff form.
+            // SEO / Slug / PublishedAt / system timestamps are NOT posted.
         };
         return new FormUrlEncodedContent(fields);
     }
@@ -188,6 +192,14 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         Assert.DoesNotContain("name=\"Input.OgImageUrl\"", html);
         Assert.DoesNotContain("name=\"Input.CanonicalUrl\"", html);
 
+        // Phase 4 — the DateTime input MUST NOT exist anymore. The
+        // <input type="datetime-local" name="Input.PublishedAt">
+        // pattern would re-introduce the production Kind=Unspecified
+        // bug. Pinning its absence here ensures a future regression
+        // can't quietly restore it.
+        Assert.DoesNotContain("type=\"datetime-local\"", html);
+        Assert.DoesNotContain("name=\"Input.PublishedAt\"", html);
+
         // Lưu thay đổi button.
         Assert.Contains("Lưu thay đổi", html);
 
@@ -216,7 +228,6 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             summary: post.Summary,
             categoryId: null,
             isPublished: true,
-            publishedAt: new DateTime(2026, 2, 1, 9, 0, 0, DateTimeKind.Utc),
             thumbnailUrl: post.ThumbnailUrl,
             authorName: post.AuthorName,
             antiforgeryToken: token);
@@ -249,7 +260,7 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         var newContent = "Nội dung đã được cập nhật hoàn toàn qua HTTP POST. ".PadRight(200, 'a');
         using var form = BuildEditForm(
             post.Id, post.Title, newContent, post.Summary,
-            null, post.IsPublished, post.PublishedAt,
+            null, post.IsPublished,
             post.ThumbnailUrl, post.AuthorName, token);
 
         var response = await client.PostAsync($"/admin/tin-tuc/sua/{post.Id}", form);
@@ -283,7 +294,7 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
 
         using var form = BuildEditForm(
             post.Id, post.Title, post.Content, post.Summary,
-            catId, post.IsPublished, post.PublishedAt,
+            catId, post.IsPublished,
             post.ThumbnailUrl, post.AuthorName, token);
 
         var response = await client.PostAsync($"/admin/tin-tuc/sua/{post.Id}", form);
@@ -306,7 +317,7 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         const string newThumb = "https://cdn.example.com/new.jpg";
         using var form = BuildEditForm(
             post.Id, post.Title, post.Content, post.Summary,
-            null, post.IsPublished, post.PublishedAt,
+            null, post.IsPublished,
             newThumb, post.AuthorName, token);
 
         var response = await client.PostAsync($"/admin/tin-tuc/sua/{post.Id}", form);
@@ -328,7 +339,7 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
 
         using var form = BuildEditForm(
             post.Id, post.Title, post.Content, post.Summary,
-            null, isPublished: true, publishedAt: null,
+            null, isPublished: true,
             post.ThumbnailUrl, post.AuthorName, token);
 
         var response = await client.PostAsync($"/admin/tin-tuc/sua/{post.Id}", form);
@@ -361,7 +372,7 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
         // Admin clears the IsPublished checkbox.
         using var form = BuildEditForm(
             post.Id, post.Title, post.Content, post.Summary,
-            null, isPublished: false, publishedAt: null,
+            null, isPublished: false,
             post.ThumbnailUrl, post.AuthorName, token);
 
         var response = await client.PostAsync($"/admin/tin-tuc/sua/{post.Id}", form);
@@ -422,7 +433,6 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             post.Summary,
             null,
             post.IsPublished,
-            post.PublishedAt,
             post.ThumbnailUrl,
             post.AuthorName,
             token);
@@ -541,6 +551,56 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
     }
 
     [Fact]
+    public async Task Step9_IndexPage_DeleteButton_HasConfirmAttributes_NotTheForm()
+    {
+        // Phase 4 — the data-confirm* attributes MUST live on the BUTTON
+        // (not on the parent form), otherwise admin-toast.js binds the
+        // click handler to the form itself and never invokes
+        // `form.submit()` because `el.tagName !== 'BUTTON'`. This pins
+        // the JS-driving shape so a future "cleanup" can't silently
+        // move the attributes back onto the form and re-introduce the
+        // production bug where confirmation appears but no delete posts.
+        var post = await SeedAsync(title: "Index button shape check");
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = true,
+        });
+        var html = await (await client.GetAsync("/admin/tin-tuc")).Content.ReadAsStringAsync();
+
+        // The form posts to the Delete handler with the row id.
+        var deleteForm = Regex.Match(html,
+            @"<form[^>]*asp-page-handler=""Delete""[^>]*>.*?</form>",
+            RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        // Fall back to a literal handler=Delete match if the attribute
+        // is rendered differently by the tag helper.
+        if (!deleteForm.Success)
+        {
+            deleteForm = Regex.Match(html,
+                @"<form[^>]*\baction=""[^""]*handler=Delete[^""]*""[^>]*>.*?</form>",
+                RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        }
+        Assert.True(deleteForm.Success,
+            "Expected a delete form posting to the Delete handler on the admin list page.");
+
+        // The form must NOT itself carry data-confirm (the production bug).
+        var formTag = deleteForm.Value.Substring(0, deleteForm.Value.IndexOf('>') + 1);
+        Assert.DoesNotContain("data-confirm", formTag, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("data-confirm-form", formTag, StringComparison.OrdinalIgnoreCase);
+
+        // The delete BUTTON inside the form MUST carry data-confirm so
+        // admin-toast.js wires the click handler against the button
+        // element (where `el.tagName === 'BUTTON' && el.type === 'submit'`
+        // finally fires `form.submit()`).
+        var deleteButton = Regex.Match(html,
+            @"<button[^>]*\btype=""submit""[^>]*\bdata-confirm=""true""[^>]*>\s*Xóa\s*</button>",
+            RegexOptions.IgnoreCase);
+        Assert.True(deleteButton.Success,
+            "Expected a <button type=\"submit\" data-confirm=\"true\">Xóa</button> " +
+            "so admin-toast.js correctly submits the form after confirmation.");
+    }
+
+    [Fact]
     public async Task Invalid_Update_DoesNotShowSuccess_AndDoesNotCorruptState()
     {
         // Empty title → Required validation must reject the POST and the
@@ -555,7 +615,6 @@ public class BlogCrudHttpReproTests : IClassFixture<HieuNgaTestAppFactory>
             summary: post.Summary,
             categoryId: null,
             isPublished: true,
-            publishedAt: null,
             thumbnailUrl: post.ThumbnailUrl,
             authorName: post.AuthorName,
             antiforgeryToken: token);

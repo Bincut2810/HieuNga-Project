@@ -17,11 +17,17 @@ namespace HieuNga.Web.Pages.Admin.TinTuc;
 ///   2. On POST, validate the staff-editable fields.
 ///   3. Apply ONLY staff-editable fields to the entity:
 ///        Title, Summary, Content, ThumbnailUrl, CategoryId,
-///        AuthorName, PublishedAt, IsPublished.
+///        AuthorName, IsPublished.
 ///   4. NEVER touch Slug, SEO, CreatedAt, IsDeleted, ViewCount.
 ///      → Title changes MUST NOT break the public URL.
-///   5. Save. Set success TempData ONLY after SaveChangesAsync returns.
-///   6. Redirect to /admin/tin-tuc.
+///   5. Auto-manage PublishedAt using a UTC-only convention:
+///         Draft  → Published : stamp UtcNow if empty (preserves history).
+///         Published → Draft  : preserve the historical PublishedAt.
+///      The staff form intentionally has no PublishedAt input — HTML
+///      datetime-local values come back with DateTimeKind.Unspecified,
+///      which Npgsql rejects for the timestamptz column.
+///   6. Save. Set success TempData ONLY after SaveChangesAsync returns.
+///   7. Redirect to /admin/tin-tuc.
 ///
 /// On any save failure, log the actual exception, surface a friendly
 /// Vietnamese message, and re-render the form.
@@ -52,6 +58,8 @@ public class TinTucSuaModel(
             return NotFound();
         }
 
+        // Staff-editable fields only. PublishedAt is intentionally
+        // absent — it is system-managed and the form has no input for it.
         Input = new BlogPostInputModel
         {
             Title = entity.Title,
@@ -60,7 +68,6 @@ public class TinTucSuaModel(
             ThumbnailUrl = entity.ThumbnailUrl,
             CategoryId = entity.CategoryId,
             AuthorName = entity.AuthorName,
-            PublishedAt = entity.PublishedAt,
             IsPublished = entity.IsPublished,
         };
         await LoadCategoriesAsync(ct);
@@ -102,21 +109,22 @@ public class TinTucSuaModel(
         entity.CategoryId = Input.CategoryId;
         entity.AuthorName = string.IsNullOrWhiteSpace(Input.AuthorName) ? null : Input.AuthorName.Trim();
 
-        // PublishedAt policy:
-        //   - If staff supplied a date, use it.
-        //   - Else if staff is publishing for the first time, set now.
-        //   - Else (unpublishing or no change), preserve existing.
-        if (Input.PublishedAt.HasValue)
-        {
-            entity.PublishedAt = Input.PublishedAt.Value;
-        }
-        else if (Input.IsPublished && !entity.PublishedAt.HasValue)
+        // PublishedAt policy — system-managed, NEVER taken from the form
+        // (the form has no PublishedAt input). The only writer is below:
+        //   - Draft → Published : if no PublishedAt exists, stamp now().
+        //   - Published → Draft : keep existing PublishedAt (historical).
+        //   - Published → Published / Draft → Draft : keep existing.
+        // Source of the values:
+        //   - entity.PublishedAt was loaded from PostgreSQL timestamptz, so
+        //     its Kind is Utc.
+        //   - DateTime.UtcNow has Kind=Utc.
+        // → we never write a DateTimeKind.Unspecified to the timestamptz
+        //   column (which Npgsql would reject).
+        entity.IsPublished = Input.IsPublished;
+        if (Input.IsPublished && !entity.PublishedAt.HasValue)
         {
             entity.PublishedAt = DateTime.UtcNow;
         }
-        // else: keep the existing entity.PublishedAt intact.
-
-        entity.IsPublished = Input.IsPublished;
 
         try
         {
