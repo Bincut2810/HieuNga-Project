@@ -2996,6 +2996,15 @@ input[type="radio"]:focus-visible {
 }
 .news-detail-prose {
   color: #374151;
+  /* Staff enter content as plain text in a <textarea> and the value
+     is stored verbatim. Preserve the newlines and blank lines they
+     typed, while still wrapping naturally on narrow screens and
+     collapsing accidental spaces / tabs so indentation in the
+     editor doesn't break alignment. `pre-line` is the safe match:
+     it keeps \n → <br> but does NOT preserve consecutive spaces. */
+  white-space: pre-line;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 .news-detail-prose.prose {
   max-width: 42rem;
