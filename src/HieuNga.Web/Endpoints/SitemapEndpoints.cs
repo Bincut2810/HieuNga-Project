@@ -18,7 +18,6 @@ public static class SitemapEndpoints
         "/dich-vu",
         "/bao-duong",
         "/tin-tuc",
-        "/khuyen-mai",
         "/lien-he",
         "/so-sanh",
         "/dat-lich-lai-thu"
@@ -85,23 +84,6 @@ public static class SitemapEndpoints
                     entries.Add(new SitemapEntry(
                         BuildLoc(baseUrl, "/tin-tuc/" + Uri.EscapeDataString(p.Slug)),
                         p.PublishedAt));
-
-                // 5. Promotions — reuse PromotionRepository.GetActiveAsync visibility rule
-                //    (IsActive && StartDate <= now && EndDate >= now).
-                //    Skip <lastmod>: StartDate/EndDate are validity windows, not modification dates.
-                var now = DateTime.UtcNow;
-                var promos = await db.Promotions.AsNoTracking()
-                    .Where(p => p.IsActive
-                                && p.StartDate <= now
-                                && p.EndDate >= now
-                                && !string.IsNullOrWhiteSpace(p.Slug))
-                    .Select(p => p.Slug)
-                    .ToListAsync(ct);
-
-                foreach (var slug in promos)
-                    entries.Add(new SitemapEntry(
-                        BuildLoc(baseUrl, "/khuyen-mai/" + Uri.EscapeDataString(slug)),
-                        null));
 
                 // Deduplicate by absolute URL (case-insensitive). Preserve first occurrence.
                 var deduped = new List<SitemapEntry>(entries.Count);

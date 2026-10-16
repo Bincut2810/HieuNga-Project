@@ -200,63 +200,6 @@
         </div>
     </section>
 
-    @* ─── PHASE 7: Latest Promotions (horizontal carousel) ─── *@
-    @if (d.Promotions.Any())
-    {
-        <section class="page-section reveal" aria-labelledby="home-promo-heading">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
-                    <div>
-                        <p class="section-eyebrow">Ưu đãi</p>
-                        <h2 id="home-promo-heading" class="section-title">Khuyến mãi đang diễn ra</h2>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="home-carousel-nav" data-promo-nav>
-                            <button type="button" class="home-carousel-btn" data-promo-prev aria-label="Khuyến mãi trước">‹</button>
-                            <button type="button" class="home-carousel-btn" data-promo-next aria-label="Khuyến mãi sau">›</button>
-                        </div>
-                        <a href="/khuyen-mai" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Tất cả →</a>
-                    </div>
-                </div>
-                <div class="home-promo-rail" data-promo-rail tabindex="0" aria-label="Danh sách khuyến mãi">
-                    @foreach (var promo in d.Promotions)
-                    {
-                        var endIso = promo.EndDate.ToString("o");
-                        <a href="/khuyen-mai/@promo.Slug" class="home-promo-slide group">
-                            <div class="home-promo-media img-wrap">
-                                @if (!string.IsNullOrWhiteSpace(promo.ImageUrl))
-                                {
-                                    <img src="@promo.ImageUrl"
-                                         alt="@promo.Title"
-                                         class="img-media home-promo-img"
-                                         width="960" height="540"
-                                         loading="lazy" decoding="async"
-                                         onerror="this.style.display='none';this.parentElement.classList.add('is-loaded')" />
-                                }
-                                else
-                                {
-                                    <div class="home-promo-placeholder" aria-label="Không có ảnh"></div>
-                                }
-                                <div class="home-promo-shade" aria-hidden="true"></div>
-                                <span class="home-promo-countdown" data-countdown="@endIso" aria-label="Thời hạn khuyến mãi">
-                                    Đến @promo.EndDate.ToString("dd/MM")
-                                </span>
-                            </div>
-                            <div class="home-promo-body">
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-honda-red">@promo.Type</span>
-                                <h3 class="mt-1 text-lg md:text-xl font-bold text-honda-dark group-hover:text-honda-red transition-colors line-clamp-2">@promo.Title</h3>
-                                @if (!string.IsNullOrEmpty(promo.Summary))
-                                {
-                                    <p class="mt-2 text-sm text-gray-500 line-clamp-2">@promo.Summary</p>
-                                }
-                            </div>
-                        </a>
-                    }
-                </div>
-            </div>
-        </section>
-    }
-
     @* ─── PHASE 8: News (magazine) ─── *@
     @if (featuredPost is not null)
     {
@@ -264,10 +207,10 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-10">
                     <div>
-                        <p class="section-eyebrow">Tin tức</p>
+                        <p class="section-eyebrow">Thông tin khuyến mãi</p>
                         <h2 id="home-news-heading" class="section-title">Góc tạp chí Hiếu Nga</h2>
                     </div>
-                    <a href="/tin-tuc" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Xem tất cả tin →</a>
+                    <a href="/tin-tuc" class="text-sm font-semibold text-honda-red hover:underline focus-ring rounded">Xem tất cả →</a>
                 </div>
                 <div class="home-news-magazine">
                     @{
