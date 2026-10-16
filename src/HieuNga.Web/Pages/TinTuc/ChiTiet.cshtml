@@ -2,37 +2,115 @@
 @model HieuNga.Web.Pages.TinTuc.ChiTietModel
 @{
     var post = Model.Post!;
+
+    // Approximate reading time from content length (≈200 words / minute, ~6 chars per word).
+    var wordCount = string.IsNullOrWhiteSpace(post.Content)
+        ? 0
+        : post.Content.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries).Length;
+    var readMinutes = Math.Max(1, (int)Math.Round(wordCount / 200.0));
+
+    var hasCategory = !string.IsNullOrWhiteSpace(post.CategoryName);
+    var hasAuthor = !string.IsNullOrWhiteSpace(post.AuthorName);
+    var hasThumbnail = !string.IsNullOrWhiteSpace(post.ThumbnailUrl);
+    var hasMeta = hasAuthor || post.PublishedAt.HasValue;
+    var publishedAt = post.PublishedAt;
 }
 
-<article>
-    <section class="relative bg-honda-dark text-white py-20 md:py-28 overflow-hidden">
-        @if (!string.IsNullOrWhiteSpace(post.ThumbnailUrl))
-        {
-            <img src="@post.ThumbnailUrl" alt="" class="absolute inset-0 w-full h-full object-cover opacity-25" />
-        }
-        <div class="relative max-w-3xl mx-auto px-4 text-center">
-            @if (!string.IsNullOrEmpty(post.CategoryName))
+<article class="news-detail bg-white">
+    @* ─── Article header (clean editorial) ─── *@
+    <header class="news-detail-header">
+        <div class="news-detail-container">
+            <nav class="news-detail-breadcrumb" aria-label="Breadcrumb">
+                <a href="/" class="news-detail-crumb">Trang chủ</a>
+                <span class="news-detail-crumb-sep" aria-hidden="true">/</span>
+                <a href="/tin-tuc" class="news-detail-crumb">Thông tin khuyến mãi</a>
+                @if (hasCategory)
+                {
+                    <span class="news-detail-crumb-sep" aria-hidden="true">/</span>
+                    <span class="news-detail-crumb-current">@post.CategoryName</span>
+                }
+            </nav>
+
+            @if (hasCategory)
             {
-                <span class="text-xs font-bold text-honda-red uppercase">@post.CategoryName</span>
+                <span class="news-detail-eyebrow">@post.CategoryName</span>
             }
-            <h1 class="text-3xl md:text-5xl font-bold mt-4 leading-tight">@post.Title</h1>
-            <p class="text-gray-400 mt-4 text-sm">
-                @(post.AuthorName ?? "Xe Máy Hiếu Nga")
-                @if (post.PublishedAt.HasValue) { <span> · @post.PublishedAt.Value.ToString("dd/MM/yyyy")</span> }
-            </p>
+
+            <h1 class="news-detail-title">@post.Title</h1>
+
+            @if (hasMeta)
+            {
+                <div class="news-detail-meta">
+                    @if (hasAuthor)
+                    {
+                        <span class="news-detail-meta-item">
+                            <svg class="news-detail-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            <span>@post.AuthorName</span>
+                        </span>
+                    }
+                    @if (publishedAt.HasValue)
+                    {
+                        <span class="news-detail-meta-sep" aria-hidden="true">·</span>
+                        <time class="news-detail-meta-item" datetime="@publishedAt.Value.ToString("yyyy-MM-dd")">
+                            <svg class="news-detail-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>@publishedAt.Value.ToString("dd/MM/yyyy")</span>
+                        </time>
+                    }
+                    <span class="news-detail-meta-sep" aria-hidden="true">·</span>
+                    <span class="news-detail-meta-item">
+                        <svg class="news-detail-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>@readMinutes phút đọc</span>
+                    </span>
+                </div>
+            }
+        </div>
+    </header>
+
+    @* ─── Featured image (preserves aspect ratio, no distortion) ─── *@
+    @if (hasThumbnail)
+    {
+        <figure class="news-detail-figure">
+            <div class="news-detail-figure-frame">
+                <img src="@post.ThumbnailUrl"
+                     alt="@post.Title"
+                     class="news-detail-figure-img"
+                     loading="eager"
+                     decoding="async"
+                     width="1280"
+                     height="720" />
+            </div>
+        </figure>
+    }
+
+    @* ─── Article body ─── *@
+    <section class="news-detail-body-wrap">
+        <div class="news-detail-container">
+            <div class="news-detail-prose prose prose-lg max-w-none">
+                @Html.Raw(post.Content)
+            </div>
         </div>
     </section>
 
-    <section class="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-        <nav class="text-sm text-gray-400 mb-8">
-            <a href="/tin-tuc" class="hover:text-honda-red">Thông tin khuyến mãi</a> / <span>@post.Title</span>
-        </nav>
-        <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-            @Html.Raw(post.Content)
+    @* ─── End-of-article footer / CTAs ─── *@
+    <footer class="news-detail-foot">
+        <div class="news-detail-container">
+            <div class="news-detail-cta">
+                <div>
+                    <p class="news-detail-cta-eyebrow">Bạn cần tư vấn?</p>
+                    <p class="news-detail-cta-title">Đặt lịch xem xe hoặc liên hệ trực tiếp với Hiếu Nga.</p>
+                </div>
+                <div class="news-detail-cta-actions">
+                    <a href="/xe" class="btn-primary">Xem xe Honda</a>
+                    <a href="/lien-he" class="btn-secondary">Liên hệ tư vấn</a>
+                </div>
+            </div>
+
+            <div class="news-detail-back">
+                <a href="/tin-tuc" class="news-detail-back-link">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    Quay lại Thông tin khuyến mãi
+                </a>
+            </div>
         </div>
-        <div class="mt-12 pt-8 border-t flex flex-wrap gap-4">
-            <a href="/xe" class="btn-primary">Xem xe Honda</a>
-            <a href="/lien-he" class="btn-secondary">Liên hệ tư vấn</a>
-        </div>
-    </section>
+    </footer>
 </article>

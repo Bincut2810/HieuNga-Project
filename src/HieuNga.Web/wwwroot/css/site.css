@@ -2877,3 +2877,195 @@ input[type="radio"]:focus-visible {
   .book-row { grid-template-columns: 1fr; }
 }
 
+/* ─── News detail (public blog post) ─── */
+.news-detail {
+  color: var(--honda-dark);
+}
+.news-detail-container {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+.news-detail-header {
+  padding-top: clamp(2.5rem, 5vw, 4rem);
+  padding-bottom: clamp(1.25rem, 3vw, 2rem);
+  background: var(--honda-surface);
+}
+.news-detail-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--honda-muted);
+  margin-bottom: 1.5rem;
+}
+.news-detail-crumb {
+  color: var(--honda-muted);
+  text-decoration: none;
+  transition: color var(--motion-fast);
+  border-radius: 0.25rem;
+}
+.news-detail-crumb:hover {
+  color: var(--honda-red);
+}
+.news-detail-crumb-sep {
+  color: #d1d5db;
+}
+.news-detail-crumb-current {
+  color: var(--honda-dark);
+  font-weight: 600;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.news-detail-eyebrow {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--honda-red);
+  background: var(--honda-red-soft);
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-pill);
+  margin-bottom: 1.25rem;
+}
+
+.news-detail-title {
+  font-size: clamp(1.875rem, 4.6vw, 2.875rem);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: var(--tracking-tight);
+  color: var(--honda-dark);
+  max-width: 48ch;
+  margin: 0;
+}
+
+.news-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--honda-muted);
+}
+.news-detail-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.news-detail-meta-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+.news-detail-meta-sep {
+  color: #d1d5db;
+}
+
+.news-detail-figure {
+  margin: clamp(1.5rem, 4vw, 2.5rem) auto clamp(2rem, 5vw, 3rem);
+  padding-inline: clamp(1rem, 3vw, 2rem);
+  max-width: 80rem;
+}
+.news-detail-figure-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-card-lg);
+  background: var(--honda-surface-muted);
+  box-shadow: var(--shadow-elevated);
+}
+.news-detail-figure-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.news-detail-body-wrap {
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+.news-detail-prose {
+  color: #374151;
+}
+.news-detail-prose.prose {
+  max-width: 42rem;
+  margin-inline: auto;
+}
+
+.news-detail-foot {
+  border-top: 1px solid var(--honda-border-soft);
+  padding-top: clamp(2rem, 4vw, 3rem);
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+  background: var(--honda-surface-muted);
+}
+.news-detail-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 4vw, 2rem);
+  background: var(--honda-surface);
+  border: 1px solid var(--honda-border-soft);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-card);
+}
+@media (min-width: 768px) {
+  .news-detail-cta {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+}
+.news-detail-cta-eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--honda-red);
+}
+.news-detail-cta-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--honda-dark);
+  font-weight: 600;
+}
+.news-detail-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.news-detail-back {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+.news-detail-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--honda-muted);
+  text-decoration: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-pill);
+  transition: color var(--motion-fast), background var(--motion-fast);
+}
+.news-detail-back-link:hover {
+  color: var(--honda-red);
+  background: var(--honda-red-soft);
+}
+
