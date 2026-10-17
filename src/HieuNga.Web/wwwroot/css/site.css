@@ -2891,7 +2891,13 @@ input[type="radio"]:focus-visible {
 .news-detail-header {
   padding-top: clamp(2.5rem, 5vw, 4rem);
   padding-bottom: clamp(1.25rem, 3vw, 2rem);
-  background: var(--honda-surface);
+  /* Article header uses the off-white surface tint so it reads as part
+     of the article (matching .news-detail-figure-frame and .news-detail-foot),
+     instead of blending with the sticky white <header id="site-header">
+     above it. Without this tint the two <header> siblings stack as one
+     continuous white block at the top of the page, which staff reported
+     as "two nearly identical navigation headers". */
+  background: var(--honda-surface-muted);
 }
 .news-detail-breadcrumb {
   display: flex;
